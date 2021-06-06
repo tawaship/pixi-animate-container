@@ -33,7 +33,7 @@
   "homepage": "https://tawaship.github.io/pixi-animate-container/",
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
-    "@rollup/plugin-commonjs": "11.0.2",
+    "@rollup/plugin-commonjs": "^11.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "@rollup/plugin-typescript": "^5.0.2",
     "@tawaship/createjs-module": "^1.0.0",
