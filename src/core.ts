@@ -1,6 +1,5 @@
 import { createjs, loadAssetAsync as _loadAssetAsync, ILoadAssetOption, IAnimateLibrary } from '@tawaship/pixi-animate-core';
 import { CreatejsMovieClip } from './MovieClip';
-
 export { createjs, ILoadAssetOption, IAnimateLibrary } from '@tawaship/pixi-animate-core';
 
 /**
@@ -38,13 +37,6 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 	const promises: Promise<IAnimateLibrary>[] = [];
 	
 	for (let i = 0; i < targets.length; i++) {
-		const comp = AdobeAn.getComposition(targets[i].id);
-		if (!comp) {
-			throw new Error(`no composition: ${targets[i].id}`);
-		}
-	}
-	
-	for (let i = 0; i < targets.length; i++) {
 		const target = targets[i];
 		
 		const comp = AdobeAn.getComposition(target.id);
@@ -52,7 +44,7 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 			throw new Error(`no composition: ${target.id}`);
 		}
 		
-		promises.push(_loadAssetAsync(target.id, target.basepath, target.options)
+		promises.push(_loadAssetAsync(comp, target.basepath, target.options)
 			.then((lib: IAnimateLibrary) => {
 				for (let i  in lib) {
 					if (lib[i].prototype instanceof CreatejsMovieClip) {

@@ -1,4 +1,5 @@
-require('./cjs.js');
+window.createjs = require('@tawaship/createjs-module');
+window.AdobeAn = {};
 const assert = require('assert');
 const PIXI = require('pixi.js-legacy');
 const PixiAnimate = require('../');

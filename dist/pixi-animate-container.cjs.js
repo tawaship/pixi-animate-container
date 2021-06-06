@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v1.0.0
+ * pixi-animate-container - v1.0.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -10,12 +10,15 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var createjs = _interopDefault(require('@tawaship/createjs-module'));
 var pixi_js = require('pixi.js');
 
 /*!
- * @tawaship/pixi-animate-core - v3.0.0
+ * @tawaship/pixi-animate-core - v3.0.3
  * 
- * @require pixi.js v5.3.2
+ * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
  * @license MIT
  */
@@ -56,11 +59,6 @@ function updateDisplayObjectChildren(cjs, e) {
     }
     return true;
 }
-
-/**
- * Global createjs object
- */
-const createjs = window.createjs;
 
 /**
  * [[https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage]]
@@ -1830,11 +1828,10 @@ Object.defineProperties(CreatejsText.prototype, {
 /**
  * Load assets of createjs content published with Adobe Animate.
  *
- * @param id "lib.properties.id" in Animate content.
+ * @param comp Composition obtained from `AdobeAn.getComposition`.
  * @param basepath Directory path of Animate content.
  */
-function loadAssetAsync(id, basepath, options = {}) {
-    const comp = AdobeAn.getComposition(id);
+function loadAssetAsync(comp, basepath, options = {}) {
     if (!comp) {
         throw new Error('no composition');
     }
@@ -1935,18 +1932,12 @@ function loadAssetAsync$1(targets) {
     }
     const promises = [];
     for (let i = 0; i < targets.length; i++) {
-        const comp = AdobeAn.getComposition(targets[i].id);
-        if (!comp) {
-            throw new Error(`no composition: ${targets[i].id}`);
-        }
-    }
-    for (let i = 0; i < targets.length; i++) {
         const target = targets[i];
         const comp = AdobeAn.getComposition(target.id);
         if (!comp) {
             throw new Error(`no composition: ${target.id}`);
         }
-        promises.push(loadAssetAsync(target.id, target.basepath, target.options)
+        promises.push(loadAssetAsync(comp, target.basepath, target.options)
             .then((lib) => {
             for (let i in lib) {
                 if (lib[i].prototype instanceof CreatejsMovieClip$1) {
@@ -2031,8 +2022,8 @@ class Container extends pixi_js.Container {
     }
 }
 
+exports.createjs = createjs;
 exports.Container = Container;
 exports.CreatejsMovieClip = CreatejsMovieClip$1;
-exports.createjs = createjs;
 exports.loadAssetAsync = loadAssetAsync$1;
 //# sourceMappingURL=pixi-animate-container.cjs.js.map

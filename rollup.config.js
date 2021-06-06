@@ -42,7 +42,7 @@ export default (async () => {
 					sourcemap: true
 				}
 			],
-			external: ['pixi.js'],
+			external: ['pixi.js', '@tawaship/createjs-module'],
 			watch: {
 				clearScreen: false
 			},
@@ -63,11 +63,12 @@ export default (async () => {
 					sourcemap: true,
 					extend: true,
 					globals: {
-						'pixi.js': 'PIXI'
+						'pixi.js': 'PIXI',
+						'@tawaship/createjs-module': 'createjs'
 					}
 				}
 			],
-			external: ['pixi.js'],
+			external: ['pixi.js', '@tawaship/createjs-module'],
 			plugins: [
 				nodeResolve(),
 				commonjs(),
@@ -97,12 +98,13 @@ export default (async () => {
 					sourcemap: true,
 					extend: true,
 					globals: {
-						'pixi.js': 'PIXI'
+						'pixi.js': 'PIXI',
+						'@tawaship/createjs-module': 'createjs'
 					},
 					compact: true
 				}
 			],
-			external: ['pixi.js'],
+			external: ['pixi.js', '@tawaship/createjs-module'],
 			plugins: [
 				nodeResolve(),
 				commonjs(),
