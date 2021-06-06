@@ -5,8 +5,9 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no, minimal-ui">
 		<script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.2/pixi.min.js"></script>
-		<script src="../../../../dist/pixi-animate-container.js"></script>
-		<script src="game/game.js"></script>
+		<script src="../../../dist/pixi-animate-container.js"></script>
+		<script src="../animation/game/game.js"></script>
+		<script src="../class/game/game.js"></script>
 	</head>
 	<body>
 		<script>
@@ -19,19 +20,28 @@
 				backgroundColor: 0xFFFFFF
 			});
 			
-			PIXI.animate.loadAssetAsync({
-				id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
-				basepath: 'game/',
-				options: {
-					crossOrigin: false
+			PIXI.animate.loadAssetAsync([
+				{
+					id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
+					basepath: '../class/game/'
+				},
+				{
+					id: '2FA8E0C7230941478CE2CA3DB82DBEDF_1',
+					basepath: '../animation/game/'
 				}
-			})
+			])
 			.then(function(lib) {
 				class Root extends PIXI.animate.Container {
-					constructor() {
+					constructor($) {
 						super(app.ticker);
 						
-						this.addCreatejs(new lib.game());
+						this.x = 10;
+						this.y = 10;
+						
+						this.scale.set(0.5);
+						
+						this.addCreatejs(new lib[0].game()).y = 100;
+						this.addCreatejs(new lib[1].game()).y = 500;
 					}
 				}
 				

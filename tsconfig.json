@@ -6,7 +6,7 @@
     "strict": false
   },
   "typedocOptions": {
-    "out": "docs/docs",
+    "out": "docs",
     "gitRevision": "master",
     "entryPoints": ["src/index.ts"],
     "includeVersion": true
