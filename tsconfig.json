@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES6",
     "moduleResolution": "node",
-    "strict": false
+    "strict": true
   },
   "typedocOptions": {
     "out": "docs",
