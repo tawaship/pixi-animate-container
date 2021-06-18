@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v1.0.1
+ * pixi-animate-container - v1.0.2
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -11,7 +11,7 @@ export { default as createjs } from '@tawaship/createjs-module';
 import { filters, Container as Container$1, BaseTexture, Texture, LINE_CAP, LINE_JOIN, Text, Sprite, Graphics } from 'pixi.js';
 
 /*!
- * @tawaship/pixi-animate-core - v3.0.3
+ * @tawaship/pixi-animate-core - v3.0.4
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1840,11 +1840,19 @@ function loadAssetAsync(comp, basepath, options = {}) {
         }
         const loader = new createjs.LoadQueue(false, basepath);
         loader.installPlugin(createjs.Sound);
-        loader.addEventListener('fileload', function (evt) {
+        const errors = [];
+        loader.addEventListener('fileload', (evt) => {
             handleFileLoad(evt, comp);
         });
-        loader.addEventListener('complete', function (evt) {
+        loader.addEventListener('complete', (evt) => {
+            if (errors.length) {
+                reject(errors);
+                return;
+            }
             resolve(evt);
+        });
+        loader.addEventListener('error', (evt) => {
+            errors.push(evt.data);
         });
         if (options.crossOrigin) {
             const m = lib.properties.manifest;

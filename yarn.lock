@@ -721,10 +721,10 @@
   resolved "https://registry.yarnpkg.com/@tawaship/createjs-module/-/createjs-module-1.0.0.tgz#8b1f8a3e99f4f271deae56dcd45e2744af6ba084"
   integrity sha512-EIQKK/Jnl8pSBk8iYLsAxAWI4pMQBj0y8WYg5WB8CvmraTsl/nJnuRlLXCavzwtOAumauRjtlOwWPoIe9TmH7w==
 
-"@tawaship/pixi-animate-core@3.0.3":
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/@tawaship/pixi-animate-core/-/pixi-animate-core-3.0.3.tgz#3fa87726e5b6059fddc307018ac5b756fe69424b"
-  integrity sha512-FMFK8kBBnAhCnRfuTyEUQgak9+Xzk6w1HnXb3GLNAwR6/iZMTREdTXm8tp0NKQaM7n2ExdBaDBiLAIUvyE6Z8w==
+"@tawaship/pixi-animate-core@3.0.4":
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/@tawaship/pixi-animate-core/-/pixi-animate-core-3.0.4.tgz#619e03728a5723dca43d436ddd934dd39e2323f6"
+  integrity sha512-ZIkpu3bHnLVKgrzfcKMK9JGIhev/xJGX7K4xdDahl9kNuLpk7C5/uUz5GDI+7HhJC+ngRXYln5QZn2D8DI0RWA==
 
 "@types/buble@^0.19.2":
   version "0.19.2"
