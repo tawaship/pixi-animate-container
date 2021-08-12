@@ -1,4 +1,4 @@
-import { CreatejsMovieClip as _CreatejsMovieClip, ITickerData } from '@tawaship/pixi-animate-core';
+import { createjs, CreatejsMovieClip as _CreatejsMovieClip, ITickerData } from '@tawaship/pixi-animate-core';
 
 export { ITickerData } from '@tawaship/pixi-animate-core';
 
@@ -12,6 +12,13 @@ const P: number = 1000 / 60;
  */
 export class CreatejsMovieClip extends _CreatejsMovieClip {
 	declare _framerateBase: number;
+	
+	/**
+	 * When the last frame of the timeline is reached.
+	 * 
+	 * @event
+	 */
+	endAnimation?(): void {}
 	
 	constructor(...args: any[]) {
 		super(...args);
@@ -29,8 +36,17 @@ export class CreatejsMovieClip extends _CreatejsMovieClip {
 	 * @override
 	 */
 	updateForPixi(e: ITickerData) {
-		this.advance(e.delta * P);
+		const currentFrame = this.currentFrame;
+		
+		// this.advance(e.delta * P);
+		this.advance(P);
+		
+		if (currentFrame !== this.currentFrame && this.currentFrame === (this.totalFrames - 1)) {
+			this.dispatchEvent(new createjs.Event('endAnimation'));
+		}
 		
 		return super.updateForPixi(e);
 	}
 }
+
+delete(CreatejsMovieClip.prototype.endAnimation);

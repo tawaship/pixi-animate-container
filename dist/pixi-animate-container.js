@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v1.0.2
+ * pixi-animate-container - v1.0.3
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1700,16 +1700,19 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, pixi_js) {
         }
         return _CreatejsMovieClip && (CreatejsMovieClip.__proto__ = _CreatejsMovieClip), 
         CreatejsMovieClip.prototype = Object.create(_CreatejsMovieClip && _CreatejsMovieClip.prototype), 
-        CreatejsMovieClip.prototype.constructor = CreatejsMovieClip, CreatejsMovieClip.prototype.initialize = function() {
+        CreatejsMovieClip.prototype.constructor = CreatejsMovieClip, CreatejsMovieClip.prototype.endAnimation = function() {}, 
+        CreatejsMovieClip.prototype.initialize = function() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
             _CreatejsMovieClip.prototype.initialize.apply(this, args), this.framerate = this._framerateBase;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
-            return this.advance(16.666666666666668 * e.delta), _CreatejsMovieClip.prototype.updateForPixi.call(this, e);
+            var currentFrame = this.currentFrame;
+            return this.advance(16.666666666666668), currentFrame !== this.currentFrame && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new createjs.Event("endAnimation")), 
+            _CreatejsMovieClip.prototype.updateForPixi.call(this, e);
         }, CreatejsMovieClip;
     }(CreatejsMovieClip);
-    createjs.MovieClip = CreatejsMovieClip$1;
+    delete CreatejsMovieClip$1.prototype.endAnimation, createjs.MovieClip = CreatejsMovieClip$1;
     var Container = function(_Container) {
         function Container(ticker) {
             var this$1 = this;

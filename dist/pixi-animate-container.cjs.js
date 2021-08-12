@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v1.0.2
+ * pixi-animate-container - v1.0.3
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1912,6 +1912,12 @@ const P$6 = 1000 / 60;
  * \@tawaship/pixi-animate-core [[https://tawaship.github.io/pixi-animate-core/classes/createjsmovieclip.html | CreatejsMovieClip]]
  */
 class CreatejsMovieClip$1 extends CreatejsMovieClip {
+    /**
+     * When the last frame of the timeline is reached.
+     *
+     * @event
+     */
+    endAnimation() { }
     constructor(...args) {
         super(...args);
         this.framerate = this._framerateBase;
@@ -1924,10 +1930,16 @@ class CreatejsMovieClip$1 extends CreatejsMovieClip {
      * @override
      */
     updateForPixi(e) {
-        this.advance(e.delta * P$6);
+        const currentFrame = this.currentFrame;
+        // this.advance(e.delta * P);
+        this.advance(P$6);
+        if (currentFrame !== this.currentFrame && this.currentFrame === (this.totalFrames - 1)) {
+            this.dispatchEvent(new createjs.Event('endAnimation'));
+        }
         return super.updateForPixi(e);
     }
 }
+delete (CreatejsMovieClip$1.prototype.endAnimation);
 
 /**
  * Load the assets of createjs content published by Adobe Animate.

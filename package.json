@@ -1,6 +1,6 @@
 {
   "name": "@tawaship/pixi-animate-container",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "dist/pixi-animate-container.cjs.js",
   "module": "dist/pixi-animate-container.esm.js",
