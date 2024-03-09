@@ -4,7 +4,7 @@ import { utils } from 'pixi.js';
 /**
  * @ignore
  */
-const createjsInteractionEvents = {
+const createjsInteractionEventsa = {
 	mousedown: true,
 	pressmove: true,
 	pressup: true,
@@ -13,12 +13,43 @@ const createjsInteractionEvents = {
 	click: true
 };
 
+export enum createjsInteractionEvents {
+	mousedown = "mousedown",
+	pressmove = "pressmove",
+	pressup = "pressup",
+	rollover = "rollover",
+	rollout = "rollout",
+	click = "click",
+}
+
+/**
+ * Event object passed to createjs interaction event handler.
+ * 
+ * It is different from the createjs event because it converts the event that occurred on pixi.js.
+ * There may be fewer properties and the property values may not match the createjs event values.
+ * Therefore, we recommend that you do not implement interaction processing with createjs, but with pixi.js.
+ * 
+ * - `target`
+ * A different object may be stored than the createjs event.
+ *
+ * - `rawX`, `rawY`
+ * Global coordinates in the pixi.js canvas are stored.
+ * When playing with createjs, the content is always placed at the canvas's global coordinates (0, 0), but this plugin allows you to freely change the coordinates of the createjs instance, so the values may shift.
+ */
+export interface ICreatejsInteractionEvent {
+	type: createjsInteractionEvents | null;
+	currentTarget: TCreatejsObject | null;
+	target: TCreatejsObject | null;
+	rawX: number;
+	rawY: number;
+}
+
 export interface ICreatejsInteractionEventDelegate {
 	 (e: any): void;
 }
 
 export class EventManager {
-	private _isDown: boolean = false;
+	private _downTarget: TCreatejsObject | null = null;
 	private _emitter: utils.EventEmitter;
 	private _cjs: TCreatejsObject;
 	
@@ -39,98 +70,104 @@ export class EventManager {
 	}
 	
 	private _onPointerDown(e: any) {
-		e.currentTarget = e.currentTarget.createjs;
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.mousedown,
+			currentTarget: e.currentTarget.createjs,
+			target: e.target.createjs,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
 		
-		e.target = e.target.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
+		this._downTarget = e.target.createjs;
 		
-		this._isDown = true;
-		
-		this._emitter.emit('mousedown', e);
+		this._emitter.emit('mousedown', ev);
 	}
 	
 	private _onPointerMove(e: any) {
-		if (!this._isDown) {
+		if (!this._downTarget) {
 			return;
 		}
+
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.pressmove,
+			currentTarget: e.currentTarget.createjs,
+			target: this._downTarget,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
 		
-		e.currentTarget = this._cjs;
-		
-		e.target = e.target && e.target.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._emitter.emit('pressmove', e);
+		this._emitter.emit('pressmove', ev);
 	}
 	
 	private _onPointerUp(e: any) {
-		e.currentTarget = this._cjs;
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.pressup,
+			currentTarget: e.currentTarget.createjs,
+			target: this._downTarget,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
+
+		this._downTarget = null;
 		
-		e.target = e.target && e.target.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._isDown = false;
-		
-		this._emitter.emit('pressup', e);
+		this._emitter.emit('pressup', ev);
 	}
 	
 	private _onPointerUpOutside(e: any) {
-		e.currentTarget = this._cjs;
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.pressup,
+			currentTarget: e.currentTarget.createjs,
+			target: this._downTarget,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
+
+		this._downTarget = null;
 		
-		e.target = e.target && e.target.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._isDown = false;
-		
-		this._emitter.emit('pressup', e);
+		this._emitter.emit('pressup', ev);
 	}
 	
 	private _onPointerTap(e: any) {
-		e.currentTarget = this._cjs;
-		
-		e.target = e.target && e.target.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._emitter.emit('click', e);
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.click,
+			currentTarget: e.currentTarget.createjs,
+			target: e.target.createjs,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
+
+		this._emitter.emit('click', ev);
 	}
 	
 	private _onPointerOver(e: any) {
-		e.currentTarget = e.currentTarget.createjs;
-		
-		e.target = e.currentTarget.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._emitter.emit('rollover', e);
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.rollover,
+			currentTarget: e.currentTarget.createjs,
+			target: e.currentTarget.createjs,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
+
+		this._emitter.emit('rollover', ev);
 	}
 	
 	private _onPointerOut(e: any) {
-		e.currentTarget = e.currentTarget.createjs;
-		
-		e.target = e.currentTarget.createjs;
-		const ev = e.data;
-		e.rawX = ev.global.x;
-		e.rawY = ev.global.y;
-		
-		this._emitter.emit('rollout', e);
+		const ev: ICreatejsInteractionEvent = {
+			type: createjsInteractionEvents.rollout,
+			currentTarget: e.currentTarget.createjs,
+			target: e.currentTarget.createjs,
+			rawX: e.data.global.x,
+			rawY: e.data.global.y,
+		};
+
+		this._emitter.emit('rollout', ev);
 	}
 	
-	add(type: string, cb: ICreatejsInteractionEventDelegate) {
+	add(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate) {
 		if (!(type in createjsInteractionEvents)) {
 			return;
 		}
 		
-		this._emitter.off(type, cb);
 		this._emitter.on(type, cb);
 		
 		if (this._emitter.eventNames().length > 0) {
@@ -138,7 +175,7 @@ export class EventManager {
 		}
 	}
 	
-	remove(type: string, cb: ICreatejsInteractionEventDelegate) {
+	remove(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate) {
 		if (!(type in createjsInteractionEvents)) {
 			return;
 		}

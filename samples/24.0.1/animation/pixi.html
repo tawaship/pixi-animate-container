@@ -36,7 +36,12 @@
 						this.y = 10;
 						this.scale.set(0.7);
 						
-						const container = this.addChild(new PIXI.animate.Container(app.ticker));
+						const container = this.addChild(new PIXI.animate.Container());
+						app.ticker.add(container.handleTick, container);
+
+						setTimeout(() => {
+							app.ticker.remove(container.handleTick, container);
+						}, 2000);
 						
 						container.addChild(new PIXI.Text('Library game'));
 						const a = container.addCreatejs(new lib.game());
@@ -45,6 +50,12 @@
 				}
 				
 				app.stage.addChild(new Root());
+				const resize = () => {
+					app.view.style.width = window.innerWidth + "px";
+					app.view.style.height = window.innerWidth * 800 / 450;
+				};
+				window.addEventListener("resize", resize);
+				resize();
 				document.body.appendChild(app.view);
 			});
 		</script>

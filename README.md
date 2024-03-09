@@ -7,12 +7,24 @@
 
 ---
 
-## Core module
-[@tawaship/pixi-animate-core](https://tawaship.github.io/pixi-animate-core/)
+## Overview
+
+### Each original (simplified) flow
+
+- createjs contents created with Adobe Animate
+![origin](https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/animate.png)
+
+- pixi.js contents
+![origin](https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/pixi.png)
+
+### Flow to be realized
+
+![core](https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/core.png)
+
 
 ## Supported version
 
-- A complete set of content created with Adobe Animate version 20.02 | 20.5.1
+- A complete set of content created with Adobe Animate version 24.0.1
 - pixi.js 5.3.x
 
 I have not confirmed the operation on other versions.
@@ -64,8 +76,8 @@ PIXI.animate.loadAssetAsync([{
 	// If you load multiple contents, the argument "lib" will be an array and the "lib" of each content will be stored in order.
 	class Root extends PIXI.animate.Container {
 		constructor() {
-			super(app.ticker);
-			
+			super();
+			app.ticker.add(this.handleTick, this);
 			this.addCreatejs(new lib.game()); // The class you want to use.
 		}
 	}
@@ -84,3 +96,10 @@ PIXI.animate.loadAssetAsync([{
 	|name|class|
 	|:--|:--|
 	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html)|
+
+### 4.0.0
+
+- Integrate core modules into source code
+- Changed the method of linking with pixi.js ticker
+- Supports sound playback
+- Improving accuracy of interaction processing

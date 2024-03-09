@@ -8,15 +8,8 @@ import { CreatejsShape } from './Shape';
 import { CreatejsBitmap } from './Bitmap';
 import { CreatejsGraphics } from './Graphics';
 import { CreatejsText } from './Text';
-import { EventManager, ICreatejsInteractionEventDelegate } from './EventManager';
+import { EventManager, ICreatejsInteractionEventDelegate, createjsInteractionEvents } from './EventManager';
 import { DEG_TO_RAD } from './utils';
-
-/**
- * [[http://pixijs.download/release/docs/PIXI.Point.html | PIXI.Point]]
- */
-declare class PixiPoint {};
-
-export { Point as PixiPoint };
 
 export interface ITickerData {
 	delta: number;
@@ -228,26 +221,29 @@ export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => T
 			this._createjsParams._off = value;
 		}
 		
-		addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]) {
+		addEventListener(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]) {
+			const p = super.addEventListener(type, cb, ...args);
 			if (!(cb instanceof CreatejsButtonHelper)) {
 				this._createjsEventManager.add(type, cb);
 			}
-			
-			return super.addEventListener(type, cb, ...args);
+
+			return p;
 		}
 		
-		removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, ...args: any[]) {
+		removeEventListener(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate, ...args: any[]) {
+			const p = super.removeEventListener(type, cb, ...args);
 			if (!(cb instanceof CreatejsButtonHelper)) {
 				this._createjsEventManager.remove(type, cb);
 			}
 			
-			return super.removeEventListener(type, cb, ...args);
+			return p;
 		}
 		
 		removeAllEventListeners(type?: string, ...args: any[]) {
+			const p = super.removeAllEventListeners(type, ...args);
 			this._createjsEventManager.removeAll(type);
-			
-			return super.removeAllEventListeners(type, ...args);
+
+			return p;
 		}
 		
 		get mask() {

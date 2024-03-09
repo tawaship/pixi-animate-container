@@ -33,8 +33,8 @@
 			.then(function(lib) {
 				class Root extends PIXI.animate.Container {
 					constructor($) {
-						super(app.ticker);
-						
+						super();
+						app.ticker.add(this.handleTick, this);
 						this.x = 10;
 						this.y = 10;
 						
@@ -42,10 +42,17 @@
 						
 						this.addCreatejs(new lib[0].game()).y = 100;
 						this.addCreatejs(new lib[1].game()).y = 500;
+						
 					}
 				}
 				
 				app.stage.addChild(new Root());
+				const resize = () => {
+					app.view.style.width = window.innerWidth + "px";
+					app.view.style.height = window.innerWidth * 800 / 450;
+				};
+				window.addEventListener("resize", resize);
+				resize();
 				document.body.appendChild(app.view);
 			});
 		</script>

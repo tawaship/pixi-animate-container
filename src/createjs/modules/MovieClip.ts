@@ -61,8 +61,6 @@ function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 	});
 }
 
-export const b = 1;
-
 export class AnimateEvent extends createjs.Event {
 	constructor(type: string) {
 		super(type);
@@ -92,7 +90,14 @@ export class ReachLabelEvent extends AnimateEvent {
 }
 
 export interface IFrameEventOption {
+	/**
+	 * Whether to fire [[CreatejsMovieClip.endAnimation]]
+	 */
 	endAnimation?: boolean;
+
+	/**
+	 * Whether to fire [[CreatejsMovieClip.reachLabel]]
+	 */
 	reachLabel?: boolean;
 }
 
@@ -148,7 +153,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 		
 		this.advance(T * e.delta);
 		
-		if (currentFrame !== this.currentFrame) {
+		if (this._useFrameEvent && currentFrame !== this.currentFrame) {
 			if (this._useFrameEvent.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
 				this.dispatchEvent(new AnimateEvent('endAnimation'));
 			}

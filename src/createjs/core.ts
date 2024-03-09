@@ -2,10 +2,9 @@ import * as PIXI from 'pixi.js';
 import * as PA from './modules';
 import createjs from '@tawaship/createjs-module';
 
-/**
- * @ignore
- */
 declare const AdobeAn: any;
+declare const window: any;
+
 
 export interface IAnimateLibrary {
 	[ name: string ]: any;
@@ -19,6 +18,8 @@ export interface ILoadAssetOption {
 
 	/**
 	 * Whether to use sound on createjs.
+	 * 
+	 * However, if possible, try to use an external library such as ***howler.js***.
 	 */
 	useSound?: boolean;
 
@@ -42,6 +43,14 @@ export interface IPrepareTarget {
 	options?: ILoadAssetOption;
 };
 
+function playSound(id: string, loop: boolean, offset: number) {
+	return createjs.Sound.play(id, {
+		interrupt: createjs.Sound.INTERRUPT_EARLY,
+		loop,
+		offset
+	});
+}
+
 export interface IAnimateManifest {
 	src: string;
 	id: string;
@@ -49,6 +58,26 @@ export interface IAnimateManifest {
 	crossOrigin?: boolean;
 	[key: string]: any;
 }
+
+/*
+function dataURLToBlobURL(dataURL: string) {
+	const bin = atob(dataURL.replace(/^.*,/, ''));
+	const buffer = new Uint8Array(bin.length);
+	for (let i = 0; i < bin.length; i++) {
+		buffer[i] = bin.charCodeAt(i);
+	}
+
+	const p = dataURL.slice(5);
+	try{
+		const blob = new Blob([buffer.buffer], {
+			type: p.slice(0, p.indexOf(";"))
+		});
+		return (URL || webkitURL).createObjectURL(blob);
+	} catch (e){
+		throw e;
+	};
+}
+*/
 
 /**
  * Load the assets of createjs content published by Adobe Animate.
@@ -64,6 +93,10 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 
 	for (let i = 0; i < targets.length; i++) {
 		const target = targets[i];
+
+		if (target.options?.useSound) {
+			window.playSound = playSound;
+		}
 		
 		const comp = AdobeAn.getComposition(target.id);
 		if (!comp) {
@@ -80,9 +113,17 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 			manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
 
 			if (manifest.src.indexOf('data:image') === 0) {
-				manifest.type = "image";
+				manifest.type = createjs.Types.IMAGE;
 			} else if (manifest.src.indexOf('data:audio') === 0) {
-				manifest.type = "sound";
+				/* note
+					data URL形式のサウンドは、createjsのローダーではサポートしていないらしい
+					blob URLに変換もダメだった
+				*/
+				throw new Error("data URL formatted sound is not supported.");
+				/*
+				manifest.type = createjs.Types.SOUND;
+				manifest.src = dataURLToBlobURL(manifest.src);
+				*/
 			}
 		}
 
@@ -164,23 +205,6 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 			
 			return resolvers;
 		});
-}
-
-export function setupCreatejs() {
-	// overrides
-	createjs.Stage = PA.CreatejsStage;
-	createjs.StageGL = PA.CreatejsStageGL;
-	createjs.MovieClip = PA.CreatejsMovieClip;
-	createjs.Sprite = PA.CreatejsSprite;
-	createjs.Shape = PA.CreatejsShape;
-	createjs.Bitmap = PA.CreatejsBitmap;
-	createjs.Graphics = PA.CreatejsGraphics;
-	createjs.Text = PA.CreatejsText;
-	createjs.ButtonHelper = PA.CreatejsButtonHelper;
-	createjs.ColorFilter = PA.CreatejsColorFilter;
-
-	// install plugins
-	createjs.MotionGuidePlugin.install();
 }
 
 /**

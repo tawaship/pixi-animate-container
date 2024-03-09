@@ -36,7 +36,7 @@
 						
 						this.scale.set(0.5);
 						
-						const container = this.addChild(new PIXI.animate.Container(app.ticker));
+						const container = this.addChild(new PIXI.animate.Container());
 						
 						this.addChild(new Block('Library A', lib.A));
 						
@@ -59,8 +59,9 @@
 				
 				class Block extends PIXI.animate.Container {
 					constructor(title, lib) {
-						super(app.ticker);
+						super();
 						
+						app.ticker.add(this.handleTick, this);
 						this.addChild(new PIXI.Text(title));
 						const a = this.addCreatejs(new lib());
 						a.y = 50;
@@ -97,6 +98,12 @@
 				}
 				
 				app.stage.addChild(new Root());
+				const resize = () => {
+					app.view.style.width = window.innerWidth + "px";
+					app.view.style.height = window.innerWidth * 800 / 450;
+				};
+				window.addEventListener("resize", resize);
+				resize();
 				document.body.appendChild(app.view);
 			});
 		</script>

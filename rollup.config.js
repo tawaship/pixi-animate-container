@@ -25,33 +25,6 @@ export default (async () => {
 		await del(['./docs/', './dist/', './types/']);
 	}
 
-	return {
-		input: 'src/module.ts',
-		output: [
-			{
-				banner,
-				file: 'dist/pixi-animate-container.cjs.js',
-				format: 'cjs',
-				sourcemap: true
-			},
-			{
-				banner,
-				file: 'dist/pixi-animate-container.esm.js',
-				format: 'esm',
-				sourcemap: true
-			}
-		],
-		external: ['pixi.js', '@tawaship/createjs-module'],
-		watch: {
-			clearScreen: false
-		},
-		plugins: [
-			nodeResolve(),
-			commonjs(),
-			typescript()
-		]
-	}
-	
 	return [
 		{
 			input: 'src/module.ts',

@@ -1,11 +1,11 @@
 /*!
- * pixi-animate-container - v1.0.3
+ * pixi-animate-container - v4.0.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
  * @license MIT
  */
-this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
+this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     "use strict";
     var CreatejsButtonHelper = function(superclass) {
         function CreatejsButtonHelper() {
@@ -41,6 +41,23 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return {
             regObj: regObj,
             instance: pixi
+        };
+    }
+    function createCreatejsParams() {
+        return {
+            x: 0,
+            y: 0,
+            scaleX: 0,
+            scaleY: 0,
+            regX: 0,
+            regY: 0,
+            skewX: 0,
+            skewY: 0,
+            rotation: 0,
+            visible: !0,
+            alpha: 1,
+            _off: !1,
+            mask: null
         };
     }
     function updateDisplayObjectChildren(cjs, e) {
@@ -154,19 +171,22 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 for (var args = [], len = arguments.length - 2; len-- > 0; ) {
                     args[len] = arguments[len + 2];
                 }
+                var p = superClass.prototype.addEventListener.apply(this, [ type, cb ].concat(args));
                 return cb instanceof CreatejsButtonHelper || this._createjsEventManager.add(type, cb), 
-                superClass.prototype.addEventListener.apply(this, [ type, cb ].concat(args));
+                p;
             }, C.prototype.removeEventListener = function(type, cb) {
                 for (var args = [], len = arguments.length - 2; len-- > 0; ) {
                     args[len] = arguments[len + 2];
                 }
+                var p = superClass.prototype.removeEventListener.apply(this, [ type, cb ].concat(args));
                 return cb instanceof CreatejsButtonHelper || this._createjsEventManager.remove(type, cb), 
-                superClass.prototype.removeEventListener.apply(this, [ type, cb ].concat(args));
+                p;
             }, C.prototype.removeAllEventListeners = function(type) {
                 for (var args = [], len = arguments.length - 1; len-- > 0; ) {
                     args[len] = arguments[len + 1];
                 }
-                return this._createjsEventManager.removeAll(type), superClass.prototype.removeAllEventListeners.apply(this, [ type ].concat(args));
+                var p = superClass.prototype.removeAllEventListeners.apply(this, [ type ].concat(args));
+                return this._createjsEventManager.removeAll(type), p;
             }, prototypeAccessors.mask.get = function() {
                 return this._createjsParams.mask;
             }, prototypeAccessors.mask.set = function(value) {
@@ -178,7 +198,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             }, Object.defineProperties(C.prototype, prototypeAccessors), C;
         }(superClass);
     }
-    var CreatejsStage = function(superclass) {
+    var createjsInteractionEvents, CreatejsStage = function(superclass) {
         function CreatejsStage() {
             superclass.apply(this, arguments);
         }
@@ -196,54 +216,86 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this.tickOnUpdate && this.tick(props), this.dispatchEvent("drawstart"), updateDisplayObjectChildren(this, props), 
             this.dispatchEvent("drawend"), !0;
         }, CreatejsStageGL;
-    }(createjs.StageGL), createjsInteractionEvents = {
-        mousedown: !0,
-        pressmove: !0,
-        pressup: !0,
-        rollover: !0,
-        rollout: !0,
-        click: !0
-    }, EventManager = function(cjs) {
-        this._isDown = !1, this._cjs = cjs, this._emitter = new PIXI.utils.EventEmitter, 
+    }(createjs.StageGL);
+    (createjsInteractionEvents = exports.createjsInteractionEvents || (exports.createjsInteractionEvents = {})).mousedown = "mousedown", 
+    createjsInteractionEvents.pressmove = "pressmove", createjsInteractionEvents.pressup = "pressup", 
+    createjsInteractionEvents.rollover = "rollover", createjsInteractionEvents.rollout = "rollout", 
+    createjsInteractionEvents.click = "click";
+    var EventManager = function(cjs) {
+        this._downTarget = null, this._cjs = cjs, this._emitter = new PIXI.utils.EventEmitter, 
         cjs.pixi.on("pointerdown", this._onPointerDown, this).on("pointermove", this._onPointerMove, this).on("pointerup", this._onPointerUp, this).on("pointerupoutside", this._onPointerUpOutside, this).on("pointertap", this._onPointerTap, this).on("pointerover", this._onPointerOver, this).on("pointerout", this._onPointerOut, this);
     };
     EventManager.prototype._onPointerDown = function(e) {
-        e.currentTarget = e.currentTarget.createjs, e.target = e.target.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._isDown = !0, this._emitter.emit("mousedown", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.mousedown,
+            currentTarget: e.currentTarget.createjs,
+            target: e.target.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._downTarget = e.target.createjs, this._emitter.emit("mousedown", ev);
     }, EventManager.prototype._onPointerMove = function(e) {
-        if (this._isDown) {
-            e.currentTarget = this._cjs, e.target = e.target && e.target.createjs;
-            var ev = e.data;
-            e.rawX = ev.global.x, e.rawY = ev.global.y, this._emitter.emit("pressmove", e);
+        if (this._downTarget) {
+            var ev = {
+                type: exports.createjsInteractionEvents.pressmove,
+                currentTarget: e.currentTarget.createjs,
+                target: this._downTarget,
+                rawX: e.data.global.x,
+                rawY: e.data.global.y
+            };
+            this._emitter.emit("pressmove", ev);
         }
     }, EventManager.prototype._onPointerUp = function(e) {
-        e.currentTarget = this._cjs, e.target = e.target && e.target.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._isDown = !1, this._emitter.emit("pressup", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.pressup,
+            currentTarget: e.currentTarget.createjs,
+            target: this._downTarget,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._downTarget = null, this._emitter.emit("pressup", ev);
     }, EventManager.prototype._onPointerUpOutside = function(e) {
-        e.currentTarget = this._cjs, e.target = e.target && e.target.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._isDown = !1, this._emitter.emit("pressup", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.pressup,
+            currentTarget: e.currentTarget.createjs,
+            target: this._downTarget,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._downTarget = null, this._emitter.emit("pressup", ev);
     }, EventManager.prototype._onPointerTap = function(e) {
-        e.currentTarget = this._cjs, e.target = e.target && e.target.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._emitter.emit("click", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.click,
+            currentTarget: e.currentTarget.createjs,
+            target: e.target.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._emitter.emit("click", ev);
     }, EventManager.prototype._onPointerOver = function(e) {
-        e.currentTarget = e.currentTarget.createjs, e.target = e.currentTarget.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._emitter.emit("rollover", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.rollover,
+            currentTarget: e.currentTarget.createjs,
+            target: e.currentTarget.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._emitter.emit("rollover", ev);
     }, EventManager.prototype._onPointerOut = function(e) {
-        e.currentTarget = e.currentTarget.createjs, e.target = e.currentTarget.createjs;
-        var ev = e.data;
-        e.rawX = ev.global.x, e.rawY = ev.global.y, this._emitter.emit("rollout", e);
+        var ev = {
+            type: exports.createjsInteractionEvents.rollout,
+            currentTarget: e.currentTarget.createjs,
+            target: e.currentTarget.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y
+        };
+        this._emitter.emit("rollout", ev);
     }, EventManager.prototype.add = function(type, cb) {
-        type in createjsInteractionEvents && (this._emitter.off(type, cb), this._emitter.on(type, cb), 
-        this._emitter.eventNames().length > 0 && (this._cjs.pixi.interactive = !0));
+        type in exports.createjsInteractionEvents && (this._emitter.on(type, cb), this._emitter.eventNames().length > 0 && (this._cjs.pixi.interactive = !0));
     }, EventManager.prototype.remove = function(type, cb) {
-        type in createjsInteractionEvents && (this._emitter.off(type, cb), 0 === this._emitter.eventNames().length && (this._cjs.pixi.interactive = !1));
+        type in exports.createjsInteractionEvents && (this._emitter.off(type, cb), 0 === this._emitter.eventNames().length && (this._cjs.pixi.interactive = !1));
     }, EventManager.prototype.removeAll = function(type) {
-        type && !(type in createjsInteractionEvents) || (this._emitter.removeAllListeners(type), 
+        type && !(type in exports.createjsInteractionEvents) || (this._emitter.removeAllListeners(type), 
         0 === this._emitter.eventNames().length && (this._cjs.pixi.interactive = !1));
     };
     var PixiMovieClip = function(Container) {
@@ -330,7 +382,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             this.framerate = this._framerateBase;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
             var currentFrame = this.currentFrame;
-            if (this.advance(16.666666666666668 * e.delta), currentFrame !== this.currentFrame && (this._useFrameEvent.endAnimation && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new AnimateEvent("endAnimation")), 
+            if (this.advance(16.666666666666668 * e.delta), this._useFrameEvent && currentFrame !== this.currentFrame && (this._useFrameEvent.endAnimation && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new AnimateEvent("endAnimation")), 
             this._useFrameEvent.reachLabel)) {
                 for (var i = 0; i < this.labels.length; i++) {
                     var label = this.labels[i];
@@ -377,7 +429,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     });
     var PixiSprite = function(Sprite) {
         function PixiSprite(cjs) {
-            Sprite.call(this), this._createjs = cjs;
+            Sprite.call(this), this._createjs = cjs, this.interactive = !0;
         }
         Sprite && (PixiSprite.__proto__ = Sprite), PixiSprite.prototype = Object.create(Sprite && Sprite.prototype), 
         PixiSprite.prototype.constructor = PixiSprite;
@@ -472,7 +524,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     });
     var PixiShape = function(Container) {
         function PixiShape(cjs) {
-            Container.call(this), this._createjs = cjs;
+            Container.call(this), this._createjs = cjs, this.interactive = !0;
         }
         Container && (PixiShape.__proto__ = Container), PixiShape.prototype = Object.create(Container && Container.prototype), 
         PixiShape.prototype.constructor = PixiShape;
@@ -567,7 +619,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     });
     var PixiBitmap = function(Sprite) {
         function PixiBitmap(cjs) {
-            Sprite.call(this), this._createjs = cjs;
+            Sprite.call(this), this._createjs = cjs, this.interactive = !0;
         }
         Sprite && (PixiBitmap.__proto__ = Sprite), PixiBitmap.prototype = Object.create(Sprite && Sprite.prototype), 
         PixiBitmap.prototype.constructor = PixiBitmap;
@@ -1145,6 +1197,13 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }, Object.defineProperties(CreatejsColorFilter.prototype, prototypeAccessors$1), 
         CreatejsColorFilter;
     }(createjs.ColorFilter);
+    function playSound(id, loop, offset) {
+        return createjs.Sound.play(id, {
+            interrupt: createjs.Sound.INTERRUPT_EARLY,
+            loop: loop,
+            offset: offset
+        });
+    }
     Object.defineProperties(CreatejsColorFilter.prototype, {
         _createjsParams: {
             value: createCreatejsColorFilterParams(),
@@ -1194,6 +1253,78 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     createjs.Sprite = CreatejsSprite, createjs.Shape = CreatejsShape, createjs.Bitmap = CreatejsBitmap, 
     createjs.Graphics = CreatejsGraphics, createjs.Text = CreatejsText, createjs.ButtonHelper = CreatejsButtonHelper, 
     createjs.ColorFilter = CreatejsColorFilter, createjs.MotionGuidePlugin.install(), 
-    exports.Container = Container;
-}(this.PIXI.animate = this.PIXI.animate || {}, PIXI, createjs);
+    exports.AnimateEvent = AnimateEvent, exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, 
+    exports.CreatejsButtonHelper = CreatejsButtonHelper, exports.CreatejsColorFilter = CreatejsColorFilter, 
+    exports.CreatejsGraphics = CreatejsGraphics, exports.CreatejsMovieClip = CreatejsMovieClip, 
+    exports.CreatejsShape = CreatejsShape, exports.CreatejsSprite = CreatejsSprite, 
+    exports.CreatejsStage = CreatejsStage, exports.CreatejsStageGL = CreatejsStageGL, 
+    exports.CreatejsText = CreatejsText, exports.EventManager = EventManager, exports.PixiBitmap = PixiBitmap, 
+    exports.PixiColorMatrixFilter = PixiColorMatrixFilter, exports.PixiGraphics = PixiGraphics, 
+    exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, exports.PixiSprite = PixiSprite, 
+    exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, exports.ReachLabelEvent = ReachLabelEvent, 
+    exports.createCreatejsParams = createCreatejsParams, exports.createPixiData = createPixiData, 
+    exports.loadAssetAsync = function(targets) {
+        var _a, _b;
+        Array.isArray(targets) || (targets = [ targets ]);
+        for (var promises = [], loop = function(i) {
+            var target = targets[i];
+            (null === (_a = target.options) || void 0 === _a ? void 0 : _a.useSound) && (window.playSound = playSound);
+            var comp = AdobeAn.getComposition(target.id);
+            if (!comp) {
+                throw new Error("no composition: " + target.id);
+            }
+            for (var lib = comp.getLibrary(), manifests = lib.properties.manifest, crossOrigin = "boolean" != typeof (null === (_b = target.options) || void 0 === _b ? void 0 : _b.crossOrigin) || target.options.crossOrigin, i$1 = 0; i$1 < manifests.length; i$1++) {
+                var manifest = manifests[i$1];
+                if (manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src), 0 === manifest.src.indexOf("data:image")) {
+                    manifest.type = createjs.Types.IMAGE;
+                } else if (0 === manifest.src.indexOf("data:audio")) {
+                    throw new Error("data URL formatted sound is not supported.");
+                }
+            }
+            if (crossOrigin) {
+                for (var i$2 = 0; i$2 < manifests.length; i$2++) {
+                    manifests[i$2].crossOrigin = !0;
+                }
+            }
+            var loadPromise = new Promise((function(resolve, reject) {
+                var _a;
+                0 === lib.properties.manifest.length && resolve({});
+                var loader = new createjs.LoadQueue(!1);
+                (null === (_a = target.options) || void 0 === _a ? void 0 : _a.useSound) && loader.installPlugin(createjs.Sound);
+                var errors = [];
+                loader.addEventListener("fileload", (function(evt) {
+                    !function(evt, comp) {
+                        var images = comp.getImages();
+                        evt && "image" == evt.item.type && (images[evt.item.id] = evt.result);
+                    }(evt, comp);
+                })), loader.addEventListener("complete", (function(evt) {
+                    errors.length ? reject(errors) : resolve(evt);
+                })), loader.addEventListener("error", (function(evt) {
+                    errors.push(evt.data);
+                })), loader.loadManifest(lib.properties.manifest || []);
+            })).then((function(evt) {
+                for (var ss = comp.getSpriteSheet(), queue = evt.target, ssMetadata = lib.ssMetadata, i = 0; i < ssMetadata.length; i++) {
+                    ss[ssMetadata[i].name] = new createjs.SpriteSheet({
+                        images: [ queue.getResult(ssMetadata[i].name) ],
+                        frames: ssMetadata[i].frames
+                    });
+                }
+                return lib;
+            }));
+            promises.push(loadPromise.then((function(lib) {
+                var _a;
+                for (var i in lib) {
+                    lib[i].prototype instanceof CreatejsMovieClip && (lib[i].prototype._framerateBase = lib.properties.fps, 
+                    lib[i].prototype._useFrameEvent = null === (_a = target.options) || void 0 === _a ? void 0 : _a.useFrameEvent);
+                }
+                return lib;
+            })));
+        }, i = 0; i < targets.length; i++) {
+            loop(i);
+        }
+        return Promise.all(promises).then((function(resolvers) {
+            return 1 === resolvers.length ? resolvers[0] : resolvers;
+        }));
+    }, exports.mixinCreatejsDisplayObject = mixinCreatejsDisplayObject, exports.updateDisplayObjectChildren = updateDisplayObjectChildren;
+}(this.PIXI.animate = this.PIXI.animate || {}, createjs, PIXI);
 //# sourceMappingURL=pixi-animate-container.js.map

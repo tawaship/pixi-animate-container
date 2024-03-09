@@ -29,13 +29,20 @@
 			.then(function(lib) {
 				class Root extends PIXI.animate.Container {
 					constructor() {
-						super(app.ticker);
-						
+						super();
+						this.scale.set(0.7);
+						app.ticker.add(this.handleTick, this);
 						this.addCreatejs(new lib.game());
 					}
 				}
 				
 				app.stage.addChild(new Root());
+				const resize = () => {
+					app.view.style.width = window.innerWidth + "px";
+					app.view.style.height = window.innerWidth * 800 / 450;
+				};
+				window.addEventListener("resize", resize);
+				resize();
 				document.body.appendChild(app.view);
 			});
 		</script>

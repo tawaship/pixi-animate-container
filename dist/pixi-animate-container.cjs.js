@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v1.0.3
+ * pixi-animate-container - v4.0.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -12,8 +12,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var PIXI = require('pixi.js');
 var createjs = _interopDefault(require('@tawaship/createjs-module'));
+var PIXI = require('pixi.js');
 
 /**
  * [[https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper]]
@@ -208,20 +208,23 @@ function mixinCreatejsDisplayObject(superClass) {
             this._createjsParams._off = value;
         }
         addEventListener(type, cb, ...args) {
+            const p = super.addEventListener(type, cb, ...args);
             if (!(cb instanceof CreatejsButtonHelper)) {
                 this._createjsEventManager.add(type, cb);
             }
-            return super.addEventListener(type, cb, ...args);
+            return p;
         }
         removeEventListener(type, cb, ...args) {
+            const p = super.removeEventListener(type, cb, ...args);
             if (!(cb instanceof CreatejsButtonHelper)) {
                 this._createjsEventManager.remove(type, cb);
             }
-            return super.removeEventListener(type, cb, ...args);
+            return p;
         }
         removeAllEventListeners(type, ...args) {
+            const p = super.removeAllEventListeners(type, ...args);
             this._createjsEventManager.removeAll(type);
-            return super.removeAllEventListeners(type, ...args);
+            return p;
         }
         get mask() {
             return this._createjsParams.mask;
@@ -273,20 +276,17 @@ class CreatejsStageGL extends createjs.StageGL {
     }
 }
 
-/**
- * @ignore
- */
-const createjsInteractionEvents = {
-    mousedown: true,
-    pressmove: true,
-    pressup: true,
-    rollover: true,
-    rollout: true,
-    click: true
-};
+(function (createjsInteractionEvents) {
+    createjsInteractionEvents["mousedown"] = "mousedown";
+    createjsInteractionEvents["pressmove"] = "pressmove";
+    createjsInteractionEvents["pressup"] = "pressup";
+    createjsInteractionEvents["rollover"] = "rollover";
+    createjsInteractionEvents["rollout"] = "rollout";
+    createjsInteractionEvents["click"] = "click";
+})(exports.createjsInteractionEvents || (exports.createjsInteractionEvents = {}));
 class EventManager {
     constructor(cjs) {
-        this._isDown = false;
+        this._downTarget = null;
         this._cjs = cjs;
         this._emitter = new PIXI.utils.EventEmitter();
         const pixi = cjs.pixi;
@@ -300,79 +300,92 @@ class EventManager {
             .on('pointerout', this._onPointerOut, this);
     }
     _onPointerDown(e) {
-        e.currentTarget = e.currentTarget.createjs;
-        e.target = e.target.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._isDown = true;
-        this._emitter.emit('mousedown', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.mousedown,
+            currentTarget: e.currentTarget.createjs,
+            target: e.target.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._downTarget = e.target.createjs;
+        this._emitter.emit('mousedown', ev);
     }
     _onPointerMove(e) {
-        if (!this._isDown) {
+        if (!this._downTarget) {
             return;
         }
-        e.currentTarget = this._cjs;
-        e.target = e.target && e.target.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._emitter.emit('pressmove', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.pressmove,
+            currentTarget: e.currentTarget.createjs,
+            target: this._downTarget,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._emitter.emit('pressmove', ev);
     }
     _onPointerUp(e) {
-        e.currentTarget = this._cjs;
-        e.target = e.target && e.target.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._isDown = false;
-        this._emitter.emit('pressup', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.pressup,
+            currentTarget: e.currentTarget.createjs,
+            target: this._downTarget,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._downTarget = null;
+        this._emitter.emit('pressup', ev);
     }
     _onPointerUpOutside(e) {
-        e.currentTarget = this._cjs;
-        e.target = e.target && e.target.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._isDown = false;
-        this._emitter.emit('pressup', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.pressup,
+            currentTarget: e.currentTarget.createjs,
+            target: this._downTarget,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._downTarget = null;
+        this._emitter.emit('pressup', ev);
     }
     _onPointerTap(e) {
-        e.currentTarget = this._cjs;
-        e.target = e.target && e.target.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._emitter.emit('click', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.click,
+            currentTarget: e.currentTarget.createjs,
+            target: e.target.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._emitter.emit('click', ev);
     }
     _onPointerOver(e) {
-        e.currentTarget = e.currentTarget.createjs;
-        e.target = e.currentTarget.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._emitter.emit('rollover', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.rollover,
+            currentTarget: e.currentTarget.createjs,
+            target: e.currentTarget.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._emitter.emit('rollover', ev);
     }
     _onPointerOut(e) {
-        e.currentTarget = e.currentTarget.createjs;
-        e.target = e.currentTarget.createjs;
-        const ev = e.data;
-        e.rawX = ev.global.x;
-        e.rawY = ev.global.y;
-        this._emitter.emit('rollout', e);
+        const ev = {
+            type: exports.createjsInteractionEvents.rollout,
+            currentTarget: e.currentTarget.createjs,
+            target: e.currentTarget.createjs,
+            rawX: e.data.global.x,
+            rawY: e.data.global.y,
+        };
+        this._emitter.emit('rollout', ev);
     }
     add(type, cb) {
-        if (!(type in createjsInteractionEvents)) {
+        if (!(type in exports.createjsInteractionEvents)) {
             return;
         }
-        this._emitter.off(type, cb);
         this._emitter.on(type, cb);
         if (this._emitter.eventNames().length > 0) {
             this._cjs.pixi.interactive = true;
         }
     }
     remove(type, cb) {
-        if (!(type in createjsInteractionEvents)) {
+        if (!(type in exports.createjsInteractionEvents)) {
             return;
         }
         this._emitter.off(type, cb);
@@ -381,7 +394,7 @@ class EventManager {
         }
     }
     removeAll(type) {
-        if (type && !(type in createjsInteractionEvents)) {
+        if (type && !(type in exports.createjsInteractionEvents)) {
             return;
         }
         this._emitter.removeAllListeners(type);
@@ -474,7 +487,7 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
     updateForPixi(e) {
         const currentFrame = this.currentFrame;
         this.advance(T * e.delta);
-        if (currentFrame !== this.currentFrame) {
+        if (this._useFrameEvent && currentFrame !== this.currentFrame) {
             if (this._useFrameEvent.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
                 this.dispatchEvent(new AnimateEvent('endAnimation'));
             }
@@ -648,6 +661,7 @@ class PixiSprite extends PIXI.Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
+        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
@@ -717,6 +731,7 @@ class PixiShape extends PIXI.Container {
     constructor(cjs) {
         super();
         this._createjs = cjs;
+        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
@@ -808,6 +823,7 @@ class PixiBitmap extends PIXI.Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
+        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
@@ -1423,6 +1439,163 @@ Object.defineProperties(CreatejsColorFilter.prototype, {
     }
 });
 
+function setupCreatejs() {
+    // overrides
+    createjs.Stage = CreatejsStage;
+    createjs.StageGL = CreatejsStageGL;
+    createjs.MovieClip = CreatejsMovieClip;
+    createjs.Sprite = CreatejsSprite;
+    createjs.Shape = CreatejsShape;
+    createjs.Bitmap = CreatejsBitmap;
+    createjs.Graphics = CreatejsGraphics;
+    createjs.Text = CreatejsText;
+    createjs.ButtonHelper = CreatejsButtonHelper;
+    createjs.ColorFilter = CreatejsColorFilter;
+    // install plugins
+    createjs.MotionGuidePlugin.install();
+}
+
+function playSound(id, loop, offset) {
+    return createjs.Sound.play(id, {
+        interrupt: createjs.Sound.INTERRUPT_EARLY,
+        loop,
+        offset
+    });
+}
+/*
+function dataURLToBlobURL(dataURL: string) {
+    const bin = atob(dataURL.replace(/^.*,/, ''));
+    const buffer = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+        buffer[i] = bin.charCodeAt(i);
+    }
+
+    const p = dataURL.slice(5);
+    try{
+        const blob = new Blob([buffer.buffer], {
+            type: p.slice(0, p.indexOf(";"))
+        });
+        return (URL || webkitURL).createObjectURL(blob);
+    } catch (e){
+        throw e;
+    };
+}
+*/
+/**
+ * Load the assets of createjs content published by Adobe Animate.
+ * If you use multiple contents, each composition ID must be unique.
+ * Please run "Pixim.animate.init" before running.
+ */
+function loadAssetAsync(targets) {
+    var _a, _b;
+    if (!Array.isArray(targets)) {
+        targets = [targets];
+    }
+    const promises = [];
+    for (let i = 0; i < targets.length; i++) {
+        const target = targets[i];
+        if ((_a = target.options) === null || _a === void 0 ? void 0 : _a.useSound) {
+            window.playSound = playSound;
+        }
+        const comp = AdobeAn.getComposition(target.id);
+        if (!comp) {
+            throw new Error(`no composition: ${target.id}`);
+        }
+        const lib = comp.getLibrary();
+        const manifests = lib.properties.manifest;
+        const crossOrigin = typeof ((_b = target.options) === null || _b === void 0 ? void 0 : _b.crossOrigin) === 'boolean' ? target.options.crossOrigin : true;
+        for (let i = 0; i < manifests.length; i++) {
+            const manifest = manifests[i];
+            manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
+            if (manifest.src.indexOf('data:image') === 0) {
+                manifest.type = createjs.Types.IMAGE;
+            }
+            else if (manifest.src.indexOf('data:audio') === 0) {
+                /* note
+                    data URL形式のサウンドは、createjsのローダーではサポートしていないらしい
+                    blob URLに変換もダメだった
+                */
+                throw new Error("data URL formatted sound is not supported.");
+                /*
+                manifest.type = createjs.Types.SOUND;
+                manifest.src = dataURLToBlobURL(manifest.src);
+                */
+            }
+        }
+        if (crossOrigin) {
+            for (let i = 0; i < manifests.length; i++) {
+                const manifest = manifests[i].crossOrigin = true;
+            }
+        }
+        const loadPromise = new Promise((resolve, reject) => {
+            var _a;
+            if (lib.properties.manifest.length === 0) {
+                resolve({});
+            }
+            const loader = new createjs.LoadQueue(false);
+            if ((_a = target.options) === null || _a === void 0 ? void 0 : _a.useSound) {
+                loader.installPlugin(createjs.Sound);
+            }
+            const errors = [];
+            loader.addEventListener('fileload', (evt) => {
+                handleFileLoad(evt, comp);
+            });
+            loader.addEventListener('complete', (evt) => {
+                if (errors.length) {
+                    reject(errors);
+                    return;
+                }
+                resolve(evt);
+            });
+            loader.addEventListener('error', (evt) => {
+                errors.push(evt.data);
+            });
+            loader.loadManifest(lib.properties.manifest || []);
+        })
+            .then((evt) => {
+            const ss = comp.getSpriteSheet();
+            const queue = evt.target;
+            const ssMetadata = lib.ssMetadata;
+            for (let i = 0; i < ssMetadata.length; i++) {
+                ss[ssMetadata[i].name] = new createjs.SpriteSheet({
+                    images: [
+                        queue.getResult(ssMetadata[i].name)
+                    ],
+                    frames: ssMetadata[i].frames
+                });
+            }
+            return lib;
+        });
+        promises.push(loadPromise
+            .then((lib) => {
+            var _a;
+            for (let i in lib) {
+                if (lib[i].prototype instanceof CreatejsMovieClip) {
+                    lib[i].prototype._framerateBase = lib.properties.fps;
+                    lib[i].prototype._useFrameEvent = (_a = target.options) === null || _a === void 0 ? void 0 : _a.useFrameEvent;
+                }
+            }
+            return lib;
+        }));
+    }
+    return Promise.all(promises)
+        .then((resolvers) => {
+        if (resolvers.length === 1) {
+            return resolvers[0];
+        }
+        return resolvers;
+    });
+}
+/**
+ * @ignore
+ */
+function handleFileLoad(evt, comp) {
+    const images = comp.getImages();
+    if (evt && (evt.item.type == 'image')) {
+        images[evt.item.id] = evt.result;
+    }
+}
+
 /**
  * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
  */
@@ -1482,5 +1655,32 @@ class Container extends PIXI.Container {
     }
 }
 
+exports.AnimateEvent = AnimateEvent;
 exports.Container = Container;
+exports.CreatejsBitmap = CreatejsBitmap;
+exports.CreatejsButtonHelper = CreatejsButtonHelper;
+exports.CreatejsColorFilter = CreatejsColorFilter;
+exports.CreatejsGraphics = CreatejsGraphics;
+exports.CreatejsMovieClip = CreatejsMovieClip;
+exports.CreatejsShape = CreatejsShape;
+exports.CreatejsSprite = CreatejsSprite;
+exports.CreatejsStage = CreatejsStage;
+exports.CreatejsStageGL = CreatejsStageGL;
+exports.CreatejsText = CreatejsText;
+exports.EventManager = EventManager;
+exports.PixiBitmap = PixiBitmap;
+exports.PixiColorMatrixFilter = PixiColorMatrixFilter;
+exports.PixiGraphics = PixiGraphics;
+exports.PixiMovieClip = PixiMovieClip;
+exports.PixiShape = PixiShape;
+exports.PixiSprite = PixiSprite;
+exports.PixiText = PixiText;
+exports.PixiTextContainer = PixiTextContainer;
+exports.ReachLabelEvent = ReachLabelEvent;
+exports.createCreatejsParams = createCreatejsParams;
+exports.createPixiData = createPixiData;
+exports.loadAssetAsync = loadAssetAsync;
+exports.mixinCreatejsDisplayObject = mixinCreatejsDisplayObject;
+exports.setupCreatejs = setupCreatejs;
+exports.updateDisplayObjectChildren = updateDisplayObjectChildren;
 //# sourceMappingURL=pixi-animate-container.cjs.js.map
