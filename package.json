@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/pixi-animate-container.cjs.js",
   "module": "dist/pixi-animate-container.esm.js",
-  "types": "types/index.d.ts",
+  "types": "types/module.d.ts",
   "directories": {
     "doc": "docs",
     "lib": "lib"
@@ -53,8 +53,5 @@
   "peerDependencies": {
     "@tawaship/createjs-module": "^1.0.0",
     "pixi.js": "^5.3.2"
-  },
-  "dependencies": {
-    "@tawaship/pixi-animate-core": "3.0.4"
   }
 }

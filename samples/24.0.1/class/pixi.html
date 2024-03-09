@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no, minimal-ui">
+		<script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.2/pixi.min.js"></script>
+		<script src="../../../dist/pixi-animate-container.js"></script>
+		<script src="game/game.js"></script>
+	</head>
+	<body>
+		<script>
+			const pRatio = window.devicePixelRatio || 1;
+			const app = new PIXI.Application({
+				width: 450,
+				height: 800,
+				antialias: true,
+				resolution: pRatio,
+				backgroundColor: 0xFFFFFF
+			});
+			
+			PIXI.animate.loadAssetAsync({
+				id: '6DCC5396CDEFA14AADDBD0BD051D657C',
+				basepath: 'game/',
+				options: {
+					crossOrigin: false
+				}
+			})
+			.then(function(lib) {
+				class Root extends PIXI.Container {
+					constructor() {
+						super();
+						
+						this.x = 10;
+						this.y = 10;
+						
+						this.scale.set(0.5);
+						
+						const container = this.addChild(new PIXI.animate.Container(app.ticker));
+						
+						this.addChild(new Block('Library A', lib.A));
+						
+						this.addChild(new Block('Library B', lib.B)).y = 150;
+						
+						this.addChild(new Block('Library C', lib.C)).y = 300;
+						
+						this.addChild(new Block('Library Root', lib.game)).y = 500;
+						
+						this.addChild(new PIXI.Text('Animation using library G_A (Graphics)')).y = 1000;
+						const ga = container.addCreatejs(new lib.G_A());
+						
+						app.ticker.add(delta => {
+							ga.rotation += delta;
+						});
+						
+						ga.x = 100, ga.y = 1100;
+					}
+				}
+				
+				class Block extends PIXI.animate.Container {
+					constructor(title, lib) {
+						super(app.ticker);
+						
+						this.addChild(new PIXI.Text(title));
+						const a = this.addCreatejs(new lib());
+						a.y = 50;
+						
+						const ab = this.addChild(new Bt(() => {
+							this.addCreatejs(a);
+						}, 'add'));
+						ab.x = 200;
+						
+						const ab2 = this.addChild(new Bt(() => {
+							this.removeCreatejs(a);
+						}, 'remove'));
+						ab2.x = 400;
+					}
+				}
+				
+				class Bt extends PIXI.Container {
+					constructor(fn, title) {
+						super();
+						
+						const ab = this.addChild(new PIXI.Graphics())
+							.lineStyle(1, 0, 1)
+							.beginFill(0xEEEEEE)
+							.drawRect(0, 0, 100, 50);
+							
+						const at = ab.addChild(new PIXI.Text(title, { fill: 0 }));
+						at.x = ab.width / 2 - at.width / 2;
+						at.y = ab.height / 2 - at.height / 2;
+						ab.x = 200;
+						ab.interactive = true;
+						ab.cursor = 'pointer'
+						ab.on('pointerdown', fn);
+					}
+				}
+				
+				app.stage.addChild(new Root());
+				document.body.appendChild(app.view);
+			});
+		</script>
+	</div>
+	</body>
+</html>

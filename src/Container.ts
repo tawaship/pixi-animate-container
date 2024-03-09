@@ -1,6 +1,5 @@
-import { Container as _Container, Ticker } from 'pixi.js';
-import { TCreatejsObject } from '@tawaship/pixi-animate-core';
-import { CreatejsMovieClip } from './MovieClip';
+import { Container as _Container } from 'pixi.js';
+import { CreatejsMovieClip, TCreatejsObject } from './createjs';
 
 export interface ICreatejsMovieClipDictionary {
 	[id: number]: CreatejsMovieClip;
@@ -17,25 +16,19 @@ export interface ICreatejsData {
 export class Container extends _Container {
 	private _createjsData: ICreatejsData;
 	
-	constructor(ticker: Ticker) {
+	constructor() {
 		super();
 		
 		this._createjsData = {
 			id: 0,
 			targets: {}
 		};
-		
-		this.on('added', () => {
-			ticker.add(this._handleTick, this);
-		});
-		
-		this.on('removed', () => {
-			ticker.remove(this._handleTick, this);
-		});
 	}
 	
-	private _handleTick(delta: number) {
-		const e = { delta };
+	handleTick(delta: number) {
+		// delta timeが1以上になるとフレーム飛びするので
+		const e = { delta: Math.min(delta, 1)};
+
 		const targets = this._createjsData.targets;
 		for (let i in targets) {
 			targets[i].updateForPixi(e);
