@@ -1624,25 +1624,16 @@ class Container extends Container$1 {
             });
         }
     }
-    /**
-     * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-     */
     addCreatejs(cjs) {
         this._addCreatejs(cjs);
         this.addChild(cjs.pixi);
         return cjs;
     }
-    /**
-     * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-     */
     addCreatejsAt(cjs, index) {
         this._addCreatejs(cjs);
         this.addChildAt(cjs.pixi, index);
         return cjs;
     }
-    /**
-     * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-     */
     removeCreatejs(cjs) {
         this.removeChild(cjs.pixi);
         return cjs;

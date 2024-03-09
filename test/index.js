@@ -16,7 +16,7 @@ describe('PiximAnimate.container', () => {
 		});
 		
 		return PixiAnimate.loadAssetAsync({
-			id: '2FA8E0C7230941478CE2CA3DB82DBEDF_1',
+			id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
 			basepath: path.resolve(__dirname, 'game/'),
 			options: {
 				crossOrigin: false
@@ -31,8 +31,8 @@ describe('PiximAnimate.container', () => {
 					this.y = 10;
 					this.scale.set(0.7);
 					
-					const container = this.addChild(new PixiAnimate.Container(app.ticker));
-					
+					const container = this.addChild(new PixiAnimate.Container());
+					app.ticker.add(container.handleTick);
 					container.addChild(new PIXI.Text('Library game'));
 					const a = container.addCreatejs(new lib.game());
 					a.y = 50;

@@ -54,9 +54,6 @@ export class Container extends _Container {
 		}
 	}
 	
-	/**
-	 * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-	 */
 	addCreatejs(cjs: TCreatejsObject) {
 		this._addCreatejs(cjs);
 		this.addChild(cjs.pixi);
@@ -64,9 +61,6 @@ export class Container extends _Container {
 		return cjs;
 	}
 	
-	/**
-	 * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-	 */
 	addCreatejsAt(cjs: TCreatejsObject, index: number) {
 		this._addCreatejs(cjs);
 		this.addChildAt(cjs.pixi, index);
@@ -74,9 +68,6 @@ export class Container extends _Container {
 		return cjs;
 	}
 	
-	/**
-	 * [[https://tawaship.github.io/pixi-animate-core/modules.html#tcreatejsobject | TCreatejsObject]]
-	 */
 	removeCreatejs(cjs: TCreatejsObject) {
 		this.removeChild(cjs.pixi);
 		
