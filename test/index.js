@@ -3,6 +3,9 @@ window.AdobeAn = {};
 const assert = require('assert');
 const PIXI = require('pixi.js-legacy');
 const PixiAnimate = require('../');
+for (let i in PixiAnimate) {
+	console.log(i)
+}
 const path = require('path');
 require('./game/game.js');
 
@@ -19,7 +22,7 @@ describe('PiximAnimate.container', () => {
 			id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
 			basepath: path.resolve(__dirname, 'game/'),
 			options: {
-				crossOrigin: false
+				crossOrigin: true
 			}
 		})
 		.then(function(lib) {
