@@ -97,7 +97,7 @@ PIXI.animate.loadAssetAsync([{
 	|:--|:--|
 	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html)|
 
-### 4.0.0
+### 2.0.0
 
 - Integrate core modules into source code
 - Changed the method of linking with pixi.js ticker

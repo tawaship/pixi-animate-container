@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v4.0.0
+ * pixi-animate-container - v2.0.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1263,7 +1263,20 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, exports.PixiSprite = PixiSprite, 
     exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, exports.ReachLabelEvent = ReachLabelEvent, 
     exports.createCreatejsParams = createCreatejsParams, exports.createPixiData = createPixiData, 
-    exports.loadAssetAsync = function(targets) {
+    exports.dataURLToBlobURL = function(dataURL) {
+        for (var bin = atob(dataURL.replace(/^.*,/, "")), buffer = new Uint8Array(bin.length), i = 0; i < bin.length; i++) {
+            buffer[i] = bin.charCodeAt(i);
+        }
+        var p = dataURL.slice(5);
+        try {
+            var blob = new Blob([ buffer.buffer ], {
+                type: p.slice(0, p.indexOf(";"))
+            });
+            return console.log(p.slice(0, p.indexOf(";"))), (URL || webkitURL).createObjectURL(blob);
+        } catch (e) {
+            throw e;
+        }
+    }, exports.loadAssetAsync = function(targets) {
         var _a, _b;
         Array.isArray(targets) || (targets = [ targets ]);
         for (var promises = [], loop = function(i) {

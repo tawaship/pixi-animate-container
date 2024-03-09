@@ -661,11 +661,11 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/ビットマップ1.png?1709982672550", id:"ビットマップ1"},
-		{src:"images/ビットマップ2.png?1709982672550", id:"ビットマップ2"},
-		{src:"images/ビットマップ3.png?1709982672550", id:"ビットマップ3"},
-		{src:"images/ビットマップ5.png?1709982672550", id:"ビットマップ5"},
-		{src:"sounds/se.mp3?1709982672550", id:"se"}
+		{src:"images/ビットマップ1.png?1709987906788", id:"ビットマップ1"},
+		{src:"images/ビットマップ2.png?1709987906788", id:"ビットマップ2"},
+		{src:"images/ビットマップ3.png?1709987906788", id:"ビットマップ3"},
+		{src:"images/ビットマップ5.png?1709987906788", id:"ビットマップ5"},
+		{src:"sounds/se.mp3?1709987906788", id:"se"}
 	],
 	preloads: []
 };

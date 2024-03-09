@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v4.0.0
+ * pixi-animate-container - v2.0.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1457,25 +1457,24 @@ function playSound(id, loop, offset) {
         offset
     });
 }
-/*
-function dataURLToBlobURL(dataURL: string) {
+function dataURLToBlobURL(dataURL) {
     const bin = atob(dataURL.replace(/^.*,/, ''));
     const buffer = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {
         buffer[i] = bin.charCodeAt(i);
     }
-
     const p = dataURL.slice(5);
-    try{
+    try {
         const blob = new Blob([buffer.buffer], {
             type: p.slice(0, p.indexOf(";"))
         });
+        console.log(p.slice(0, p.indexOf(";")));
         return (URL || webkitURL).createObjectURL(blob);
-    } catch (e){
+    }
+    catch (e) {
         throw e;
-    };
+    }
 }
-*/
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
@@ -1507,8 +1506,8 @@ function loadAssetAsync(targets) {
             }
             else if (manifest.src.indexOf('data:audio') === 0) {
                 /* note
-                    data URL形式のサウンドは、createjsのローダーではサポートしていないらしい
-                    blob URLに変換もダメだった
+                    It seems that data URL format sounds are not supported by the createjs loader.
+                    Converting to blob URL also didn't work.
                 */
                 throw new Error("data URL formatted sound is not supported.");
                 /*
@@ -1650,5 +1649,5 @@ class Container extends Container$1 {
     }
 }
 
-export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, loadAssetAsync, mixinCreatejsDisplayObject, setupCreatejs, updateDisplayObjectChildren };
+export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, dataURLToBlobURL, loadAssetAsync, mixinCreatejsDisplayObject, setupCreatejs, updateDisplayObjectChildren };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

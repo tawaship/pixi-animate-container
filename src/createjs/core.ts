@@ -59,8 +59,7 @@ export interface IAnimateManifest {
 	[key: string]: any;
 }
 
-/*
-function dataURLToBlobURL(dataURL: string) {
+export function dataURLToBlobURL(dataURL: string) {
 	const bin = atob(dataURL.replace(/^.*,/, ''));
 	const buffer = new Uint8Array(bin.length);
 	for (let i = 0; i < bin.length; i++) {
@@ -72,12 +71,12 @@ function dataURLToBlobURL(dataURL: string) {
 		const blob = new Blob([buffer.buffer], {
 			type: p.slice(0, p.indexOf(";"))
 		});
+		console.log(p.slice(0, p.indexOf(";")))
 		return (URL || webkitURL).createObjectURL(blob);
 	} catch (e){
 		throw e;
 	};
 }
-*/
 
 /**
  * Load the assets of createjs content published by Adobe Animate.
@@ -111,13 +110,12 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 			const manifest = manifests[i];
 			
 			manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
-
 			if (manifest.src.indexOf('data:image') === 0) {
 				manifest.type = createjs.Types.IMAGE;
 			} else if (manifest.src.indexOf('data:audio') === 0) {
 				/* note
-					data URL形式のサウンドは、createjsのローダーではサポートしていないらしい
-					blob URLに変換もダメだった
+					It seems that data URL format sounds are not supported by the createjs loader.
+					Converting to blob URL also didn't work.
 				*/
 				throw new Error("data URL formatted sound is not supported.");
 				/*
