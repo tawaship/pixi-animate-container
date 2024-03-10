@@ -1595,15 +1595,12 @@ function handleFileLoad(evt, comp) {
     }
 }
 
-/**
- * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
- */
-class Container extends PIXI.Container {
-    constructor() {
-        super();
+class CreatejsController {
+    constructor(container) {
         this._createjsData = {
             id: 0,
-            targets: {}
+            targets: {},
+            container
         };
     }
     handleTick(delta) {
@@ -1631,17 +1628,40 @@ class Container extends PIXI.Container {
     }
     addCreatejs(cjs) {
         this._addCreatejs(cjs);
-        this.addChild(cjs.pixi);
+        this._createjsData.container.addChild(cjs.pixi);
         return cjs;
     }
     addCreatejsAt(cjs, index) {
         this._addCreatejs(cjs);
-        this.addChildAt(cjs.pixi, index);
+        this._createjsData.container.addChildAt(cjs.pixi, index);
         return cjs;
     }
     removeCreatejs(cjs) {
-        this.removeChild(cjs.pixi);
+        this._createjsData.container.removeChild(cjs.pixi);
         return cjs;
+    }
+}
+/**
+ * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
+ */
+class Container extends PIXI.Container {
+    constructor() {
+        super();
+        this._createjsData = {
+            controller: new CreatejsController(this)
+        };
+    }
+    handleTick(delta) {
+        return this._createjsData.controller.handleTick(delta);
+    }
+    addCreatejs(cjs) {
+        return this._createjsData.controller.addCreatejs(cjs);
+    }
+    addCreatejsAt(cjs, index) {
+        return this._createjsData.controller.addCreatejsAt(cjs, index);
+    }
+    removeCreatejs(cjs) {
+        return this._createjsData.controller.removeCreatejs(cjs);
     }
 }
 
@@ -1650,6 +1670,7 @@ exports.Container = Container;
 exports.CreatejsBitmap = CreatejsBitmap;
 exports.CreatejsButtonHelper = CreatejsButtonHelper;
 exports.CreatejsColorFilter = CreatejsColorFilter;
+exports.CreatejsController = CreatejsController;
 exports.CreatejsGraphics = CreatejsGraphics;
 exports.CreatejsMovieClip = CreatejsMovieClip;
 exports.CreatejsShape = CreatejsShape;

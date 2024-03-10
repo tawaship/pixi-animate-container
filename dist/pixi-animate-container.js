@@ -1214,39 +1214,56 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             writable: !0
         }
     });
+    var CreatejsController = function(container) {
+        this._createjsData = {
+            id: 0,
+            targets: {},
+            container: container
+        };
+    };
+    CreatejsController.prototype.handleTick = function(delta) {
+        var e = {
+            delta: Math.min(delta, 1)
+        }, targets = this._createjsData.targets;
+        for (var i in targets) {
+            targets[i].updateForPixi(e);
+        }
+    }, CreatejsController.prototype._addCreatejs = function(cjs) {
+        var this$1 = this;
+        if (cjs instanceof CreatejsMovieClip) {
+            var p = cjs.pixi.parent;
+            cjs.pixi.once("added", (function() {
+                cjs.pixi.parent !== p && cjs.gotoAndPlay(0);
+                var id = this$1._createjsData.id++;
+                this$1._createjsData.targets[id] = cjs, cjs.pixi.once("removed", (function() {
+                    delete this$1._createjsData.targets[id];
+                }));
+            }));
+        }
+    }, CreatejsController.prototype.addCreatejs = function(cjs) {
+        return this._addCreatejs(cjs), this._createjsData.container.addChild(cjs.pixi), 
+        cjs;
+    }, CreatejsController.prototype.addCreatejsAt = function(cjs, index) {
+        return this._addCreatejs(cjs), this._createjsData.container.addChildAt(cjs.pixi, index), 
+        cjs;
+    }, CreatejsController.prototype.removeCreatejs = function(cjs) {
+        return this._createjsData.container.removeChild(cjs.pixi), cjs;
+    };
     var Container = function(_Container) {
         function Container() {
             _Container.call(this), this._createjsData = {
-                id: 0,
-                targets: {}
+                controller: new CreatejsController(this)
             };
         }
         return _Container && (Container.__proto__ = _Container), Container.prototype = Object.create(_Container && _Container.prototype), 
         Container.prototype.constructor = Container, Container.prototype.handleTick = function(delta) {
-            var e = {
-                delta: Math.min(delta, 1)
-            }, targets = this._createjsData.targets;
-            for (var i in targets) {
-                targets[i].updateForPixi(e);
-            }
-        }, Container.prototype._addCreatejs = function(cjs) {
-            var this$1 = this;
-            if (cjs instanceof CreatejsMovieClip) {
-                var p = cjs.pixi.parent;
-                cjs.pixi.once("added", (function() {
-                    cjs.pixi.parent !== p && cjs.gotoAndPlay(0);
-                    var id = this$1._createjsData.id++;
-                    this$1._createjsData.targets[id] = cjs, cjs.pixi.once("removed", (function() {
-                        delete this$1._createjsData.targets[id];
-                    }));
-                }));
-            }
+            return this._createjsData.controller.handleTick(delta);
         }, Container.prototype.addCreatejs = function(cjs) {
-            return this._addCreatejs(cjs), this.addChild(cjs.pixi), cjs;
+            return this._createjsData.controller.addCreatejs(cjs);
         }, Container.prototype.addCreatejsAt = function(cjs, index) {
-            return this._addCreatejs(cjs), this.addChildAt(cjs.pixi, index), cjs;
+            return this._createjsData.controller.addCreatejsAt(cjs, index);
         }, Container.prototype.removeCreatejs = function(cjs) {
-            return this.removeChild(cjs.pixi), cjs;
+            return this._createjsData.controller.removeCreatejs(cjs);
         }, Container;
     }(PIXI.Container);
     createjs.Stage = CreatejsStage, createjs.StageGL = CreatejsStageGL, createjs.MovieClip = CreatejsMovieClip, 
@@ -1255,15 +1272,15 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     createjs.ColorFilter = CreatejsColorFilter, createjs.MotionGuidePlugin.install(), 
     exports.AnimateEvent = AnimateEvent, exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, 
     exports.CreatejsButtonHelper = CreatejsButtonHelper, exports.CreatejsColorFilter = CreatejsColorFilter, 
-    exports.CreatejsGraphics = CreatejsGraphics, exports.CreatejsMovieClip = CreatejsMovieClip, 
-    exports.CreatejsShape = CreatejsShape, exports.CreatejsSprite = CreatejsSprite, 
-    exports.CreatejsStage = CreatejsStage, exports.CreatejsStageGL = CreatejsStageGL, 
-    exports.CreatejsText = CreatejsText, exports.EventManager = EventManager, exports.PixiBitmap = PixiBitmap, 
-    exports.PixiColorMatrixFilter = PixiColorMatrixFilter, exports.PixiGraphics = PixiGraphics, 
-    exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, exports.PixiSprite = PixiSprite, 
-    exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, exports.ReachLabelEvent = ReachLabelEvent, 
-    exports.createCreatejsParams = createCreatejsParams, exports.createPixiData = createPixiData, 
-    exports.dataURLToBlobURL = function(dataURL) {
+    exports.CreatejsController = CreatejsController, exports.CreatejsGraphics = CreatejsGraphics, 
+    exports.CreatejsMovieClip = CreatejsMovieClip, exports.CreatejsShape = CreatejsShape, 
+    exports.CreatejsSprite = CreatejsSprite, exports.CreatejsStage = CreatejsStage, 
+    exports.CreatejsStageGL = CreatejsStageGL, exports.CreatejsText = CreatejsText, 
+    exports.EventManager = EventManager, exports.PixiBitmap = PixiBitmap, exports.PixiColorMatrixFilter = PixiColorMatrixFilter, 
+    exports.PixiGraphics = PixiGraphics, exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, 
+    exports.PixiSprite = PixiSprite, exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, 
+    exports.ReachLabelEvent = ReachLabelEvent, exports.createCreatejsParams = createCreatejsParams, 
+    exports.createPixiData = createPixiData, exports.dataURLToBlobURL = function(dataURL) {
         for (var bin = atob(dataURL.replace(/^.*,/, "")), buffer = new Uint8Array(bin.length), i = 0; i < bin.length; i++) {
             buffer[i] = bin.charCodeAt(i);
         }

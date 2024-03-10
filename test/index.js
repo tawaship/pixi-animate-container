@@ -3,14 +3,11 @@ window.AdobeAn = {};
 const assert = require('assert');
 const PIXI = require('pixi.js-legacy');
 const PixiAnimate = require('../');
-for (let i in PixiAnimate) {
-	console.log(i)
-}
 const path = require('path');
 require('./game/game.js');
 
 describe('PiximAnimate.container', () => {
-	it('basic', () => {
+	it('loader', () => {
 		const app = new PIXI.Application({
 			width: 450,
 			height: 800,
@@ -20,30 +17,10 @@ describe('PiximAnimate.container', () => {
 		
 		return PixiAnimate.loadAssetAsync({
 			id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
-			basepath: path.resolve(__dirname, 'game/'),
+			basepath: path.resolve(__dirname, 'game/') + "\\",
 			options: {
-				crossOrigin: true
+				crossOrigin: false
 			}
-		})
-		.then(function(lib) {
-			class Root extends PIXI.Container {
-				constructor() {
-					super();
-					
-					this.x = 10;
-					this.y = 10;
-					this.scale.set(0.7);
-					
-					const container = this.addChild(new PixiAnimate.Container());
-					app.ticker.add(container.handleTick);
-					container.addChild(new PIXI.Text('Library game'));
-					const a = container.addCreatejs(new lib.game());
-					a.y = 50;
-				}
-			}
-			
-			app.stage.addChild(new Root());
-			document.body.appendChild(app.view);
 		});
 	});
 });
