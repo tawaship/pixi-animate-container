@@ -15,7 +15,7 @@
     "docs": "typedoc --tsconfig tsconfig.json",
     "watch": "npm run rollup -- -w",
     "test": "floss --path test/ --reporter=tap",
-    "build": "ENV PROD=1 npm run rollup && npm run docs && npm run d && echo done."
+    "build": "ENV PROD=1 npm run rollup && npm run test && npm run docs && npm run d && echo done."
   },
   "keywords": [
     "pixi.js",

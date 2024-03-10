@@ -2,7 +2,6 @@
 
 "pixi-animate-container" is a plugin for using content created by Adobe Animate with "[pixi.js](https://github.com/pixijs/pixi.js)".
 
-[![Build Status](https://travis-ci.com/tawaship/pixi-animate-container.svg?branch=master)](https://travis-ci.com/tawaship/pixi-animate-container)
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 
 ---
