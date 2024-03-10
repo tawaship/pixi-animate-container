@@ -1434,22 +1434,6 @@ Object.defineProperties(CreatejsColorFilter.prototype, {
     }
 });
 
-function setupCreatejs() {
-    // overrides
-    createjs.Stage = CreatejsStage;
-    createjs.StageGL = CreatejsStageGL;
-    createjs.MovieClip = CreatejsMovieClip;
-    createjs.Sprite = CreatejsSprite;
-    createjs.Shape = CreatejsShape;
-    createjs.Bitmap = CreatejsBitmap;
-    createjs.Graphics = CreatejsGraphics;
-    createjs.Text = CreatejsText;
-    createjs.ButtonHelper = CreatejsButtonHelper;
-    createjs.ColorFilter = CreatejsColorFilter;
-    // install plugins
-    createjs.MotionGuidePlugin.install();
-}
-
 function playSound(id, loop, offset) {
     return createjs.Sound.play(id, {
         interrupt: createjs.Sound.INTERRUPT_EARLY,
@@ -1660,5 +1644,19 @@ class Container extends Container$1 {
     }
 }
 
-export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, dataURLToBlobURL, loadAssetAsync, mixinCreatejsDisplayObject, setupCreatejs, updateDisplayObjectChildren };
+// overrides
+createjs.Stage = CreatejsStage;
+createjs.StageGL = CreatejsStageGL;
+createjs.MovieClip = CreatejsMovieClip;
+createjs.Sprite = CreatejsSprite;
+createjs.Shape = CreatejsShape;
+createjs.Bitmap = CreatejsBitmap;
+createjs.Graphics = CreatejsGraphics;
+createjs.Text = CreatejsText;
+createjs.ButtonHelper = CreatejsButtonHelper;
+createjs.ColorFilter = CreatejsColorFilter;
+// install plugins
+createjs.MotionGuidePlugin.install();
+
+export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, dataURLToBlobURL, loadAssetAsync, mixinCreatejsDisplayObject, updateDisplayObjectChildren };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

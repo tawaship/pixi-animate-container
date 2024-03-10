@@ -5,7 +5,6 @@ import createjs from '@tawaship/createjs-module';
 declare const AdobeAn: any;
 declare const window: any;
 
-
 export interface IAnimateLibrary {
 	[ name: string ]: any;
 }

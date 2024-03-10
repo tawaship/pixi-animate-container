@@ -1439,22 +1439,6 @@ Object.defineProperties(CreatejsColorFilter.prototype, {
     }
 });
 
-function setupCreatejs() {
-    // overrides
-    createjs.Stage = CreatejsStage;
-    createjs.StageGL = CreatejsStageGL;
-    createjs.MovieClip = CreatejsMovieClip;
-    createjs.Sprite = CreatejsSprite;
-    createjs.Shape = CreatejsShape;
-    createjs.Bitmap = CreatejsBitmap;
-    createjs.Graphics = CreatejsGraphics;
-    createjs.Text = CreatejsText;
-    createjs.ButtonHelper = CreatejsButtonHelper;
-    createjs.ColorFilter = CreatejsColorFilter;
-    // install plugins
-    createjs.MotionGuidePlugin.install();
-}
-
 function playSound(id, loop, offset) {
     return createjs.Sound.play(id, {
         interrupt: createjs.Sound.INTERRUPT_EARLY,
@@ -1665,6 +1649,20 @@ class Container extends PIXI.Container {
     }
 }
 
+// overrides
+createjs.Stage = CreatejsStage;
+createjs.StageGL = CreatejsStageGL;
+createjs.MovieClip = CreatejsMovieClip;
+createjs.Sprite = CreatejsSprite;
+createjs.Shape = CreatejsShape;
+createjs.Bitmap = CreatejsBitmap;
+createjs.Graphics = CreatejsGraphics;
+createjs.Text = CreatejsText;
+createjs.ButtonHelper = CreatejsButtonHelper;
+createjs.ColorFilter = CreatejsColorFilter;
+// install plugins
+createjs.MotionGuidePlugin.install();
+
 exports.AnimateEvent = AnimateEvent;
 exports.Container = Container;
 exports.CreatejsBitmap = CreatejsBitmap;
@@ -1693,6 +1691,5 @@ exports.createPixiData = createPixiData;
 exports.dataURLToBlobURL = dataURLToBlobURL;
 exports.loadAssetAsync = loadAssetAsync;
 exports.mixinCreatejsDisplayObject = mixinCreatejsDisplayObject;
-exports.setupCreatejs = setupCreatejs;
 exports.updateDisplayObjectChildren = updateDisplayObjectChildren;
 //# sourceMappingURL=pixi-animate-container.cjs.js.map

@@ -1249,13 +1249,13 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     }, CreatejsController.prototype.removeCreatejs = function(cjs) {
         return this._createjsData.container.removeChild(cjs.pixi), cjs;
     };
-    var Container = function(_Container) {
+    var Container = function(PixiContainer) {
         function Container() {
-            _Container.call(this), this._createjsData = {
+            PixiContainer.call(this), this._createjsData = {
                 controller: new CreatejsController(this)
             };
         }
-        return _Container && (Container.__proto__ = _Container), Container.prototype = Object.create(_Container && _Container.prototype), 
+        return PixiContainer && (Container.__proto__ = PixiContainer), Container.prototype = Object.create(PixiContainer && PixiContainer.prototype), 
         Container.prototype.constructor = Container, Container.prototype.handleTick = function(delta) {
             return this._createjsData.controller.handleTick(delta);
         }, Container.prototype.addCreatejs = function(cjs) {

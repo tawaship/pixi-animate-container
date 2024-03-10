@@ -1,11 +1,11 @@
-import { Container as _Container } from 'pixi.js';
+import { Container as PixiContainer } from 'pixi.js';
 import { CreatejsMovieClip, TCreatejsObject } from './createjs';
 
 export interface ICreatejsMovieClipDictionary {
 	[id: number]: CreatejsMovieClip;
 }
 
-export interface IAnimateContainer extends Container {
+export interface IAnimateContainer extends PixiContainer {
 	handleTick(delta: number): void;
 	addCreatejs(cjs: TCreatejsObject): TCreatejsObject;
 	addCreatejsAt(cjs: TCreatejsObject, index: number): TCreatejsObject;
@@ -80,7 +80,7 @@ export class CreatejsController {
 /**
  * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
  */
-export class Container extends _Container implements IAnimateContainer {
+export class Container extends PixiContainer implements IAnimateContainer {
 	private _createjsData: {
 		controller: CreatejsController;
 	};

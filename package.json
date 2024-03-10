@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/pixi-animate-container.cjs.js",
   "module": "dist/pixi-animate-container.esm.js",
-  "types": "types/module.d.ts",
+  "types": "types/index.d.ts",
   "directories": {
     "doc": "docs",
     "lib": "lib"
