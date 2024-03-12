@@ -1280,20 +1280,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     exports.PixiGraphics = PixiGraphics, exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, 
     exports.PixiSprite = PixiSprite, exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, 
     exports.ReachLabelEvent = ReachLabelEvent, exports.createCreatejsParams = createCreatejsParams, 
-    exports.createPixiData = createPixiData, exports.dataURLToBlobURL = function(dataURL) {
-        for (var bin = atob(dataURL.replace(/^.*,/, "")), buffer = new Uint8Array(bin.length), i = 0; i < bin.length; i++) {
-            buffer[i] = bin.charCodeAt(i);
-        }
-        var p = dataURL.slice(5);
-        try {
-            var blob = new Blob([ buffer.buffer ], {
-                type: p.slice(0, p.indexOf(";"))
-            });
-            return console.log(p.slice(0, p.indexOf(";"))), (URL || webkitURL).createObjectURL(blob);
-        } catch (e) {
-            throw e;
-        }
-    }, exports.loadAssetAsync = function(targets) {
+    exports.createPixiData = createPixiData, exports.loadAssetAsync = function(targets) {
         var _a, _b;
         Array.isArray(targets) || (targets = [ targets ]);
         for (var promises = [], loop = function(i) {
@@ -1318,7 +1305,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             }
             var loadPromise = new Promise((function(resolve, reject) {
                 var _a;
-                0 === lib.properties.manifest.length && resolve({});
+                0 === manifests.length && resolve({});
                 var loader = new createjs.LoadQueue(!1);
                 (null === (_a = target.options) || void 0 === _a ? void 0 : _a.useSound) && loader.installPlugin(createjs.Sound);
                 var errors = [];
@@ -1331,7 +1318,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                     errors.length ? reject(errors) : resolve(evt);
                 })), loader.addEventListener("error", (function(evt) {
                     errors.push(evt.data);
-                })), loader.loadManifest(lib.properties.manifest || []);
+                })), loader.loadManifest(manifests || []);
             })).then((function(evt) {
                 for (var ss = comp.getSpriteSheet(), queue = evt.target, ssMetadata = lib.ssMetadata, i = 0; i < ssMetadata.length; i++) {
                     ss[ssMetadata[i].name] = new createjs.SpriteSheet({

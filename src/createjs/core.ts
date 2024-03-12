@@ -58,6 +58,7 @@ export interface IAnimateManifest {
 	[key: string]: any;
 }
 
+/*
 export function dataURLToBlobURL(dataURL: string) {
 	const bin = atob(dataURL.replace(/^.*,/, ''));
 	const buffer = new Uint8Array(bin.length);
@@ -76,6 +77,7 @@ export function dataURLToBlobURL(dataURL: string) {
 		throw e;
 	};
 }
+*/
 
 /**
  * Load the assets of createjs content published by Adobe Animate.
@@ -126,12 +128,12 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 
 		if (crossOrigin) {
 			for (let i = 0; i < manifests.length; i++) {
-				const manifest = manifests[i].crossOrigin = true;
+				manifests[i].crossOrigin = true;
 			}
 		}
 
 		const loadPromise = new Promise((resolve, reject) => {
-			if (lib.properties.manifest.length === 0) {
+			if (manifests.length === 0) {
 				resolve({});
 			}
 			
@@ -160,7 +162,7 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 				errors.push(evt.data);
 			});
 			
-			loader.loadManifest(lib.properties.manifest || []);
+			loader.loadManifest(manifests || []);
 		})
 		.then((evt: any) => {
 			const ss = comp.getSpriteSheet();
