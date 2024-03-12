@@ -2,7 +2,7 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import buble from '@rollup/plugin-buble';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import del from 'del';
 
 const conf = require('./package.json');

@@ -8,12 +8,27 @@
 
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var createjs = _interopDefault(require('@tawaship/createjs-module'));
+var createjs = require('@tawaship/createjs-module');
 var PIXI = require('pixi.js');
+
+function _interopNamespaceDefault(e) {
+    var n = Object.create(null);
+    if (e) {
+        Object.keys(e).forEach(function (k) {
+            if (k !== 'default') {
+                var d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        });
+    }
+    n.default = e;
+    return Object.freeze(n);
+}
+
+var PIXI__namespace = /*#__PURE__*/_interopNamespaceDefault(PIXI);
 
 /**
  * [[https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper]]
@@ -276,6 +291,7 @@ class CreatejsStageGL extends createjs.StageGL {
     }
 }
 
+exports.createjsInteractionEvents = void 0;
 (function (createjsInteractionEvents) {
     createjsInteractionEvents["mousedown"] = "mousedown";
     createjsInteractionEvents["pressmove"] = "pressmove";
@@ -451,20 +467,12 @@ class ReachLabelEvent extends AnimateEvent {
         this.data = label;
     }
 }
-const P = createjs.MovieClip;
+const P$6 = createjs.MovieClip;
 const T = 1000 / 60;
 /**
  * [[https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip]]
  */
 class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
-    constructor(...args) {
-        super();
-        this._pixiData = createPixiMovieClipData(this);
-        this._createjsParams = createCreatejsMovieClipParams();
-        this._createjsEventManager = new EventManager(this);
-        P.apply(this, args);
-        this.framerate = this._framerateBase;
-    }
     /**
      * When the last frame of the timeline is reached.
      *
@@ -477,6 +485,14 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
      * @event
      */
     reachLabel(e) { }
+    constructor(...args) {
+        super();
+        this._pixiData = createPixiMovieClipData(this);
+        this._createjsParams = createCreatejsMovieClipParams();
+        this._createjsEventManager = new EventManager(this);
+        P$6.apply(this, args);
+        this.framerate = this._framerateBase;
+    }
     initialize(...args) {
         this._pixiData = createPixiMovieClipData(this);
         this._createjsParams = createCreatejsMovieClipParams();
@@ -683,7 +699,7 @@ function createPixiSpriteData(cjs) {
 /**
  * @ignore
  */
-const P$1 = createjs.Sprite;
+const P$5 = createjs.Sprite;
 /**
  * [[https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite]]
  */
@@ -693,7 +709,7 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
         this._pixiData = createPixiSpriteData(this);
         this._createjsParams = createCreatejsSpriteParams();
         this._createjsEventManager = new EventManager(this);
-        P$1.apply(this, args);
+        P$5.apply(this, args);
     }
     initialize(...args) {
         this._pixiData = createPixiSpriteData(this);
@@ -757,7 +773,7 @@ function createPixiShapeData(cjs) {
 /**
  * @ignore
  */
-const P$2 = createjs.Shape;
+const P$4 = createjs.Shape;
 /**
  * [[https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape]]
  */
@@ -767,7 +783,7 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
         this._pixiData = createPixiShapeData(this);
         this._createjsParams = createCreatejsShapeParams(null);
         this._createjsEventManager = new EventManager(this);
-        P$2.apply(this, args);
+        P$4.apply(this, args);
     }
     initialize(...args) {
         this._pixiData = createPixiShapeData(this);
@@ -937,7 +953,7 @@ const LineJoin = {
 /**
  * @ignore
  */
-const P$4 = createjs.Graphics;
+const P$2 = createjs.Graphics;
 /**
  * [[https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics]]
  */
@@ -947,7 +963,7 @@ class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
         this._pixiData = createPixiGraphicsData(this);
         this._createjsParams = createCreatejsGraphicsParams();
         this._createjsEventManager = new EventManager(this);
-        P$4.apply(this, args);
+        P$2.apply(this, args);
         this._pixiData.instance.beginFill(0xFFEEEE, 1);
         this._pixiData.strokeFill = 0;
         this._pixiData.strokeAlpha = 1;
@@ -1185,7 +1201,7 @@ function createPixiTextData(cjs, text) {
 /**
  * @ignore
  */
-const P$5 = createjs.Text;
+const P$1 = createjs.Text;
 /**
  * [[https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text]]
  */
@@ -1204,7 +1220,7 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
         this._pixiData = createPixiTextData(this, t);
         this._pixiData.instance.addChild(t);
         this._createjsEventManager = new EventManager(this);
-        P$5.call(this, text, font, color, ...args);
+        P$1.call(this, text, font, color, ...args);
     }
     updateForPixi(e) {
         return true;
@@ -1337,7 +1353,7 @@ function createCreatejsColorFilterParams() {
 /**
  * @ignore
  */
-const P$6 = createjs.ColorFilter;
+const P = createjs.ColorFilter;
 /**
  * [[https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter]]
  */
@@ -1421,7 +1437,7 @@ class CreatejsColorFilter extends createjs.ColorFilter {
                 }
             }
         });
-        P$6.apply(this, args);
+        P.apply(this, args);
     }
     get pixi() {
         return this._pixiData.instance;
@@ -1509,7 +1525,7 @@ function loadAssetAsync(targets) {
             else if (manifest.src.indexOf('blob:') === 0) ;
             else if (manifest.src.indexOf('file:') === 0) ;
             else {
-                manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
+                manifest.src = PIXI__namespace.utils.url.resolve(target.basepath, manifest.src);
             }
         }
         if (crossOrigin) {

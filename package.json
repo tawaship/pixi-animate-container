@@ -10,7 +10,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "rollup": "rollup -c",
+    "rollup": "rollup -c --bundleConfigAsCjs",
     "d": "tsc --target ES6 --declaration --emitDeclarationOnly --outDir ./types",
     "docs": "typedoc --tsconfig tsconfig.json",
     "watch": "npm run rollup -- -w",
@@ -32,23 +32,20 @@
   },
   "homepage": "https://tawaship.github.io/pixi-animate-container/",
   "devDependencies": {
-    "@rollup/plugin-buble": "^0.21.3",
-    "@rollup/plugin-commonjs": "^11.0.2",
-    "@rollup/plugin-node-resolve": "^7.1.1",
-    "@rollup/plugin-typescript": "^5.0.2",
+    "@rollup/plugin-buble": "^1.0.3",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@tawaship/createjs-module": "^1.0.0",
     "del": "^5.1.0",
-    "electron": "^11.1.1",
-    "floss": "^3.0.1",
     "howler": "^2.2.0",
-    "nyc": "^15.0.0",
     "pixi.js": "^5.3.2",
     "pixi.js-legacy": "^5.3.2",
-    "rollup": "2.14.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "tslib": "^1.11.0",
-    "typedoc": "0.20.36",
-    "typescript": "4.2.4"
+    "rollup": "^4.13.0",
+    "tslib": "^2.6.2",
+    "typedoc": "^0.25.12",
+    "typescript": "^5.4.2"
   },
   "peerDependencies": {
     "@tawaship/createjs-module": "^1.0.0",

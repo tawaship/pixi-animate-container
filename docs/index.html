@@ -1,424 +1,56 @@
-<!doctype html>
-<html class="default no-js">
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>@tawaship/pixi-animate-container - v2.0.0</title>
-	<meta name="description" content="Documentation for @tawaship/pixi-animate-container - v2.0.0">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="assets/css/main.css">
-	<script async src="assets/js/search.js" id="search-script"></script>
-</head>
-<body>
-<header>
-	<div class="tsd-page-toolbar">
-		<div class="container">
-			<div class="table-wrap">
-				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
-					<div class="field">
-						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
-						<input id="tsd-search-field" type="text" />
-					</div>
-					<ul class="results">
-						<li class="state loading">Preparing search index...</li>
-						<li class="state failure">The search index is not available</li>
-					</ul>
-					<a href="index.html" class="title">@tawaship/pixi-animate-container - v2.0.0</a>
-				</div>
-				<div class="table-cell" id="tsd-widgets">
-					<div id="tsd-filter">
-						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
-						<div class="tsd-filter-group">
-							<div class="tsd-select" id="tsd-filter-visibility">
-								<span class="tsd-select-label">All</span>
-								<ul class="tsd-select-list">
-									<li data-value="public">Public</li>
-									<li data-value="protected">Public/Protected</li>
-									<li data-value="private" class="selected">All</li>
-								</ul>
-							</div>
-							<input type="checkbox" id="tsd-filter-inherited" checked />
-							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
-							<input type="checkbox" id="tsd-filter-externals" checked />
-							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
-						</div>
-					</div>
-					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="tsd-page-title">
-		<div class="container">
-			<h1>@tawaship/pixi-animate-container - v2.0.0</h1>
-		</div>
-	</div>
-</header>
-<div class="container container-main">
-	<div class="row">
-		<div class="col-8 col-content">
-			<div class="tsd-panel tsd-typography">
-				<a href="#pixi-animate-container" id="pixi-animate-container" style="color: inherit; text-decoration: none;">
-					<h1>pixi-animate-container</h1>
-				</a>
-				<p>&quot;pixi-animate-container&quot; is a plugin for using content created by Adobe Animate with &quot;<a href="https://github.com/pixijs/pixi.js">pixi.js</a>&quot;.</p>
-				<p><a href="LICENSE"><img src="http://img.shields.io/badge/license-MIT-blue.svg?style=flat" alt="MIT License"></a></p>
-				<hr>
-				<a href="#overview" id="overview" style="color: inherit; text-decoration: none;">
-					<h2>Overview</h2>
-				</a>
-				<a href="#each-original-simplified-flow" id="each-original-simplified-flow" style="color: inherit; text-decoration: none;">
-					<h3>Each original (simplified) flow</h3>
-				</a>
-				<ul>
-					<li><p>createjs contents created with Adobe Animate
-						<img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/animate.png" alt="origin"></p>
-					</li>
-					<li><p>pixi.js contents
-						<img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/pixi.png" alt="origin"></p>
-					</li>
-				</ul>
-				<a href="#flow-to-be-realized" id="flow-to-be-realized" style="color: inherit; text-decoration: none;">
-					<h3>Flow to be realized</h3>
-				</a>
-				<p><img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/core.png" alt="core"></p>
-				<a href="#supported-version" id="supported-version" style="color: inherit; text-decoration: none;">
-					<h2>Supported version</h2>
-				</a>
-				<ul>
-					<li>A complete set of content created with Adobe Animate version 24.0.1</li>
-					<li>pixi.js 5.3.x</li>
-				</ul>
-				<p>I have not confirmed the operation on other versions.</p>
-				<a href="#setup" id="setup" style="color: inherit; text-decoration: none;">
-					<h2>Setup</h2>
-				</a>
-				<a href="#npm" id="npm" style="color: inherit; text-decoration: none;">
-					<h3>NPM</h3>
-				</a>
-				<pre><code class="language-sh"><span style="color: #000000">npm install --save pixi.js @tawaship/pixi-animate-container</span>
-</code></pre>
-				<br />
-				<pre><code class="language-javascript"><span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #0000FF">*</span><span style="color: #000000"> </span><span style="color: #AF00DB">as</span><span style="color: #000000"> </span><span style="color: #001080">PIXI</span><span style="color: #000000"> </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;pixi.js&#039;</span><span style="color: #000000">;</span>
-<span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #0000FF">*</span><span style="color: #000000"> </span><span style="color: #AF00DB">as</span><span style="color: #000000"> </span><span style="color: #001080">PixiAnimate</span><span style="color: #000000"> </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;@tawaship/pixi-animate-container&#039;</span><span style="color: #000000">;</span>
-</code></pre>
-				<a href="#browser" id="browser" style="color: inherit; text-decoration: none;">
-					<h3>Browser</h3>
-				</a>
-				<pre><code class="language-sh"><span style="color: #000000">git clone https://github.com/tawaship/pixi-animate-container</span>
-</code></pre>
-				<br />
-				<pre><code class="language-html"><span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;https://code.createjs.com/1.0.0/createjs.min.js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
-<span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.2/pixi.min.js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
-<span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;/path/to/dist/pixi-animate-container.min.js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
-<span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;[your content].js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
-</code></pre>
-				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
-					<h2>Usage</h2>
-				</a>
-				<p>For browsers, this module is stored in the namespace &quot;PIXI.animate&quot;.</p>
-				<pre><code class="language-javascript"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">app</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #0070C1">PIXI</span><span style="color: #000000">.</span><span style="color: #795E26">Application</span><span style="color: #000000">();</span>
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@tawaship/pixi-animate-container - v2.0.0</title><meta name="description" content="Documentation for @tawaship/pixi-animate-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-search"></use></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div><div class="field"><div id="tsd-toolbar-links"></div></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">@tawaship/pixi-animate-container - v2.0.0</a></div><div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h2>@tawaship/pixi-animate-container - v2.0.0</h2></div><div class="tsd-panel tsd-typography"><a id="md:pixi-animate-container" class="tsd-anchor"></a><h1><a href="#md:pixi-animate-container">pixi-animate-container</a></h1><p>&quot;pixi-animate-container&quot; is a plugin for using content created by Adobe Animate with &quot;<a href="https://github.com/pixijs/pixi.js">pixi.js</a>&quot;.</p>
+<p><a href="LICENSE"><img src="http://img.shields.io/badge/license-MIT-blue.svg?style=flat" alt="MIT License"></a></p>
+<hr>
+<a id="md:overview" class="tsd-anchor"></a><h2><a href="#md:overview">Overview</a></h2><a id="md:each-original-simplified-flow" class="tsd-anchor"></a><h3><a href="#md:each-original-simplified-flow">Each original (simplified) flow</a></h3><ul>
+<li><p>createjs contents created with Adobe Animate
+<img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/animate.png" alt="origin"></p>
+</li>
+<li><p>pixi.js contents
+<img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/pixi.png" alt="origin"></p>
+</li>
+</ul>
+<a id="md:flow-to-be-realized" class="tsd-anchor"></a><h3><a href="#md:flow-to-be-realized">Flow to be realized</a></h3><p><img src="https://raw.githubusercontent.com/tawaship/pixi-animate-core/master/img/core.png" alt="core"></p>
+<a id="md:supported-version" class="tsd-anchor"></a><h2><a href="#md:supported-version">Supported version</a></h2><ul>
+<li>A complete set of content created with Adobe Animate version 24.0.1</li>
+<li>pixi.js 5.3.x</li>
+</ul>
+<p>I have not confirmed the operation on other versions.</p>
+<a id="md:setup" class="tsd-anchor"></a><h2><a href="#md:setup">Setup</a></h2><a id="md:npm" class="tsd-anchor"></a><h3><a href="#md:npm">NPM</a></h3><pre><code class="language-sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-3">--save</span><span class="hl-1"> </span><span class="hl-2">pixi.js</span><span class="hl-1"> </span><span class="hl-2">@tawaship/pixi-animate-container</span>
+</code><button>Copy</button></pre>
+<br />
 
-<span style="color: #0070C1">PIXI</span><span style="color: #000000">.</span><span style="color: #001080">animate</span><span style="color: #000000">.</span><span style="color: #795E26">loadAssetAsync</span><span style="color: #000000">([{</span>
-<span style="color: #000000">    </span><span style="color: #001080">id:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;[conposition id]&quot;</span><span style="color: #000000">, </span><span style="color: #008000">// &quot;lib.properties.id&quot; in Animate content.</span>
-<span style="color: #000000">    </span><span style="color: #001080">basepath:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;[content directory path]&quot;</span><span style="color: #000000">, </span><span style="color: #008000">// Directory path of Animate content.</span>
-<span style="color: #000000">    </span><span style="color: #001080">options:</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #001080">crossOrigin:</span><span style="color: #000000"> </span><span style="color: #0000FF">false</span>
-<span style="color: #000000">    }</span>
-<span style="color: #000000">}]).</span><span style="color: #795E26">then</span><span style="color: #000000">(</span><span style="color: #0000FF">function</span><span style="color: #000000">(</span><span style="color: #001080">lib</span><span style="color: #000000">) {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// If you load multiple contents, the argument &quot;lib&quot; will be an array and the &quot;lib&quot; of each content will be stored in order.</span>
-<span style="color: #000000">    </span><span style="color: #0000FF">class</span><span style="color: #000000"> </span><span style="color: #267F99">Root</span><span style="color: #000000"> </span><span style="color: #0000FF">extends</span><span style="color: #000000"> </span><span style="color: #267F99">PIXI</span><span style="color: #000000">.</span><span style="color: #267F99">animate</span><span style="color: #000000">.</span><span style="color: #267F99">Container</span><span style="color: #000000"> {</span>
-<span style="color: #000000">        </span><span style="color: #0000FF">constructor</span><span style="color: #000000">() {</span>
-<span style="color: #000000">            </span><span style="color: #0000FF">super</span><span style="color: #000000">();</span>
-<span style="color: #000000">            </span><span style="color: #001080">app</span><span style="color: #000000">.</span><span style="color: #001080">ticker</span><span style="color: #000000">.</span><span style="color: #795E26">add</span><span style="color: #000000">(</span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">handleTick</span><span style="color: #000000">, </span><span style="color: #0000FF">this</span><span style="color: #000000">);</span>
-<span style="color: #000000">            </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #795E26">addCreatejs</span><span style="color: #000000">(</span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #001080">lib</span><span style="color: #000000">.</span><span style="color: #795E26">game</span><span style="color: #000000">()); </span><span style="color: #008000">// The class you want to use.</span>
-<span style="color: #000000">        }</span>
-<span style="color: #000000">    }</span>
-<span style="color: #000000">    </span>
-<span style="color: #000000">    </span><span style="color: #001080">app</span><span style="color: #000000">.</span><span style="color: #001080">stage</span><span style="color: #000000">.</span><span style="color: #795E26">addChild</span><span style="color: #000000">(</span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Root</span><span style="color: #000000">());</span>
-<span style="color: #000000">    </span><span style="color: #001080">document</span><span style="color: #000000">.</span><span style="color: #001080">body</span><span style="color: #000000">.</span><span style="color: #795E26">appendChild</span><span style="color: #000000">(</span><span style="color: #001080">app</span><span style="color: #000000">.</span><span style="color: #001080">view</span><span style="color: #000000">);</span>
-<span style="color: #000000">});</span>
-</code></pre>
-				<p>See <a href="interfaces/ipreparetarget.html">here</a> for complete options for <code>PIXI.animate.loadAssetAsync</code>.</p>
-				<a href="#change-log" id="change-log" style="color: inherit; text-decoration: none;">
-					<h2>Change log</h2>
-				</a>
-				<a href="#100" id="100" style="color: inherit; text-decoration: none;">
-					<h3>1.0.0</h3>
-				</a>
-				<ul>
-					<li><p>Overrides</p>
-						<table>
-							<thead>
-								<tr>
-									<th align="left">name</th>
-									<th align="left">class</th>
-								</tr>
-							</thead>
-							<tbody><tr>
-									<td align="left">createjs.MovieClip</td>
-									<td align="left"><a href="https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html">CreatejsMovieClip</a></td>
-								</tr>
-						</tbody></table>
-					</li>
-				</ul>
-				<a href="#200" id="200" style="color: inherit; text-decoration: none;">
-					<h3>2.0.0</h3>
-				</a>
-				<ul>
-					<li>Integrate core modules into source code</li>
-					<li>Changed the method of linking with pixi.js ticker</li>
-					<li>Supports sound playback</li>
-					<li>Improving accuracy of interaction processing</li>
-				</ul>
-			</div>
-		</div>
-		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
-			<nav class="tsd-navigation primary">
-				<ul>
-					<li class=" ">
-						<a href="modules.html">Exports</a>
-					</li>
-				</ul>
-			</nav>
-			<nav class="tsd-navigation secondary menu-sticky">
-				<ul class="before-current">
-					<li class=" tsd-kind-enum">
-						<a href="enums/createjsinteractionevents.html" class="tsd-kind-icon">createjs<wbr>Interaction<wbr>Events</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/animateevent.html" class="tsd-kind-icon">Animate<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/container.html" class="tsd-kind-icon">Container</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsbitmap.html" class="tsd-kind-icon">Createjs<wbr>Bitmap</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsbuttonhelper.html" class="tsd-kind-icon">Createjs<wbr>Button<wbr>Helper</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjscolorfilter.html" class="tsd-kind-icon">Createjs<wbr>Color<wbr>Filter</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjscontroller.html" class="tsd-kind-icon">Createjs<wbr>Controller</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsgraphics.html" class="tsd-kind-icon">Createjs<wbr>Graphics</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsmovieclip.html" class="tsd-kind-icon">Createjs<wbr>Movie<wbr>Clip</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsshape.html" class="tsd-kind-icon">Createjs<wbr>Shape</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjssprite.html" class="tsd-kind-icon">Createjs<wbr>Sprite</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsstage.html" class="tsd-kind-icon">Createjs<wbr>Stage</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjsstagegl.html" class="tsd-kind-icon">Createjs<wbr>StageGL</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/createjstext.html" class="tsd-kind-icon">Createjs<wbr>Text</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/eventmanager.html" class="tsd-kind-icon">Event<wbr>Manager</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixibitmap.html" class="tsd-kind-icon">Pixi<wbr>Bitmap</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixicolormatrixfilter.html" class="tsd-kind-icon">Pixi<wbr>Color<wbr>Matrix<wbr>Filter</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixigraphics.html" class="tsd-kind-icon">Pixi<wbr>Graphics</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/piximovieclip.html" class="tsd-kind-icon">Pixi<wbr>Movie<wbr>Clip</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixishape.html" class="tsd-kind-icon">Pixi<wbr>Shape</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixisprite.html" class="tsd-kind-icon">Pixi<wbr>Sprite</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixitext.html" class="tsd-kind-icon">Pixi<wbr>Text</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/pixitextcontainer.html" class="tsd-kind-icon">Pixi<wbr>Text<wbr>Container</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/reachlabelevent.html" class="tsd-kind-icon">Reach<wbr>Label<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ianimatecontainer.html" class="tsd-kind-icon">IAnimate<wbr>Container</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ianimatelibrary.html" class="tsd-kind-icon">IAnimate<wbr>Library</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ianimatemanifest.html" class="tsd-kind-icon">IAnimate<wbr>Manifest</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsbitmapparam.html" class="tsd-kind-icon">ICreatejs<wbr>Bitmap<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejscolorfilterparam.html" class="tsd-kind-icon">ICreatejs<wbr>Color<wbr>Filter<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsdisplayobjectinitializer.html" class="tsd-kind-icon">ICreatejs<wbr>Display<wbr>Object<wbr>Initializer</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsdisplayobjectupdater.html" class="tsd-kind-icon">ICreatejs<wbr>Display<wbr>Object<wbr>Updater</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsgraphicsparam.html" class="tsd-kind-icon">ICreatejs<wbr>Graphics<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsinteractionevent.html" class="tsd-kind-icon">ICreatejs<wbr>Interaction<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsinteractioneventdelegate.html" class="tsd-kind-icon">ICreatejs<wbr>Interaction<wbr>Event<wbr>Delegate</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsmovieclipdictionary.html" class="tsd-kind-icon">ICreatejs<wbr>Movie<wbr>Clip<wbr>Dictionary</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsmovieclipparam.html" class="tsd-kind-icon">ICreatejs<wbr>Movie<wbr>Clip<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsparam.html" class="tsd-kind-icon">ICreatejs<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsshapeparam.html" class="tsd-kind-icon">ICreatejs<wbr>Shape<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejsspriteparam.html" class="tsd-kind-icon">ICreatejs<wbr>Sprite<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/icreatejstextparam.html" class="tsd-kind-icon">ICreatejs<wbr>Text<wbr>Param</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/iframeeventoption.html" class="tsd-kind-icon">IFrame<wbr>Event<wbr>Option</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/iloadassetoption.html" class="tsd-kind-icon">ILoad<wbr>Asset<wbr>Option</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/imixinedcreatejsdisplayobject.html" class="tsd-kind-icon">IMixined<wbr>Createjs<wbr>Display<wbr>Object</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/iparsedtext.html" class="tsd-kind-icon">IParsed<wbr>Text</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixibitmapdata.html" class="tsd-kind-icon">IPixi<wbr>Bitmap<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixicolormatrixfilterdata.html" class="tsd-kind-icon">IPixi<wbr>Color<wbr>Matrix<wbr>Filter<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-has-type-parameter">
-						<a href="interfaces/ipixidata.html" class="tsd-kind-icon">IPixi<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixigraphicsdata.html" class="tsd-kind-icon">IPixi<wbr>Graphics<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipiximovieclipdata.html" class="tsd-kind-icon">IPixi<wbr>Movie<wbr>Clip<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixishapedata.html" class="tsd-kind-icon">IPixi<wbr>Shape<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixispritedata.html" class="tsd-kind-icon">IPixi<wbr>Sprite<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipixitextdata.html" class="tsd-kind-icon">IPixi<wbr>Text<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ipreparetarget.html" class="tsd-kind-icon">IPrepare<wbr>Target</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/ireachlabeldata.html" class="tsd-kind-icon">IReach<wbr>Label<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-interface">
-						<a href="interfaces/itickerdata.html" class="tsd-kind-icon">ITicker<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#tcreatejscolorfilters" class="tsd-kind-icon">TCreatejs<wbr>Color<wbr>Filters</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#tcreatejsdisplayobject" class="tsd-kind-icon">TCreatejs<wbr>Display<wbr>Object</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#tcreatejsmask" class="tsd-kind-icon">TCreatejs<wbr>Mask</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#tcreatejsobject" class="tsd-kind-icon">TCreatejs<wbr>Object</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="modules.html#ttextalign" class="tsd-kind-icon">TText<wbr>Align</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#createcreatejsparams" class="tsd-kind-icon">create<wbr>Createjs<wbr>Params</a>
-					</li>
-					<li class=" tsd-kind-function tsd-has-type-parameter">
-						<a href="modules.html#createpixidata" class="tsd-kind-icon">create<wbr>Pixi<wbr>Data</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#dataurltobloburl" class="tsd-kind-icon">dataURLTo<wbr>BlobURL</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#loadassetasync" class="tsd-kind-icon">load<wbr>Asset<wbr>Async</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#mixincreatejsdisplayobject" class="tsd-kind-icon">mixin<wbr>Createjs<wbr>Display<wbr>Object</a>
-					</li>
-					<li class=" tsd-kind-function">
-						<a href="modules.html#updatedisplayobjectchildren" class="tsd-kind-icon">update<wbr>Display<wbr>Object<wbr>Children</a>
-					</li>
-				</ul>
-			</nav>
-		</div>
-	</div>
-</div>
-<footer class="with-border-bottom">
-	<div class="container">
-		<h2>Legend</h2>
-		<div class="tsd-legend-group">
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
-				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
-				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
-			</ul>
-		</div>
-	</div>
-</footer>
-<div class="container tsd-generator">
-	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
-</div>
-<div class="overlay"></div>
-<script src="assets/js/main.js"></script>
-</body>
-</html>
+<pre><code class="language-javascript"><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-3">*</span><span class="hl-1"> </span><span class="hl-4">as</span><span class="hl-1"> </span><span class="hl-5">PIXI</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;pixi.js&#39;</span><span class="hl-1">;</span><br/><span class="hl-4">import</span><span class="hl-1"> </span><span class="hl-3">*</span><span class="hl-1"> </span><span class="hl-4">as</span><span class="hl-1"> </span><span class="hl-5">PixiAnimate</span><span class="hl-1"> </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tawaship/pixi-animate-container&#39;</span><span class="hl-1">;</span>
+</code><button>Copy</button></pre>
+<a id="md:browser" class="tsd-anchor"></a><h3><a href="#md:browser">Browser</a></h3><pre><code class="language-sh"><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/tawaship/pixi-animate-container</span>
+</code><button>Copy</button></pre>
+<br />
+
+<pre><code class="language-html"><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;https://code.createjs.com/1.0.0/createjs.min.js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span><br/><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.2/pixi.min.js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span><br/><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;/path/to/dist/pixi-animate-container.min.js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span><br/><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;[your content].js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span>
+</code><button>Copy</button></pre>
+<a id="md:usage" class="tsd-anchor"></a><h2><a href="#md:usage">Usage</a></h2><p>For browsers, this module is stored in the namespace &quot;PIXI.animate&quot;.</p>
+<pre><code class="language-javascript"><span class="hl-3">const</span><span class="hl-1"> </span><span class="hl-11">app</span><span class="hl-1"> = </span><span class="hl-3">new</span><span class="hl-1"> </span><span class="hl-11">PIXI</span><span class="hl-1">.</span><span class="hl-0">Application</span><span class="hl-1">();</span><br/><br/><span class="hl-11">PIXI</span><span class="hl-1">.</span><span class="hl-5">animate</span><span class="hl-1">.</span><span class="hl-0">loadAssetAsync</span><span class="hl-1">([{</span><br/><span class="hl-1">    </span><span class="hl-5">id:</span><span class="hl-1"> </span><span class="hl-2">&quot;[conposition id]&quot;</span><span class="hl-1">, </span><span class="hl-12">// &quot;lib.properties.id&quot; in Animate content.</span><br/><span class="hl-1">    </span><span class="hl-5">basepath:</span><span class="hl-1"> </span><span class="hl-2">&quot;[content directory path]&quot;</span><span class="hl-1">, </span><span class="hl-12">// Directory path of Animate content.</span><br/><span class="hl-1">    </span><span class="hl-5">options:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-5">crossOrigin:</span><span class="hl-1"> </span><span class="hl-3">false</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}]).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-3">function</span><span class="hl-1">(</span><span class="hl-5">lib</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-12">// If you load multiple contents, the argument &quot;lib&quot; will be an array and the &quot;lib&quot; of each content will be stored in order.</span><br/><span class="hl-1">    </span><span class="hl-3">class</span><span class="hl-1"> </span><span class="hl-13">Root</span><span class="hl-1"> </span><span class="hl-3">extends</span><span class="hl-1"> </span><span class="hl-13">PIXI</span><span class="hl-1">.</span><span class="hl-13">animate</span><span class="hl-1">.</span><span class="hl-13">Container</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-3">constructor</span><span class="hl-1">() {</span><br/><span class="hl-1">            </span><span class="hl-3">super</span><span class="hl-1">();</span><br/><span class="hl-1">            </span><span class="hl-5">app</span><span class="hl-1">.</span><span class="hl-5">ticker</span><span class="hl-1">.</span><span class="hl-0">add</span><span class="hl-1">(</span><span class="hl-3">this</span><span class="hl-1">.</span><span class="hl-5">handleTick</span><span class="hl-1">, </span><span class="hl-3">this</span><span class="hl-1">);</span><br/><span class="hl-1">            </span><span class="hl-3">this</span><span class="hl-1">.</span><span class="hl-0">addCreatejs</span><span class="hl-1">(</span><span class="hl-3">new</span><span class="hl-1"> </span><span class="hl-5">lib</span><span class="hl-1">.</span><span class="hl-0">game</span><span class="hl-1">()); </span><span class="hl-12">// The class you want to use.</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">    </span><br/><span class="hl-1">    </span><span class="hl-5">app</span><span class="hl-1">.</span><span class="hl-5">stage</span><span class="hl-1">.</span><span class="hl-0">addChild</span><span class="hl-1">(</span><span class="hl-3">new</span><span class="hl-1"> </span><span class="hl-0">Root</span><span class="hl-1">());</span><br/><span class="hl-1">    </span><span class="hl-5">document</span><span class="hl-1">.</span><span class="hl-5">body</span><span class="hl-1">.</span><span class="hl-0">appendChild</span><span class="hl-1">(</span><span class="hl-5">app</span><span class="hl-1">.</span><span class="hl-5">view</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
+</code><button>Copy</button></pre>
+<p>See <a href="interfaces/ipreparetarget.html">here</a> for complete options for <code>PIXI.animate.loadAssetAsync</code>.</p>
+<a id="md:change-log" class="tsd-anchor"></a><h2><a href="#md:change-log">Change log</a></h2><a id="md:100" class="tsd-anchor"></a><h3><a href="#md:100">1.0.0</a></h3><ul>
+<li><p>Overrides</p>
+<table>
+<thead>
+<tr>
+<th align="left">name</th>
+<th align="left">class</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">createjs.MovieClip</td>
+<td align="left"><a href="https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html">CreatejsMovieClip</a></td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<a id="md:200" class="tsd-anchor"></a><h3><a href="#md:200">2.0.0</a></h3><ul>
+<li>Integrate core modules into source code</li>
+<li>Changed the method of linking with pixi.js ticker</li>
+<li>Supports sound playback</li>
+<li>Improving accuracy of interaction processing</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-index-accordion"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><h4 class="uppercase">Member Visibility</h4><form><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-private" name="private"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Private</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></form></div><div class="tsd-theme-toggle"><h4 class="uppercase">Theme</h4><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-index-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="assets/icons.svg#icon-chevronDown"></use></svg>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#md:pixi-animate-container"><span>pixi-<wbr/>animate-<wbr/>container</span></a><ul><li><a href="#md:overview"><span>Overview</span></a></li><li><ul><li><a href="#md:each-original-simplified-flow"><span>Each original (simplified) flow</span></a></li><li><a href="#md:flow-to-be-realized"><span>Flow to be realized</span></a></li></ul></li><li><a href="#md:supported-version"><span>Supported version</span></a></li><li><a href="#md:setup"><span>Setup</span></a></li><li><ul><li><a href="#md:npm"><span>NPM</span></a></li><li><a href="#md:browser"><span>Browser</span></a></li></ul></li><li><a href="#md:usage"><span>Usage</span></a></li><li><a href="#md:change-log"><span>Change log</span></a></li><li><ul><li><a href="#md:100"><span>1.0.0</span></a></li><li><a href="#md:200"><span>2.0.0</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="assets/icons.svg#icon-1"></use></svg><span>@tawaship/pixi-animate-container - v2.0.0</span></a><ul class="tsd-small-nested-navigation" id="tsd-nav-container" data-base="."><li>Loading...</li></ul></nav></div></div></div><div class="tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div></body></html>
