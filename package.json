@@ -14,7 +14,7 @@
     "d": "tsc --target ES6 --declaration --emitDeclarationOnly --outDir ./types",
     "docs": "typedoc --tsconfig tsconfig.json",
     "watch": "npm run rollup -- -w",
-    "test": "node test/index.js",
+    "test": "jest ./test/",
     "build": "ENV PROD=1 npm run rollup && npm run test && npm run docs && npm run d && echo done."
   },
   "keywords": [
@@ -40,11 +40,13 @@
     "@tawaship/createjs-module": "^1.0.0",
     "canvas": "^2.11.2",
     "del": "^5.1.0",
+    "express": "^4.18.3",
     "howler": "^2.2.0",
-    "jsdom": "^24.0.0",
+    "jest": "^29.7.0",
     "pixi.js": "^5.3.2",
     "pixi.js-legacy": "^5.3.2",
     "rollup": "^4.13.0",
+    "selenium-webdriver": "^4.18.1",
     "tslib": "^2.6.2",
     "typedoc": "^0.25.12",
     "typescript": "^5.4.2"

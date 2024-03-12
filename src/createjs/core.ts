@@ -58,7 +58,7 @@ export interface IAnimateManifest {
 	[key: string]: any;
 }
 
-
+/*
 export function dataURLToBlobURL(dataURL: string) {
 	const bin = atob(dataURL.replace(/^.*,/, ''));
 	const buffer = new Uint8Array(bin.length);
@@ -71,12 +71,12 @@ export function dataURLToBlobURL(dataURL: string) {
 		const blob = new Blob([buffer.buffer], {
 			type: p.slice(0, p.indexOf(";"))
 		});
-		console.log(p.slice(0, p.indexOf(";")))
 		return (URL || webkitURL).createObjectURL(blob);
 	} catch (e){
 		throw e;
 	};
 }
+*/
 
 /**
  * Load the assets of createjs content published by Adobe Animate.
@@ -111,7 +111,6 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 		for (let i = 0; i < manifests.length; i++) {
 			const manifest = manifests[i];
 			if (manifest.src.indexOf('data:image') === 0) {
-				manifest.src = dataURLToBlobURL(manifest.src);
 				manifest.type = createjs.Types.IMAGE;
 			} else if (manifest.src.indexOf('data:audio') === 0) {
 				/* note
