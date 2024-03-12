@@ -20,12 +20,55 @@
 				backgroundColor: 0xFFFFFF
 			});
 			
-			PIXI.animate.loadAssetAsync({
-				id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
-				basepath: 'game/',
-				options: {
-					crossOrigin: false
-				}
+			const m = AdobeAn.getComposition("2FA8E0C7230941478CE2CA3DB82DBEDF").getLibrary().properties.manifest;
+			Promise.all(m.map((manifest, i) => {
+				const { id, src } = manifest;
+
+				return (() => {
+					manifest.type = "image";
+
+					if (i % 3 === 0) {
+						return Promise.resolve(src);
+					}
+					
+					if (i % 3 === 1) {
+						return new Promise(resolve => {
+							const img = new Image();
+							img.addEventListener("load", () => {
+								const canvas = document.createElement('canvas');
+								const ctx = canvas.getContext('2d');
+								canvas.width  = img.width;
+								canvas.height = img.height;
+								ctx.drawImage(img, 0, 0);
+								resolve(canvas.toDataURL());
+							});
+							img.src = "game/" + src;
+						});
+					}
+					
+					return fetch("game/" + src)
+						.then(res => res.blob())
+						.then(blob => {
+							return URL.createObjectURL(blob);
+						});
+				})()
+				.then(src => {
+					manifest.src = src;
+				});
+			}))
+			.then(res => {
+				return PIXI.animate.loadAssetAsync({
+					id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
+					basepath: 'game/',
+					options: {
+						crossOrigin: false,
+						listenFrameEvents: {
+							reachLabel: true,
+							endAnimation: true
+						},
+						useSound: true
+					}
+				})
 			})
 			.then(function(lib) {
 				class Root extends PIXI.Container {
@@ -41,6 +84,13 @@
 						
 						container.addChild(new PIXI.Text('Library game'));
 						const a = container.addCreatejs(new lib.game());
+						a.addEventListener("reachLabel", e => {
+							console.log(e);
+						});
+
+						a.addEventListener("endAnimation", e => {
+							console.log(e);
+						});
 						a.y = 50;
 					}
 				}

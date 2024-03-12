@@ -25,7 +25,7 @@ export interface ILoadAssetOption {
 	/**
 	 * Whether to fire events related to frames.
 	 */
-	useFrameEvent?: PA.IFrameEventOption;
+	listenFrameEvents?: PA.IFrameEventOption;
 };
 
 export interface IPrepareTarget {
@@ -58,7 +58,7 @@ export interface IAnimateManifest {
 	[key: string]: any;
 }
 
-/*
+
 export function dataURLToBlobURL(dataURL: string) {
 	const bin = atob(dataURL.replace(/^.*,/, ''));
 	const buffer = new Uint8Array(bin.length);
@@ -77,7 +77,6 @@ export function dataURLToBlobURL(dataURL: string) {
 		throw e;
 	};
 }
-*/
 
 /**
  * Load the assets of createjs content published by Adobe Animate.
@@ -104,14 +103,15 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 		}
 		
 		const lib: IAnimateLibrary = comp.getLibrary();
-		const manifests: IAnimateManifest[] = lib.properties.manifest;
+		const manifests: IAnimateManifest[] = lib.properties.manifest.map((v: any) => {
+			return JSON.parse(JSON.stringify(v));
+		});
 		const crossOrigin = typeof(target.options?.crossOrigin) === 'boolean' ? target.options.crossOrigin : true;
 		
 		for (let i = 0; i < manifests.length; i++) {
 			const manifest = manifests[i];
-			
-			manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
 			if (manifest.src.indexOf('data:image') === 0) {
+				manifest.src = dataURLToBlobURL(manifest.src);
 				manifest.type = createjs.Types.IMAGE;
 			} else if (manifest.src.indexOf('data:audio') === 0) {
 				/* note
@@ -123,6 +123,12 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 				manifest.type = createjs.Types.SOUND;
 				manifest.src = dataURLToBlobURL(manifest.src);
 				*/
+			} else if (manifest.src.indexOf('blob:') === 0) {
+
+			} else if (manifest.src.indexOf('file:') === 0) {
+				
+			} else {
+				manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
 			}
 		}
 
@@ -187,7 +193,7 @@ export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
 				for (let i  in lib) {
 					if (lib[i].prototype instanceof PA.CreatejsMovieClip) {
 						lib[i].prototype._framerateBase = lib.properties.fps;
-						lib[i].prototype._useFrameEvent = target.options?.useFrameEvent;
+						lib[i].prototype._listenFrameEvents = target.options?.listenFrameEvents;
 					}
 				}
 				

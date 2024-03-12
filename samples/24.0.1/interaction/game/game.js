@@ -2,7 +2,9 @@
 
 var p; // shortcut to reference prototypes
 var lib={};var ss={};var img={};
-lib.ssMetadata = [];
+lib.ssMetadata = [
+		{name:"game_atlas_1", frames: [[0,120,82,82],[120,0,50,50],[84,120,82,82],[0,0,118,118]]}
+];
 
 
 (lib.AnMovieClip = function(){
@@ -26,27 +28,31 @@ lib.ssMetadata = [];
 
 
 (lib.ビットマップ1 = function() {
-	this.initialize(img.ビットマップ1);
-}).prototype = p = new cjs.Bitmap();
-p.nominalBounds = new cjs.Rectangle(0,0,82,82);
+	this.initialize(ss["game_atlas_1"]);
+	this.gotoAndStop(0);
+}).prototype = p = new cjs.Sprite();
+
 
 
 (lib.ビットマップ2 = function() {
-	this.initialize(img.ビットマップ2);
-}).prototype = p = new cjs.Bitmap();
-p.nominalBounds = new cjs.Rectangle(0,0,50,50);
+	this.initialize(ss["game_atlas_1"]);
+	this.gotoAndStop(1);
+}).prototype = p = new cjs.Sprite();
+
 
 
 (lib.ビットマップ3 = function() {
-	this.initialize(img.ビットマップ3);
-}).prototype = p = new cjs.Bitmap();
-p.nominalBounds = new cjs.Rectangle(0,0,82,82);
+	this.initialize(ss["game_atlas_1"]);
+	this.gotoAndStop(2);
+}).prototype = p = new cjs.Sprite();
+
 
 
 (lib.ビットマップ5 = function() {
-	this.initialize(img.ビットマップ5);
-}).prototype = p = new cjs.Bitmap();
-p.nominalBounds = new cjs.Rectangle(0,0,118,118);// helper functions:
+	this.initialize(ss["game_atlas_1"]);
+	this.gotoAndStop(3);
+}).prototype = p = new cjs.Sprite();
+// helper functions:
 
 function mc_symbol_clone() {
 	var clone = this._cloneProps(new this.constructor(this.mode, this.startPosition, this.loop, this.reversed));
@@ -661,11 +667,8 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/ビットマップ1.png?1709987906788", id:"ビットマップ1"},
-		{src:"images/ビットマップ2.png?1709987906788", id:"ビットマップ2"},
-		{src:"images/ビットマップ3.png?1709987906788", id:"ビットマップ3"},
-		{src:"images/ビットマップ5.png?1709987906788", id:"ビットマップ5"},
-		{src:"sounds/se.mp3?1709987906788", id:"se"}
+		{src:"images/game_atlas_1.png?1710223034481", id:"game_atlas_1"},
+		{src:"sounds/se.mp3?1710223034495", id:"se"}
 	],
 	preloads: []
 };

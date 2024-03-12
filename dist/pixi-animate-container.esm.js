@@ -482,11 +482,11 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
     updateForPixi(e) {
         const currentFrame = this.currentFrame;
         this.advance(T * e.delta);
-        if (this._useFrameEvent && currentFrame !== this.currentFrame) {
-            if (this._useFrameEvent.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
+        if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
+            if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
                 this.dispatchEvent(new AnimateEvent('endAnimation'));
             }
-            if (this._useFrameEvent.reachLabel) {
+            if (this._listenFrameEvents.reachLabel) {
                 for (let i = 0; i < this.labels.length; i++) {
                     const label = this.labels[i];
                     if (this.currentFrame === label.position) {
@@ -1441,26 +1441,24 @@ function playSound(id, loop, offset) {
         offset
     });
 }
-/*
-export function dataURLToBlobURL(dataURL: string) {
+function dataURLToBlobURL(dataURL) {
     const bin = atob(dataURL.replace(/^.*,/, ''));
     const buffer = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {
         buffer[i] = bin.charCodeAt(i);
     }
-
     const p = dataURL.slice(5);
-    try{
+    try {
         const blob = new Blob([buffer.buffer], {
             type: p.slice(0, p.indexOf(";"))
         });
-        console.log(p.slice(0, p.indexOf(";")))
+        console.log(p.slice(0, p.indexOf(";")));
         return (URL || webkitURL).createObjectURL(blob);
-    } catch (e){
+    }
+    catch (e) {
         throw e;
-    };
+    }
 }
-*/
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
@@ -1482,12 +1480,14 @@ function loadAssetAsync(targets) {
             throw new Error(`no composition: ${target.id}`);
         }
         const lib = comp.getLibrary();
-        const manifests = lib.properties.manifest;
+        const manifests = lib.properties.manifest.map((v) => {
+            return JSON.parse(JSON.stringify(v));
+        });
         const crossOrigin = typeof ((_b = target.options) === null || _b === void 0 ? void 0 : _b.crossOrigin) === 'boolean' ? target.options.crossOrigin : true;
         for (let i = 0; i < manifests.length; i++) {
             const manifest = manifests[i];
-            manifest.src = utils.url.resolve(target.basepath, manifest.src);
             if (manifest.src.indexOf('data:image') === 0) {
+                manifest.src = dataURLToBlobURL(manifest.src);
                 manifest.type = createjs.Types.IMAGE;
             }
             else if (manifest.src.indexOf('data:audio') === 0) {
@@ -1500,6 +1500,11 @@ function loadAssetAsync(targets) {
                 manifest.type = createjs.Types.SOUND;
                 manifest.src = dataURLToBlobURL(manifest.src);
                 */
+            }
+            else if (manifest.src.indexOf('blob:') === 0) ;
+            else if (manifest.src.indexOf('file:') === 0) ;
+            else {
+                manifest.src = utils.url.resolve(target.basepath, manifest.src);
             }
         }
         if (crossOrigin) {
@@ -1552,7 +1557,7 @@ function loadAssetAsync(targets) {
             for (let i in lib) {
                 if (lib[i].prototype instanceof CreatejsMovieClip) {
                     lib[i].prototype._framerateBase = lib.properties.fps;
-                    lib[i].prototype._useFrameEvent = (_a = target.options) === null || _a === void 0 ? void 0 : _a.useFrameEvent;
+                    lib[i].prototype._listenFrameEvents = (_a = target.options) === null || _a === void 0 ? void 0 : _a.listenFrameEvents;
                 }
             }
             return lib;
@@ -1660,5 +1665,5 @@ createjs.ColorFilter = CreatejsColorFilter;
 // install plugins
 createjs.MotionGuidePlugin.install();
 
-export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, loadAssetAsync, mixinCreatejsDisplayObject, updateDisplayObjectChildren };
+export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, dataURLToBlobURL, loadAssetAsync, mixinCreatejsDisplayObject, updateDisplayObjectChildren };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

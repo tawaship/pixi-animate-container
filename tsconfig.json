@@ -8,7 +8,7 @@
   "typedocOptions": {
     "out": "docs",
     "gitRevision": "master",
-    "entryPoints": ["src/module.ts"],
+    "entryPoints": ["src/index.ts"],
     "includeVersion": true
   },
   "exclude": ["node_modules", "src/**/*.d.ts"]

@@ -31,6 +31,18 @@ lib.ssMetadata = [];
 p.nominalBounds = new cjs.Rectangle(0,0,32,32);
 
 
+(lib.bitmap2 = function() {
+	this.initialize(img.bitmap2);
+}).prototype = p = new cjs.Bitmap();
+p.nominalBounds = new cjs.Rectangle(0,0,32,32);
+
+
+(lib.bitmap3 = function() {
+	this.initialize(img.bitmap3);
+}).prototype = p = new cjs.Bitmap();
+p.nominalBounds = new cjs.Rectangle(0,0,32,32);
+
+
 (lib.gra = function(mode,startPosition,loop,reversed) {
 if (loop == null) { loop = true; }
 if (reversed == null) { reversed = false; }
@@ -83,7 +95,7 @@ if (reversed == null) { reversed = false; }
 	var props = new Object();
 	props.mode = mode;
 	props.startPosition = startPosition;
-	props.labels = {};
+	props.labels = {point:33};
 	props.loop = loop;
 	props.reversed = reversed;
 	cjs.MovieClip.apply(this,[props]);
@@ -422,10 +434,16 @@ if (reversed == null) { reversed = false; }
 	this.timeline.addTween(cjs.Tween.get(this.instance_2).wait(87));
 
 	// レイヤー_2
-	this.instance_3 = new lib.anim();
-	this.instance_3.setTransform(31.75,30.8);
+	this.instance_3 = new lib.bitmap3();
+	this.instance_3.setTransform(489,15);
 
-	this.timeline.addTween(cjs.Tween.get(this.instance_3).wait(87));
+	this.instance_4 = new lib.bitmap2();
+	this.instance_4.setTransform(440,15);
+
+	this.instance_5 = new lib.anim();
+	this.instance_5.setTransform(31.75,30.8);
+
+	this.timeline.addTween(cjs.Tween.get({}).to({state:[{t:this.instance_5},{t:this.instance_4},{t:this.instance_3}]}).wait(87));
 
 	this._renderFirstFrame();
 
@@ -440,7 +458,9 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/bitmap1.png?1709952068540", id:"bitmap1"}
+		{src:"images/bitmap1.png?1710228758099", id:"bitmap1"},
+		{src:"images/bitmap2.png?1710228758099", id:"bitmap2"},
+		{src:"images/bitmap3.png?1710228758099", id:"bitmap3"}
 	],
 	preloads: []
 };

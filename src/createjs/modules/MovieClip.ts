@@ -114,7 +114,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	protected _createjsEventManager: EventManager;
 
 	declare protected _framerateBase: number;
-	declare protected _useFrameEvent: IFrameEventOption;
+	declare protected _listenFrameEvents: IFrameEventOption;
 
 	/**
 	 * When the last frame of the timeline is reached.
@@ -153,12 +153,12 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 		
 		this.advance(T * e.delta);
 		
-		if (this._useFrameEvent && currentFrame !== this.currentFrame) {
-			if (this._useFrameEvent.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
+		if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
+			if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
 				this.dispatchEvent(new AnimateEvent('endAnimation'));
 			}
 			
-			if (this._useFrameEvent.reachLabel) {
+			if (this._listenFrameEvents.reachLabel) {
 				for (let i = 0; i < this.labels.length; i++) {
 					const label = this.labels[i];
 					if (this.currentFrame === label.position) {
