@@ -1,5 +1,19 @@
-window.createjs = require('@tawaship/createjs-module');
-window.AdobeAn = {};
+
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+const { window } = new JSDOM("", {url: "https://localhost" });
+
+global.window = window;
+for (let i in window) {
+	global[i] = window[i];
+}
+
+global.HTMLVideoElement = class HTMLVideoElement extends window.HTMLMediaElement {}
+global.HTMLCanvasElement = window.HTMLCanvasElement;
+global.HTMLImageElement = window.HTMLImageElement;
+
+global.createjs = require('@tawaship/createjs-module');
+global.AdobeAn = {};
 const assert = require('assert');
 const PIXI = require('pixi.js-legacy');
 const PixiAnimate = require('../');

@@ -14,7 +14,7 @@
     "d": "tsc --target ES6 --declaration --emitDeclarationOnly --outDir ./types",
     "docs": "typedoc --tsconfig tsconfig.json",
     "watch": "npm run rollup -- -w",
-    "test": "floss --path test/ --reporter=tap",
+    "test": "node test/index.js",
     "build": "ENV PROD=1 npm run rollup && npm run test && npm run docs && npm run d && echo done."
   },
   "keywords": [
@@ -38,8 +38,10 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
     "@tawaship/createjs-module": "^1.0.0",
+    "canvas": "^2.11.2",
     "del": "^5.1.0",
     "howler": "^2.2.0",
+    "jsdom": "^24.0.0",
     "pixi.js": "^5.3.2",
     "pixi.js-legacy": "^5.3.2",
     "rollup": "^4.13.0",
