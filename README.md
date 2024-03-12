@@ -86,6 +86,8 @@ PIXI.animate.loadAssetAsync([{
 });
 ```
 
+See [here](interfaces/ipreparetarget.html) for complete options for `PIXI.animate.loadAssetAsync`.
+
 ## Change log
 
 ### 1.0.0
