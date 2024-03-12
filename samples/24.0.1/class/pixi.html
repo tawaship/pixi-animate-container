@@ -98,12 +98,6 @@
 				}
 				
 				app.stage.addChild(new Root());
-				const resize = () => {
-					app.view.style.width = window.innerWidth + "px";
-					app.view.style.height = window.innerWidth * 800 / 450;
-				};
-				window.addEventListener("resize", resize);
-				resize();
 				document.body.appendChild(app.view);
 			});
 		</script>

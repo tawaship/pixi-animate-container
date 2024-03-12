@@ -1,0 +1,19 @@
+﻿{"frames": {
+
+"CachedBmp_30":
+{
+	"frame": {"x":0,"y":0,"w":862,"h":604},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":862,"h":604},
+	"sourceSize": {"w":862,"h":604}
+}},
+"meta": {
+	"app": "Adobe Animate",
+	"version": "23.0.2.103",
+	"image": "game_atlas_2.png",
+	"format": "undefined",
+	"size": {"w":1024,"h":1024},
+	"scale": "1"
+}
+}
