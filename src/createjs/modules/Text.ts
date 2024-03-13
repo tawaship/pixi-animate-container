@@ -2,15 +2,15 @@ import { Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater } from './core';
 import { createObject } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text}
  */
 export class PixiText extends Text {}
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiTextContainer extends Container {
 	private _createjs: CreatejsText;
@@ -32,18 +32,18 @@ export class PixiTextContainer extends Container {
 	}
 }
 
-export type TTextAlign = 'left' | 'center' | 'right';
+export type TCreatejsTextAlign = 'left' | 'center' | 'right';
 
 /**
  * @ignore
  */
-const DEF_ALIGN: TTextAlign = 'left';
+const DEF_ALIGN: TCreatejsTextAlign = 'left';
 
 export interface ICreatejsTextParam extends ICreatejsParam {
 	text: string;
 	font: string;
 	color: string;
-	textAlign: TTextAlign;
+	textAlign: TCreatejsTextAlign;
 	lineHeight: number;
 	lineWidth: number;
 }
@@ -75,7 +75,7 @@ function createPixiTextData(cjs: CreatejsText, text: PixiText): IPixiTextData {
 	return createPixiData<PixiTextContainer>(pixi, pixi.pivot);
 }
 
-export interface IParsedText {
+export interface ICreatejsParsedText {
 	fontSize: number;
 	fontFamily: string;
 	fontWeight?: string | number;
@@ -87,12 +87,12 @@ export interface IParsedText {
 const P = createjs.Text;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
  */
 export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) implements ICreatejsDisplayObjectUpdater {
 	protected _pixiData: IPixiTextData;
 	protected _createjsParams: ICreatejsTextParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 	
 	constructor(text: string, font: string, color: string = '#000000', ...args: any[]) {
 		super(text, font, color, ...args);
@@ -112,7 +112,7 @@ export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) impl
 		this._pixiData = createPixiTextData(this, t);
 		this._pixiData.instance.addChild(t);
 		
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		P.call(this, text, font, color, ...args);
 	}
@@ -132,7 +132,7 @@ export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) impl
 		this._createjsParams.text = text;
 	}
 	
-	private _parseFont(font: string): IParsedText {
+	private _parseFont(font: string): ICreatejsParsedText {
 		const p = font.split(' ');
 		
 		let w = 'normal';
@@ -176,7 +176,7 @@ export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) impl
 		this._createjsParams.color = color;
 	}
 	
-	private _align(align: TTextAlign) {
+	private _align(align: TCreatejsTextAlign) {
 		if (align === 'left') {
 			this._pixiData.instance.text.x = 0;
 			return;

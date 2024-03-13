@@ -2,7 +2,7 @@ import createjs from '@tawaship/createjs-module';
 import { updateDisplayObjectChildren, ITickerData, ICreatejsDisplayObjectUpdater } from './core';
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/StageGL.html | createjs.StageGL]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/StageGL.html | createjs.StageGL}
  */
 export class CreatejsStageGL extends createjs.StageGL implements ICreatejsDisplayObjectUpdater {
 	updateForPixi(props: ITickerData) {

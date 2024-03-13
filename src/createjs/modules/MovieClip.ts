@@ -3,10 +3,10 @@ import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter, PixiColorMatrixFilter } from './ColorFilter';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, updateDisplayObjectChildren, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiMovieClip extends Container {
 	private _createjs: CreatejsMovieClip;
@@ -67,7 +67,7 @@ export class AnimateEvent extends createjs.Event {
 	}
 };
 
-export interface IReachLabelData {
+export interface IAnimateReachLabelData {
 	/**
 	 * Label name.
 	 */
@@ -79,24 +79,24 @@ export interface IReachLabelData {
 	position: number;
 }
 
-export class ReachLabelEvent extends AnimateEvent {
-	data: IReachLabelData;
+export class AnimateReachLabelEvent extends AnimateEvent {
+	data: IAnimateReachLabelData;
 	
-	constructor(type: string, label: IReachLabelData) {
+	constructor(type: string, label: IAnimateReachLabelData) {
 		super(type);
 		
 		this.data = label;
 	}
 }
 
-export interface IFrameEventOption {
+export interface IAnimateFrameEventOption {
 	/**
-	 * Whether to fire [[CreatejsMovieClip.endAnimation]]
+	 * Whether to fire {@link CreatejsMovieClip.endAnimation}
 	 */
 	endAnimation?: boolean;
 
 	/**
-	 * Whether to fire [[CreatejsMovieClip.reachLabel]]
+	 * Whether to fire {@link CreatejsMovieClip.reachLabel}
 	 */
 	reachLabel?: boolean;
 }
@@ -106,15 +106,15 @@ const P = createjs.MovieClip;
 const T: number = 1000 / 60;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  */
 export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiMovieClipData;
 	protected _createjsParams: ICreatejsMovieClipParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsCreatejsEventManager: CreatejsEventManager;
 
 	declare protected _framerateBase: number;
-	declare protected _listenFrameEvents: IFrameEventOption;
+	declare protected _listenFrameEvents: IAnimateFrameEventOption;
 
 	/**
 	 * When the last frame of the timeline is reached.
@@ -128,14 +128,14 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	 * 
 	 * @event
 	 */
-	reachLabel?(e: ReachLabelEvent): void {}
+	reachLabel?(e: AnimateReachLabelEvent): void {}
 
 	constructor(...args: any[]) {
 		super();
 		
 		this._pixiData = createPixiMovieClipData(this);
 		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsCreatejsEventManager = new CreatejsEventManager(this);
 		P.apply(this, args);
 		this.framerate = this._framerateBase;
 	}
@@ -143,7 +143,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	initialize(...args: any[]) {
 		this._pixiData = createPixiMovieClipData(this);
 		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsCreatejsEventManager = new CreatejsEventManager(this);
 		super.initialize(...args);
 		this.framerate = this._framerateBase;
 	}
@@ -162,7 +162,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 				for (let i = 0; i < this.labels.length; i++) {
 					const label = this.labels[i];
 					if (this.currentFrame === label.position) {
-						this.dispatchEvent(new ReachLabelEvent('reachLabel', label));
+						this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
 						break;
 					}
 				}

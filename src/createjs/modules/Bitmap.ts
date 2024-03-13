@@ -2,10 +2,10 @@ import { Sprite, Texture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export class PixiBitmap extends Sprite {
 	private _createjs: CreatejsBitmap;
@@ -52,19 +52,19 @@ function createPixiBitmapData(cjs: CreatejsBitmap): IPixiBitmapData {
 const P = createjs.Bitmap;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
  */
 export class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiBitmapData;
 	protected _createjsParams: ICreatejsBitmapParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 	 
 	constructor(...args: any[]) {
 		super(...args);
 		
 		this._pixiData = createPixiBitmapData(this);
 		this._createjsParams = createCreatejsBitmapParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		P.apply(this, args);
 	}
@@ -72,7 +72,7 @@ export class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) 
 	initialize(...args: any[]) {
 		this._pixiData = createPixiBitmapData(this);
 		this._createjsParams = createCreatejsBitmapParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		const res = super.initialize(...args);
 		const texture = Texture.from(this.image);

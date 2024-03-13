@@ -2,10 +2,10 @@ import { Graphics, LINE_CAP, LINE_JOIN} from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam,  ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject, DEG_TO_RAD } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Graphics.html | PIXI.Graphics]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
 export class PixiGraphics extends Graphics {
 	private _createjs: CreatejsGraphics;
@@ -83,19 +83,19 @@ const LineJoin = {
 const P = createjs.Graphics;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
  */
 export class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiGraphicsData;
 	protected _createjsParams: ICreatejsGraphicsParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 	
 	constructor(...args: any[]) {
 		super(...args);
 		
 		this._pixiData = createPixiGraphicsData(this);
 		this._createjsParams = createCreatejsGraphicsParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		P.apply(this, args);
 		
@@ -107,7 +107,7 @@ export class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphi
 	initialize(...args: any[]) {
 		this._pixiData = createPixiGraphicsData(this);
 		this._createjsParams = createCreatejsGraphicsParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		return super.initialize(...args);
 	}

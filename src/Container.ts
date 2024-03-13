@@ -78,7 +78,7 @@ export class CreatejsController {
 }
 
 /**
- * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
+ * inherited {@link https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container}
  */
 export class Container extends PixiContainer implements IAnimateContainer {
 	private _createjsData: {

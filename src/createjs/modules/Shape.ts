@@ -3,10 +3,10 @@ import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsGraphics } from './Graphics';
 import { createObject } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiShape extends Container {
 	private _createjs: CreatejsShape;
@@ -38,7 +38,7 @@ function createCreatejsShapeParams(graphics: CreatejsGraphics | null): ICreatejs
 
 export interface IPixiShapeData extends IPixiData<PixiShape> {
 	/**
-	 * [[http://pixijs.download/release/docs/PIXI.DisplayObject.html | PIXI.DisplayObject]]
+	 * inherited {@link http://pixijs.download/release/docs/PIXI.DisplayObject.html | PIXI.DisplayObject}
 	 */
 	masked: DisplayObject[];
 };
@@ -60,19 +60,19 @@ function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
 const P = createjs.Shape;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
  */
 export class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiShapeData;
 	protected _createjsParams: ICreatejsShapeParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 	
 	constructor(...args: any[]) {
 		super(...args);
 		
 		this._pixiData = createPixiShapeData(this);
 		this._createjsParams = createCreatejsShapeParams(null);
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		P.apply(this, args);
 	}
@@ -80,7 +80,7 @@ export class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) im
 	initialize(...args: any[]) {
 		this._pixiData = createPixiShapeData(this);
 		this._createjsParams = createCreatejsShapeParams(null);
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		return super.initialize(...args);
 	}

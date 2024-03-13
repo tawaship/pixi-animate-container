@@ -8,7 +8,7 @@ import { CreatejsShape } from './Shape';
 import { CreatejsBitmap } from './Bitmap';
 import { CreatejsGraphics } from './Graphics';
 import { CreatejsText } from './Text';
-import { EventManager, ICreatejsInteractionEventDelegate, createjsInteractionEvents } from './EventManager';
+import { CreatejsEventManager, ICreatejsInteractionEventDelegate, createjsInteractionEvents } from './EventManager';
 import { DEG_TO_RAD } from './utils';
 
 export interface ITickerData {
@@ -106,7 +106,7 @@ export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => T
 	abstract class C extends superClass {
 		protected abstract _pixiData: IPixiData<Container>;
 		protected abstract _createjsParams: ICreatejsParam;
-		protected abstract _createjsEventManager: EventManager;
+		protected abstract _createjsEventManager: CreatejsEventManager;
 		
 		get pixi() {
 			return this._pixiData.instance;

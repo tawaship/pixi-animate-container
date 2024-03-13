@@ -4,7 +4,7 @@ import { ICreatejsParam, createCreatejsParams } from './core';
 import { createObject } from './utils';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
  */
 export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 	private _createjs: CreatejsColorFilter;
@@ -66,7 +66,7 @@ function createCreatejsColorFilterParams(): ICreatejsColorFilterParam {
 const P = createjs.ColorFilter;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter}
  */
 export class CreatejsColorFilter extends createjs.ColorFilter {
     protected _pixiData: IPixiColorMatrixFilterData;

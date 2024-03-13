@@ -9,7 +9,7 @@ export interface IAnimateLibrary {
 	[ name: string ]: any;
 }
 
-export interface ILoadAssetOption {
+export interface IAnimateLoadAssetOption {
 	/**
 	 * Whether to use assets on a server in another domain.
 	 */
@@ -25,10 +25,10 @@ export interface ILoadAssetOption {
 	/**
 	 * Whether to fire events related to frames.
 	 */
-	listenFrameEvents?: PA.IFrameEventOption;
+	listenFrameEvents?: PA.IAnimateFrameEventOption;
 };
 
-export interface IPrepareTarget {
+export interface IAnimatePrepareTarget {
 	/**
 	 * "lib.properties.id" in Animate content.
 	 */
@@ -39,7 +39,7 @@ export interface IPrepareTarget {
 	 */
 	basepath: string;
 	
-	options?: ILoadAssetOption;
+	options?: IAnimateLoadAssetOption;
 };
 
 function playSound(id: string, loop: boolean, offset: number) {
@@ -83,7 +83,7 @@ export function dataURLToBlobURL(dataURL: string) {
  * If you use multiple contents, each composition ID must be unique.
  * Please run "Pixim.animate.init" before running.
  */
-export function loadAssetAsync(targets: IPrepareTarget | IPrepareTarget[]) {
+export function loadAssetAsync(targets: IAnimatePrepareTarget | IAnimatePrepareTarget[]) {
 	if (!Array.isArray(targets)) {
 		targets = [targets];
 	}

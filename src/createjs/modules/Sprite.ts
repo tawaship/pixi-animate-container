@@ -2,10 +2,10 @@ import { Sprite, Texture, BaseTexture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
-import { EventManager } from './EventManager';
+import { CreatejsEventManager } from './EventManager';
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export class PixiSprite extends Sprite {
 	private _createjs: CreatejsSprite | {};
@@ -52,19 +52,19 @@ function createPixiSpriteData(cjs: CreatejsSprite | {}): IPixiSpriteData {
 const P = createjs.Sprite;
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
  */
 export class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiSpriteData;
 	protected _createjsParams: ICreatejsSpriteParam;
-	protected _createjsEventManager: EventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 	
 	constructor(...args: any[]) {
 		super(...args);
 		
 		this._pixiData = createPixiSpriteData(this);
 		this._createjsParams = createCreatejsSpriteParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		P.apply(this, args);
 	}
@@ -72,7 +72,7 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) 
 	initialize(...args: any[]) {
 		this._pixiData = createPixiSpriteData(this);
 		this._createjsParams = createCreatejsSpriteParams();
-		this._createjsEventManager = new EventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		
 		return super.initialize(...args);
 	}

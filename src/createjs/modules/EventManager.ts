@@ -48,7 +48,7 @@ export interface ICreatejsInteractionEventDelegate {
 	 (e: any): void;
 }
 
-export class EventManager {
+export class CreatejsEventManager {
 	private _downTarget: TCreatejsObject | null = null;
 	private _emitter: utils.EventEmitter;
 	private _cjs: TCreatejsObject;

@@ -2,7 +2,7 @@ import createjs from '@tawaship/createjs-module';
 import { updateDisplayObjectChildren, ITickerData, ICreatejsDisplayObjectUpdater } from './core';
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage}
  */
 export class CreatejsStage extends createjs.Stage implements ICreatejsDisplayObjectUpdater {
 	updateForPixi(props: ITickerData) {

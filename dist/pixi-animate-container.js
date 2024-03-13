@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.0.0
+ * pixi-animate-container - v2.0.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -236,11 +236,11 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     createjsInteractionEvents.pressmove = "pressmove", createjsInteractionEvents.pressup = "pressup", 
     createjsInteractionEvents.rollover = "rollover", createjsInteractionEvents.rollout = "rollout", 
     createjsInteractionEvents.click = "click";
-    var EventManager = function(cjs) {
+    var CreatejsEventManager = function(cjs) {
         this._downTarget = null, this._cjs = cjs, this._emitter = new PIXI.utils.EventEmitter, 
         cjs.pixi.on("pointerdown", this._onPointerDown, this).on("pointermove", this._onPointerMove, this).on("pointerup", this._onPointerUp, this).on("pointerupoutside", this._onPointerUpOutside, this).on("pointertap", this._onPointerTap, this).on("pointerover", this._onPointerOver, this).on("pointerout", this._onPointerOut, this);
     };
-    EventManager.prototype._onPointerDown = function(e) {
+    CreatejsEventManager.prototype._onPointerDown = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.mousedown,
             currentTarget: e.currentTarget.createjs,
@@ -249,7 +249,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._downTarget = e.target.createjs, this._emitter.emit("mousedown", ev);
-    }, EventManager.prototype._onPointerMove = function(e) {
+    }, CreatejsEventManager.prototype._onPointerMove = function(e) {
         if (this._downTarget) {
             var ev = {
                 type: exports.createjsInteractionEvents.pressmove,
@@ -260,7 +260,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             };
             this._emitter.emit("pressmove", ev);
         }
-    }, EventManager.prototype._onPointerUp = function(e) {
+    }, CreatejsEventManager.prototype._onPointerUp = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.pressup,
             currentTarget: e.currentTarget.createjs,
@@ -269,7 +269,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._downTarget = null, this._emitter.emit("pressup", ev);
-    }, EventManager.prototype._onPointerUpOutside = function(e) {
+    }, CreatejsEventManager.prototype._onPointerUpOutside = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.pressup,
             currentTarget: e.currentTarget.createjs,
@@ -278,7 +278,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._downTarget = null, this._emitter.emit("pressup", ev);
-    }, EventManager.prototype._onPointerTap = function(e) {
+    }, CreatejsEventManager.prototype._onPointerTap = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.click,
             currentTarget: e.currentTarget.createjs,
@@ -287,7 +287,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._emitter.emit("click", ev);
-    }, EventManager.prototype._onPointerOver = function(e) {
+    }, CreatejsEventManager.prototype._onPointerOver = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.rollover,
             currentTarget: e.currentTarget.createjs,
@@ -296,7 +296,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._emitter.emit("rollover", ev);
-    }, EventManager.prototype._onPointerOut = function(e) {
+    }, CreatejsEventManager.prototype._onPointerOut = function(e) {
         var ev = {
             type: exports.createjsInteractionEvents.rollout,
             currentTarget: e.currentTarget.createjs,
@@ -305,11 +305,11 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             rawY: e.data.global.y
         };
         this._emitter.emit("rollout", ev);
-    }, EventManager.prototype.add = function(type, cb) {
+    }, CreatejsEventManager.prototype.add = function(type, cb) {
         type in exports.createjsInteractionEvents && (this._emitter.on(type, cb), this._emitter.eventNames().length > 0 && (this._cjs.pixi.interactive = !0));
-    }, EventManager.prototype.remove = function(type, cb) {
+    }, CreatejsEventManager.prototype.remove = function(type, cb) {
         type in exports.createjsInteractionEvents && (this._emitter.off(type, cb), 0 === this._emitter.eventNames().length && (this._cjs.pixi.interactive = !1));
-    }, EventManager.prototype.removeAll = function(type) {
+    }, CreatejsEventManager.prototype.removeAll = function(type) {
         type && !(type in exports.createjsInteractionEvents) || (this._emitter.removeAllListeners(type), 
         0 === this._emitter.eventNames().length && (this._cjs.pixi.interactive = !1));
     };
@@ -366,19 +366,20 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
         }
         return superclass && (AnimateEvent.__proto__ = superclass), AnimateEvent.prototype = Object.create(superclass && superclass.prototype), 
         AnimateEvent.prototype.constructor = AnimateEvent, AnimateEvent;
-    }(createjs.Event), ReachLabelEvent = function(AnimateEvent) {
-        function ReachLabelEvent(type, label) {
+    }(createjs.Event), AnimateReachLabelEvent = function(AnimateEvent) {
+        function AnimateReachLabelEvent(type, label) {
             AnimateEvent.call(this, type), this.data = label;
         }
-        return AnimateEvent && (ReachLabelEvent.__proto__ = AnimateEvent), ReachLabelEvent.prototype = Object.create(AnimateEvent && AnimateEvent.prototype), 
-        ReachLabelEvent.prototype.constructor = ReachLabelEvent, ReachLabelEvent;
+        return AnimateEvent && (AnimateReachLabelEvent.__proto__ = AnimateEvent), AnimateReachLabelEvent.prototype = Object.create(AnimateEvent && AnimateEvent.prototype), 
+        AnimateReachLabelEvent.prototype.constructor = AnimateReachLabelEvent, AnimateReachLabelEvent;
     }(AnimateEvent), P$6 = createjs.MovieClip, CreatejsMovieClip = function(superclass) {
         function CreatejsMovieClip() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
             superclass.call(this), this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
-            this._createjsEventManager = new EventManager(this), P$6.apply(this, args), this.framerate = this._framerateBase;
+            this._createjsCreatejsEventManager = new CreatejsEventManager(this), P$6.apply(this, args), 
+            this.framerate = this._framerateBase;
         }
         superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsMovieClip.prototype.constructor = CreatejsMovieClip;
@@ -393,7 +394,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 args[len] = arguments[len];
             }
             this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
-            this._createjsEventManager = new EventManager(this), superclass.prototype.initialize.apply(this, args), 
+            this._createjsCreatejsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args), 
             this.framerate = this._framerateBase;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
             var currentFrame = this.currentFrame;
@@ -402,7 +403,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 for (var i = 0; i < this.labels.length; i++) {
                     var label = this.labels[i];
                     if (this.currentFrame === label.position) {
-                        this.dispatchEvent(new ReachLabelEvent("reachLabel", label));
+                        this.dispatchEvent(new AnimateReachLabelEvent("reachLabel", label));
                         break;
                     }
                 }
@@ -480,7 +481,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this), P$5.apply(this, args);
+            }, this._createjsEventManager = new CreatejsEventManager(this), P$5.apply(this, args);
         }
         return superclass && (CreatejsSprite.__proto__ = superclass), CreatejsSprite.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsSprite.prototype.constructor = CreatejsSprite, CreatejsSprite.prototype.initialize = function() {
@@ -501,7 +502,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this), superclass.prototype.initialize.apply(this, args);
+            }, this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args);
         }, CreatejsSprite.prototype.updateForPixi = function(e) {
             return !0;
         }, CreatejsSprite.prototype.gotoAndStop = function() {
@@ -583,7 +584,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 args[len] = arguments[len];
             }
             superclass.apply(this, args), this._pixiData = createPixiShapeData(this), this._createjsParams = createCreatejsShapeParams(null), 
-            this._createjsEventManager = new EventManager(this), P$4.apply(this, args);
+            this._createjsEventManager = new CreatejsEventManager(this), P$4.apply(this, args);
         }
         superclass && (CreatejsShape.__proto__ = superclass), CreatejsShape.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsShape.prototype.constructor = CreatejsShape;
@@ -600,7 +601,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 args[len] = arguments[len];
             }
             return this._pixiData = createPixiShapeData(this), this._createjsParams = createCreatejsShapeParams(null), 
-            this._createjsEventManager = new EventManager(this), superclass.prototype.initialize.apply(this, args);
+            this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args);
         }, CreatejsShape.prototype.updateForPixi = function(e) {
             return !0;
         }, prototypeAccessors$1.graphics.get = function() {
@@ -670,7 +671,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this), P$3.apply(this, args);
+            }, this._createjsEventManager = new CreatejsEventManager(this), P$3.apply(this, args);
         }
         return superclass && (CreatejsBitmap.__proto__ = superclass), CreatejsBitmap.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsBitmap.prototype.constructor = CreatejsBitmap, CreatejsBitmap.prototype.initialize = function() {
@@ -691,7 +692,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this);
+            }, this._createjsEventManager = new CreatejsEventManager(this);
             var res = superclass.prototype.initialize.apply(this, args), texture = PIXI.Texture.from(this.image);
             return this._pixiData.instance.texture = texture, res;
         }, CreatejsBitmap.prototype.updateForPixi = function(e) {
@@ -771,8 +772,8 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this), P$2.apply(this, args), this._pixiData.instance.beginFill(16772846, 1), 
-            this._pixiData.strokeFill = 0, this._pixiData.strokeAlpha = 1;
+            }, this._createjsEventManager = new CreatejsEventManager(this), P$2.apply(this, args), 
+            this._pixiData.instance.beginFill(16772846, 1), this._pixiData.strokeFill = 0, this._pixiData.strokeAlpha = 1;
         }
         return superclass && (CreatejsGraphics.__proto__ = superclass), CreatejsGraphics.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsGraphics.prototype.constructor = CreatejsGraphics, CreatejsGraphics.prototype.initialize = function() {
@@ -793,7 +794,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 alpha: 1,
                 _off: !1,
                 mask: null
-            }, this._createjsEventManager = new EventManager(this), superclass.prototype.initialize.apply(this, args);
+            }, this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args);
         }, CreatejsGraphics.prototype.updateForPixi = function(e) {
             return !0;
         }, CreatejsGraphics.prototype.moveTo = function(x, y) {
@@ -995,7 +996,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 wordWrap: !0
             });
             this._pixiData = createPixiTextData(this, t), this._pixiData.instance.addChild(t), 
-            this._createjsEventManager = new EventManager(this), P$1.call.apply(P$1, [ this, text, font, color ].concat(args));
+            this._createjsEventManager = new CreatejsEventManager(this), P$1.call.apply(P$1, [ this, text, font, color ].concat(args));
         }
         superclass && (CreatejsText.__proto__ = superclass), CreatejsText.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsText.prototype.constructor = CreatejsText;
@@ -1285,17 +1286,18 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     createjs.Sprite = CreatejsSprite, createjs.Shape = CreatejsShape, createjs.Bitmap = CreatejsBitmap, 
     createjs.Graphics = CreatejsGraphics, createjs.Text = CreatejsText, createjs.ButtonHelper = CreatejsButtonHelper, 
     createjs.ColorFilter = CreatejsColorFilter, createjs.MotionGuidePlugin.install(), 
-    exports.AnimateEvent = AnimateEvent, exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, 
-    exports.CreatejsButtonHelper = CreatejsButtonHelper, exports.CreatejsColorFilter = CreatejsColorFilter, 
-    exports.CreatejsController = CreatejsController, exports.CreatejsGraphics = CreatejsGraphics, 
+    exports.AnimateEvent = AnimateEvent, exports.AnimateReachLabelEvent = AnimateReachLabelEvent, 
+    exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, exports.CreatejsButtonHelper = CreatejsButtonHelper, 
+    exports.CreatejsColorFilter = CreatejsColorFilter, exports.CreatejsController = CreatejsController, 
+    exports.CreatejsEventManager = CreatejsEventManager, exports.CreatejsGraphics = CreatejsGraphics, 
     exports.CreatejsMovieClip = CreatejsMovieClip, exports.CreatejsShape = CreatejsShape, 
     exports.CreatejsSprite = CreatejsSprite, exports.CreatejsStage = CreatejsStage, 
     exports.CreatejsStageGL = CreatejsStageGL, exports.CreatejsText = CreatejsText, 
-    exports.EventManager = EventManager, exports.PixiBitmap = PixiBitmap, exports.PixiColorMatrixFilter = PixiColorMatrixFilter, 
+    exports.PixiBitmap = PixiBitmap, exports.PixiColorMatrixFilter = PixiColorMatrixFilter, 
     exports.PixiGraphics = PixiGraphics, exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, 
     exports.PixiSprite = PixiSprite, exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, 
-    exports.ReachLabelEvent = ReachLabelEvent, exports.createCreatejsParams = createCreatejsParams, 
-    exports.createPixiData = createPixiData, exports.loadAssetAsync = function(targets) {
+    exports.createCreatejsParams = createCreatejsParams, exports.createPixiData = createPixiData, 
+    exports.loadAssetAsync = function(targets) {
         var _a, _b;
         Array.isArray(targets) || (targets = [ targets ]);
         for (var promises = [], loop = function(i) {

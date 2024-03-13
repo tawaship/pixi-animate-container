@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.0.0
+ * pixi-animate-container - v2.0.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -11,7 +11,7 @@ import * as PIXI from 'pixi.js';
 import { utils, Container as Container$1, BaseTexture, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text, filters } from 'pixi.js';
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
  */
 class CreatejsButtonHelper extends createjs.ButtonHelper {
     constructor(...args) {
@@ -242,7 +242,7 @@ function mixinCreatejsDisplayObject(superClass) {
 }
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage}
  */
 class CreatejsStage extends createjs.Stage {
     updateForPixi(props) {
@@ -257,7 +257,7 @@ class CreatejsStage extends createjs.Stage {
 }
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/StageGL.html | createjs.StageGL]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/StageGL.html | createjs.StageGL}
  */
 class CreatejsStageGL extends createjs.StageGL {
     updateForPixi(props) {
@@ -280,7 +280,7 @@ var createjsInteractionEvents;
     createjsInteractionEvents["rollout"] = "rollout";
     createjsInteractionEvents["click"] = "click";
 })(createjsInteractionEvents || (createjsInteractionEvents = {}));
-class EventManager {
+class CreatejsEventManager {
     constructor(cjs) {
         this._downTarget = null;
         this._cjs = cjs;
@@ -401,7 +401,7 @@ class EventManager {
 }
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiMovieClip extends Container$1 {
     constructor(cjs) {
@@ -441,7 +441,7 @@ class AnimateEvent extends createjs.Event {
         super(type);
     }
 }
-class ReachLabelEvent extends AnimateEvent {
+class AnimateReachLabelEvent extends AnimateEvent {
     constructor(type, label) {
         super(type);
         this.data = label;
@@ -450,7 +450,7 @@ class ReachLabelEvent extends AnimateEvent {
 const P$6 = createjs.MovieClip;
 const T = 1000 / 60;
 /**
- * [[https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  */
 class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
     /**
@@ -469,14 +469,14 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         super();
         this._pixiData = createPixiMovieClipData(this);
         this._createjsParams = createCreatejsMovieClipParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsCreatejsEventManager = new CreatejsEventManager(this);
         P$6.apply(this, args);
         this.framerate = this._framerateBase;
     }
     initialize(...args) {
         this._pixiData = createPixiMovieClipData(this);
         this._createjsParams = createCreatejsMovieClipParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsCreatejsEventManager = new CreatejsEventManager(this);
         super.initialize(...args);
         this.framerate = this._framerateBase;
     }
@@ -491,7 +491,7 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
                 for (let i = 0; i < this.labels.length; i++) {
                     const label = this.labels[i];
                     if (this.currentFrame === label.position) {
-                        this.dispatchEvent(new ReachLabelEvent('reachLabel', label));
+                        this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
                         break;
                     }
                 }
@@ -651,7 +651,7 @@ Object.defineProperties(CreatejsMovieClip.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiSprite extends Sprite {
     constructor(cjs) {
@@ -681,20 +681,20 @@ function createPixiSpriteData(cjs) {
  */
 const P$5 = createjs.Sprite;
 /**
- * [[https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
  */
 class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
     constructor(...args) {
         super(...args);
         this._pixiData = createPixiSpriteData(this);
         this._createjsParams = createCreatejsSpriteParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$5.apply(this, args);
     }
     initialize(...args) {
         this._pixiData = createPixiSpriteData(this);
         this._createjsParams = createCreatejsSpriteParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
     updateForPixi(e) {
@@ -721,7 +721,7 @@ Object.defineProperties(CreatejsSprite.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiShape extends Container$1 {
     constructor(cjs) {
@@ -755,20 +755,20 @@ function createPixiShapeData(cjs) {
  */
 const P$4 = createjs.Shape;
 /**
- * [[https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
  */
 class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
     constructor(...args) {
         super(...args);
         this._pixiData = createPixiShapeData(this);
         this._createjsParams = createCreatejsShapeParams(null);
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$4.apply(this, args);
     }
     initialize(...args) {
         this._pixiData = createPixiShapeData(this);
         this._createjsParams = createCreatejsShapeParams(null);
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
     updateForPixi(e) {
@@ -813,7 +813,7 @@ Object.defineProperties(CreatejsShape.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiBitmap extends Sprite {
     constructor(cjs) {
@@ -843,20 +843,20 @@ function createPixiBitmapData(cjs) {
  */
 const P$3 = createjs.Bitmap;
 /**
- * [[https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
  */
 class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
     constructor(...args) {
         super(...args);
         this._pixiData = createPixiBitmapData(this);
         this._createjsParams = createCreatejsBitmapParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$3.apply(this, args);
     }
     initialize(...args) {
         this._pixiData = createPixiBitmapData(this);
         this._createjsParams = createCreatejsBitmapParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         const res = super.initialize(...args);
         const texture = Texture.from(this.image);
         this._pixiData.instance.texture = texture;
@@ -879,7 +879,7 @@ Object.defineProperties(CreatejsBitmap.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Graphics.html | PIXI.Graphics]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
 class PixiGraphics extends Graphics {
     constructor(cjs) {
@@ -935,14 +935,14 @@ const LineJoin = {
  */
 const P$2 = createjs.Graphics;
 /**
- * [[https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
  */
 class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
     constructor(...args) {
         super(...args);
         this._pixiData = createPixiGraphicsData(this);
         this._createjsParams = createCreatejsGraphicsParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$2.apply(this, args);
         this._pixiData.instance.beginFill(0xFFEEEE, 1);
         this._pixiData.strokeFill = 0;
@@ -951,7 +951,7 @@ class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
     initialize(...args) {
         this._pixiData = createPixiGraphicsData(this);
         this._createjsParams = createCreatejsGraphicsParams();
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
     updateForPixi(e) {
@@ -1134,12 +1134,12 @@ Object.defineProperties(CreatejsGraphics.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text}
  */
 class PixiText extends Text {
 }
 /**
- * [[http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiTextContainer extends Container$1 {
     constructor(cjs, text) {
@@ -1183,7 +1183,7 @@ function createPixiTextData(cjs, text) {
  */
 const P$1 = createjs.Text;
 /**
- * [[https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
  */
 class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
     constructor(text, font, color = '#000000', ...args) {
@@ -1199,7 +1199,7 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
         });
         this._pixiData = createPixiTextData(this, t);
         this._pixiData.instance.addChild(t);
-        this._createjsEventManager = new EventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$1.call(this, text, font, color, ...args);
     }
     updateForPixi(e) {
@@ -1297,7 +1297,7 @@ Object.defineProperties(CreatejsText.prototype, {
 });
 
 /**
- * [[http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite]]
+ * inherited {@link http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
  */
 class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
     constructor(cjs) {
@@ -1335,7 +1335,7 @@ function createCreatejsColorFilterParams() {
  */
 const P = createjs.ColorFilter;
 /**
- * [[https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter}
  */
 class CreatejsColorFilter extends createjs.ColorFilter {
     constructor(...args) {
@@ -1629,7 +1629,7 @@ class CreatejsController {
     }
 }
 /**
- * [[https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container]]
+ * inherited {@link https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container}
  */
 class Container extends Container$1 {
     constructor() {
@@ -1666,5 +1666,5 @@ createjs.ColorFilter = CreatejsColorFilter;
 // install plugins
 createjs.MotionGuidePlugin.install();
 
-export { AnimateEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, EventManager, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, ReachLabelEvent, createCreatejsParams, createPixiData, createjsInteractionEvents, loadAssetAsync, mixinCreatejsDisplayObject, updateDisplayObjectChildren };
+export { AnimateEvent, AnimateReachLabelEvent, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsEventManager, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsStage, CreatejsStageGL, CreatejsText, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, createCreatejsParams, createPixiData, createjsInteractionEvents, loadAssetAsync, mixinCreatejsDisplayObject, updateDisplayObjectChildren };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

@@ -1,7 +1,7 @@
 import createjs from '@tawaship/createjs-module';
 
 /**
- * [[https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper]]
+ * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
  */
 export class CreatejsButtonHelper extends createjs.ButtonHelper {
 	constructor(...args: any[]) {
