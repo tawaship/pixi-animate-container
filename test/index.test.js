@@ -56,15 +56,13 @@ afterAll(async () => {
 	server.close();
 });
 
-test("test", async () => {
+test("basic", async () => {
 	await driver.get("http://localhost:5000/test/index.html");
 	await driver.wait(new Condition(
 		"content started",
 		async driver => {
 			return driver.executeScript("return window.reachLabel && window.endAnimation")
-			.then(flag => {
-				return flag;
-			});
+			.then(flag => !!flag);
 		}
 	));
 });

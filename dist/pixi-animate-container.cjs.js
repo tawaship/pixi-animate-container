@@ -1462,24 +1462,25 @@ function playSound(id, loop, offset) {
         offset
     });
 }
-function dataURLToBlobURL(dataURL) {
+/*
+export function dataURLToBlobURL(dataURL: string) {
     const bin = atob(dataURL.replace(/^.*,/, ''));
     const buffer = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {
         buffer[i] = bin.charCodeAt(i);
     }
+
     const p = dataURL.slice(5);
-    try {
+    try{
         const blob = new Blob([buffer.buffer], {
             type: p.slice(0, p.indexOf(";"))
         });
-        console.log(p.slice(0, p.indexOf(";")));
         return (URL || webkitURL).createObjectURL(blob);
-    }
-    catch (e) {
+    } catch (e){
         throw e;
-    }
+    };
 }
+*/
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
@@ -1508,7 +1509,6 @@ function loadAssetAsync(targets) {
         for (let i = 0; i < manifests.length; i++) {
             const manifest = manifests[i];
             if (manifest.src.indexOf('data:image') === 0) {
-                manifest.src = dataURLToBlobURL(manifest.src);
                 manifest.type = createjs.Types.IMAGE;
             }
             else if (manifest.src.indexOf('data:audio') === 0) {
@@ -1711,7 +1711,6 @@ exports.PixiTextContainer = PixiTextContainer;
 exports.ReachLabelEvent = ReachLabelEvent;
 exports.createCreatejsParams = createCreatejsParams;
 exports.createPixiData = createPixiData;
-exports.dataURLToBlobURL = dataURLToBlobURL;
 exports.loadAssetAsync = loadAssetAsync;
 exports.mixinCreatejsDisplayObject = mixinCreatejsDisplayObject;
 exports.updateDisplayObjectChildren = updateDisplayObjectChildren;

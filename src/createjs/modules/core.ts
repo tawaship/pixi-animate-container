@@ -100,7 +100,7 @@ export interface IMixinedCreatejsDisplayObject extends ICreatejsParam, TCreatejs
 	removeAllEventListeners(type?: string, ...args: any[]): any;
 }
 
-type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
+export type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
 
 export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => TCreatejsDisplayObject): TMixinedCreatejsDisplayObjectClass {
 	abstract class C extends superClass {

@@ -1219,20 +1219,6 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             offset: offset
         });
     }
-    function dataURLToBlobURL(dataURL) {
-        for (var bin = atob(dataURL.replace(/^.*,/, "")), buffer = new Uint8Array(bin.length), i = 0; i < bin.length; i++) {
-            buffer[i] = bin.charCodeAt(i);
-        }
-        var p = dataURL.slice(5);
-        try {
-            var blob = new Blob([ buffer.buffer ], {
-                type: p.slice(0, p.indexOf(";"))
-            });
-            return console.log(p.slice(0, p.indexOf(";"))), (URL || webkitURL).createObjectURL(blob);
-        } catch (e) {
-            throw e;
-        }
-    }
     Object.defineProperties(CreatejsColorFilter.prototype, {
         _createjsParams: {
             value: createCreatejsColorFilterParams(),
@@ -1309,8 +1295,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
     exports.PixiGraphics = PixiGraphics, exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, 
     exports.PixiSprite = PixiSprite, exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, 
     exports.ReachLabelEvent = ReachLabelEvent, exports.createCreatejsParams = createCreatejsParams, 
-    exports.createPixiData = createPixiData, exports.dataURLToBlobURL = dataURLToBlobURL, 
-    exports.loadAssetAsync = function(targets) {
+    exports.createPixiData = createPixiData, exports.loadAssetAsync = function(targets) {
         var _a, _b;
         Array.isArray(targets) || (targets = [ targets ]);
         for (var promises = [], loop = function(i) {
@@ -1325,7 +1310,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             })), crossOrigin = "boolean" != typeof (null === (_b = target.options) || void 0 === _b ? void 0 : _b.crossOrigin) || target.options.crossOrigin, i$1 = 0; i$1 < manifests.length; i$1++) {
                 var manifest = manifests[i$1];
                 if (0 === manifest.src.indexOf("data:image")) {
-                    manifest.src = dataURLToBlobURL(manifest.src), manifest.type = createjs.Types.IMAGE;
+                    manifest.type = createjs.Types.IMAGE;
                 } else {
                     if (0 === manifest.src.indexOf("data:audio")) {
                         throw new Error("data URL formatted sound is not supported.");
