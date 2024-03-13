@@ -222,7 +222,6 @@ export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => T
 		}
 		
 		addEventListener(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]) {
-			console.log(this)
 			const p = super.addEventListener(type, cb, ...args);
 			if (!(cb instanceof CreatejsButtonHelper)) {
 				this._createjsEventManager.add(type, cb);

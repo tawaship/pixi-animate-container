@@ -223,7 +223,6 @@ function mixinCreatejsDisplayObject(superClass) {
             this._createjsParams._off = value;
         }
         addEventListener(type, cb, ...args) {
-            console.log(this);
             const p = super.addEventListener(type, cb, ...args);
             if (!(cb instanceof CreatejsButtonHelper)) {
                 this._createjsEventManager.add(type, cb);

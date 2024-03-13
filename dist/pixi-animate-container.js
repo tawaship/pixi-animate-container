@@ -185,7 +185,6 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 for (var args = [], len = arguments.length - 2; len-- > 0; ) {
                     args[len] = arguments[len + 2];
                 }
-                console.log(this);
                 var p = superClass.prototype.addEventListener.apply(this, [ type, cb ].concat(args));
                 return cb instanceof CreatejsButtonHelper || this._createjsEventManager.add(type, cb), 
                 p;
