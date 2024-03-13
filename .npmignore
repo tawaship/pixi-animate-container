@@ -4,7 +4,7 @@ src/
 test/
 lib/
 npm/
-.travis.yml
+jest.config.js
 .gitignore
 jsdoc.json
 tsconfig.json
