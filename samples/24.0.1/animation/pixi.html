@@ -74,7 +74,15 @@
 				class Root extends PIXI.Container {
 					constructor() {
 						super();
-						
+
+						this.interactiveChildren = false
+						const u = this.addChild(new PIXI.Container());
+						u.interactiveChildren = true;
+						const b = u.addChild(new PIXI.Graphics());
+						b.beginFill(0x999999).drawRect(0, 0, 405, 800);
+						b.on("pointerdown", e => console.log(e));
+						b.interactive = true;
+
 						this.x = 10;
 						this.y = 10;
 						this.scale.set(0.7);

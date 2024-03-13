@@ -15,7 +15,6 @@ export class PixiShape extends Container {
 		super();
 		
 		this._createjs = cjs;
-		this.interactive = true;
 	}
 	
 	get createjs() {

@@ -14,7 +14,6 @@ export class PixiBitmap extends Sprite {
 		super();
 		
 		this._createjs = cjs;
-		this.interactive = true;
 	}
 	
 	get createjs() {

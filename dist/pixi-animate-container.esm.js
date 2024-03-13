@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.0.1
+ * pixi-animate-container - v2.0.2
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -657,7 +657,6 @@ class PixiSprite extends Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
-        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
@@ -727,7 +726,6 @@ class PixiShape extends Container$1 {
     constructor(cjs) {
         super();
         this._createjs = cjs;
-        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
@@ -819,7 +817,6 @@ class PixiBitmap extends Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
-        this.interactive = true;
     }
     get createjs() {
         return this._createjs;
