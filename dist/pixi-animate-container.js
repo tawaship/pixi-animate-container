@@ -185,6 +185,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 for (var args = [], len = arguments.length - 2; len-- > 0; ) {
                     args[len] = arguments[len + 2];
                 }
+                console.log(this);
                 var p = superClass.prototype.addEventListener.apply(this, [ type, cb ].concat(args));
                 return cb instanceof CreatejsButtonHelper || this._createjsEventManager.add(type, cb), 
                 p;
@@ -378,7 +379,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 args[len] = arguments[len];
             }
             superclass.call(this), this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
-            this._createjsCreatejsEventManager = new CreatejsEventManager(this), P$6.apply(this, args), 
+            this._createjsEventManager = new CreatejsEventManager(this), P$6.apply(this, args), 
             this.framerate = this._framerateBase;
         }
         superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
@@ -394,7 +395,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
                 args[len] = arguments[len];
             }
             this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
-            this._createjsCreatejsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args), 
+            this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args), 
             this.framerate = this._framerateBase;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
             var currentFrame = this.currentFrame;

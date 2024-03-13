@@ -111,7 +111,7 @@ const T: number = 1000 / 60;
 export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiMovieClipData;
 	protected _createjsParams: ICreatejsMovieClipParam;
-	protected _createjsCreatejsEventManager: CreatejsEventManager;
+	protected _createjsEventManager: CreatejsEventManager;
 
 	declare protected _framerateBase: number;
 	declare protected _listenFrameEvents: IAnimateFrameEventOption;
@@ -135,7 +135,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 		
 		this._pixiData = createPixiMovieClipData(this);
 		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsCreatejsEventManager = new CreatejsEventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		P.apply(this, args);
 		this.framerate = this._framerateBase;
 	}
@@ -143,7 +143,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	initialize(...args: any[]) {
 		this._pixiData = createPixiMovieClipData(this);
 		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsCreatejsEventManager = new CreatejsEventManager(this);
+		this._createjsEventManager = new CreatejsEventManager(this);
 		super.initialize(...args);
 		this.framerate = this._framerateBase;
 	}

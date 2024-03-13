@@ -223,6 +223,7 @@ function mixinCreatejsDisplayObject(superClass) {
             this._createjsParams._off = value;
         }
         addEventListener(type, cb, ...args) {
+            console.log(this);
             const p = super.addEventListener(type, cb, ...args);
             if (!(cb instanceof CreatejsButtonHelper)) {
                 this._createjsEventManager.add(type, cb);
@@ -489,14 +490,14 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         super();
         this._pixiData = createPixiMovieClipData(this);
         this._createjsParams = createCreatejsMovieClipParams();
-        this._createjsCreatejsEventManager = new CreatejsEventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         P$6.apply(this, args);
         this.framerate = this._framerateBase;
     }
     initialize(...args) {
         this._pixiData = createPixiMovieClipData(this);
         this._createjsParams = createCreatejsMovieClipParams();
-        this._createjsCreatejsEventManager = new CreatejsEventManager(this);
+        this._createjsEventManager = new CreatejsEventManager(this);
         super.initialize(...args);
         this.framerate = this._framerateBase;
     }
