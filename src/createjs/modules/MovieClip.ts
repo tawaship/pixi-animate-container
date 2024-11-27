@@ -177,26 +177,28 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	updateForPixi(e: ITickerData): boolean {
 		const currentFrame = this.currentFrame;
 		
-		this.advance(T * e.delta);
-		
-		if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
-			if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
-				this.dispatchEvent(new AnimateEvent('endAnimation'));
-			}
+		// challenge
+		if (!this.paused) {
+			this.advance(T * e.delta);
 			
-			if (this._listenFrameEvents.reachLabel) {
-				for (let i = 0; i < this.labels.length; i++) {
-					const label = this.labels[i];
-					if (this.currentFrame === label.position) {
-						this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
-						break;
+			if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
+				if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
+					this.dispatchEvent(new AnimateEvent('endAnimation'));
+				}
+				
+				if (this._listenFrameEvents.reachLabel) {
+					for (let i = 0; i < this.labels.length; i++) {
+						const label = this.labels[i];
+						if (this.currentFrame === label.position) {
+							this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
+							break;
+						}
 					}
 				}
 			}
-		}
 
-		this._updateState();
-		
+			this._updateState();
+		}
 		return updateDisplayObjectChildren(this, e);
 	}
 
@@ -331,6 +333,8 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 
 	private _updateChildrenBlendModeForPixi(child: ICreatejsDisplayObjectUpdater) {
 		const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
+		this._createjsParams.compositeOperation && console.warn(this, child)
+		//console.log(blendMode)
 		if (!blendMode) return;
 		child.pixi.updateBlendModeForPixi(blendMode);
 	}

@@ -14,7 +14,7 @@
 <title>game</title>
 <!-- write your code here -->
 <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
-<script src="game.js?1732695807664"></script>
+<script src="game.js?1732699365014"></script>
 <script>
 var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
 function init() {
@@ -30,13 +30,13 @@ function handleComplete(evt,comp) {
 	var lib=comp.getLibrary();
 	var ss=comp.getSpriteSheet();
 	exportRoot = new lib.game();
+	exportRoot.addEventListener("tick", AdobeAn.handleFilterCache);
 	stage = new lib.Stage(canvas);	
 	//Registers the "tick" event listener.
 	fnStartAnimation = function() {
 		stage.addChild(exportRoot);
 		createjs.Ticker.framerate = lib.properties.fps;
 		createjs.Ticker.addEventListener("tick", stage);
-		stage.addEventListener("tick", stage._handleTick);
 	}	    
 	//Code to support hidpi screens and responsive scaling.
 	AdobeAn.makeResponsive(false,'both',false,1,[canvas,anim_container,dom_overlay_container]);	

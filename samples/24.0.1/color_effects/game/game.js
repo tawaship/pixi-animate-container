@@ -156,6 +156,15 @@ if (reversed == null) { reversed = false; }
 	props.reversed = reversed;
 	cjs.MovieClip.apply(this,[props]);
 
+	this.actionFrames = [0];
+	// timeline functions:
+	this.frame_0 = function() {
+		this.stop();
+	}
+
+	// actions tween:
+	this.timeline.addTween(cjs.Tween.get(this).call(this.frame_0).wait(50));
+
 	// レイヤー_3
 	this.shape = new cjs.Shape();
 	this.shape.graphics.beginFill("#000000").beginStroke().moveTo(2.7,5.3).lineTo(2.7,-1.9).curveTo(2.7,-2.7,2.2,-3.3).curveTo(1.6,-3.8,0.6,-3.8).curveTo(-0.4,-3.8,-1.3,-2.9).curveTo(-2.7,-1.5,-2.7,0.1).lineTo(-2.7,5.3).lineTo(-4.6,5.3).lineTo(-4.6,-5.2).lineTo(-2.7,-5.2).lineTo(-2.7,-3.3).curveTo(-1,-5.3,0.8,-5.3).curveTo(2.7,-5.3,3.8,-4.2).curveTo(4.6,-3.5,4.6,-2.4).lineTo(4.6,5.3).closePath();

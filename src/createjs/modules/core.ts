@@ -220,6 +220,7 @@ export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => T
 		}
 		
 		set _off(value) {
+			console.warn(value);
 			this._pixiData.instance.renderable = !value;
 			this._createjsParams._off = value;
 		}

@@ -7,7 +7,7 @@
  */
 
 import createjs from '@tawaship/createjs-module';
-import * as PIXI from 'pixi.js';
+import * as PIXI$1 from 'pixi.js';
 import { utils, Container as Container$1, BaseTexture, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text, filters } from 'pixi.js';
 
 /**
@@ -84,7 +84,8 @@ const DEG_TO_RAD = Math.PI / 180;
 function createPixiData(pixi, regObj) {
     return {
         regObj,
-        instance: pixi
+        instance: pixi,
+        reservedBlendMode: PIXI.BLEND_MODES.NORMAL
     };
 }
 function createCreatejsParams() {
@@ -199,6 +200,7 @@ function mixinCreatejsDisplayObject(superClass) {
             return this._createjsParams._off;
         }
         set _off(value) {
+            console.warn(value);
             this._pixiData.instance.renderable = !value;
             this._createjsParams._off = value;
         }
@@ -254,6 +256,8 @@ class CreatejsStage extends createjs.Stage {
         this.dispatchEvent("drawend");
         return true;
     }
+    updateBlendModeForPixi(mode) {
+    }
 }
 
 /**
@@ -268,6 +272,8 @@ class CreatejsStageGL extends createjs.StageGL {
         updateDisplayObjectChildren(this, props);
         this.dispatchEvent("drawend");
         return true;
+    }
+    updateBlendModeForPixi(mode) {
     }
 }
 
@@ -424,7 +430,8 @@ class PixiMovieClip extends Container$1 {
  */
 function createCreatejsMovieClipParams() {
     return Object.assign(createCreatejsParams(), {
-        filters: null
+        filters: null,
+        compositeOperation: null
     });
 }
 /**
@@ -447,7 +454,30 @@ class AnimateReachLabelEvent extends AnimateEvent {
         this.data = label;
     }
 }
+/**
+ * @ignore
+ */
 const P$6 = createjs.MovieClip;
+/**
+ * @ignore
+ */
+var CompositeOpeations;
+(function (CompositeOpeations) {
+    CompositeOpeations["Lighter"] = "lighter";
+    CompositeOpeations["Multiply"] = "multiply";
+    CompositeOpeations["Screen"] = "screen";
+})(CompositeOpeations || (CompositeOpeations = {}));
+/**
+ * @ignore
+ */
+const blendModes = {
+    [CompositeOpeations.Lighter]: PIXI.BLEND_MODES.ADD,
+    [CompositeOpeations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
+    [CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
+};
+/**
+ * @ignore
+ */
 const T = 1000 / 60;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
@@ -482,23 +512,34 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
     }
     updateForPixi(e) {
         const currentFrame = this.currentFrame;
-        this.advance(T * e.delta);
-        if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
-            if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
-                this.dispatchEvent(new AnimateEvent('endAnimation'));
-            }
-            if (this._listenFrameEvents.reachLabel) {
-                for (let i = 0; i < this.labels.length; i++) {
-                    const label = this.labels[i];
-                    if (this.currentFrame === label.position) {
-                        this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
-                        break;
+        // challenge
+        if (!this.paused) {
+            this.advance(T * e.delta);
+            if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
+                if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
+                    this.dispatchEvent(new AnimateEvent('endAnimation'));
+                }
+                if (this._listenFrameEvents.reachLabel) {
+                    for (let i = 0; i < this.labels.length; i++) {
+                        const label = this.labels[i];
+                        if (this.currentFrame === label.position) {
+                            this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
+                            break;
+                        }
                     }
                 }
             }
+            this._updateState();
         }
-        this._updateState();
         return updateDisplayObjectChildren(this, e);
+    }
+    updateBlendModeForPixi(mode) {
+        if (this._createjsParams.compositeOperation)
+            return;
+        this._pixiData.reservedBlendMode = mode;
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].updateBlendModeForPixi(mode);
+        }
     }
     get filters() {
         return this._createjsParams.filters;
@@ -615,12 +656,22 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsParams.filters = value;
     }
     //*/
+    _updateChildrenBlendModeForPixi(child) {
+        const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
+        this._createjsParams.compositeOperation && console.warn(this, child);
+        //console.log(blendMode)
+        if (!blendMode)
+            return;
+        child.pixi.updateBlendModeForPixi(blendMode);
+    }
     addChild(child) {
         this._pixiData.subInstance.addChild(child.pixi);
+        this._updateChildrenBlendModeForPixi(child);
         return super.addChild(child);
     }
     addChildAt(child, index) {
         this._pixiData.subInstance.addChildAt(child.pixi, index);
+        this._updateChildrenBlendModeForPixi(child);
         return super.addChildAt(child, index);
     }
     removeChild(child) {
@@ -699,6 +750,11 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
     updateForPixi(e) {
         return true;
     }
+    updateBlendModeForPixi(mode) {
+        if (mode)
+            return;
+        this._pixiData.instance.blendMode = mode;
+    }
     gotoAndStop(...args) {
         super.gotoAndStop(...args);
         const frame = this.spriteSheet.getFrame(this.currentFrame);
@@ -771,6 +827,13 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
     }
     updateForPixi(e) {
         return true;
+    }
+    updateBlendModeForPixi(mode) {
+        var _a;
+        if (mode)
+            return;
+        this._pixiData.reservedBlendMode = mode;
+        (_a = this._createjsParams.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(mode);
     }
     get graphics() {
         return this._createjsParams.graphics;
@@ -861,6 +924,11 @@ class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
     }
     updateForPixi(e) {
         return true;
+    }
+    updateBlendModeForPixi(mode) {
+        if (mode)
+            return;
+        this._pixiData.instance.blendMode = mode;
     }
 }
 // temporary prototype
@@ -953,6 +1021,11 @@ class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
     }
     updateForPixi(e) {
         return true;
+    }
+    updateBlendModeForPixi(mode) {
+        if (!mode)
+            return;
+        this._pixiData.instance.blendMode = mode;
     }
     // path methods
     moveTo(x, y) {
@@ -1201,6 +1274,11 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
     }
     updateForPixi(e) {
         return true;
+    }
+    updateBlendModeForPixi(mode) {
+        if (mode)
+            return;
+        this._pixiData.instance.text.blendMode = mode;
     }
     get text() {
         return this._createjsParams.text;
@@ -1502,7 +1580,7 @@ function loadAssetAsync(targets) {
             else if (manifest.src.indexOf('blob:') === 0) ;
             else if (manifest.src.indexOf('file:') === 0) ;
             else {
-                manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
+                manifest.src = PIXI$1.utils.url.resolve(target.basepath, manifest.src);
             }
         }
         if (crossOrigin) {
