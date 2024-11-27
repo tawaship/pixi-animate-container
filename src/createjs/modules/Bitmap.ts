@@ -53,7 +53,7 @@ const P = createjs.Bitmap;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
  */
-export class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
+export class CreatejsBitmap extends mixinCreatejsDisplayObject<PixiBitmap, ICreatejsBitmapParam>(createjs.Bitmap) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiBitmapData;
 	protected _createjsParams: ICreatejsBitmapParam;
 	protected _createjsEventManager: CreatejsEventManager;
@@ -85,7 +85,6 @@ export class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) 
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
-		if (mode) return;
 		this._pixiData.instance.blendMode = mode;
 	}
 }

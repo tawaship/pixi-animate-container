@@ -23,7 +23,7 @@
 
 ## Supported version
 
-- A complete set of content created with Adobe Animate version 24.0.1
+- A complete set of content created with Adobe Animate version 24.0.1 / 24.0.5
 - pixi.js 5.3.x
 
 I have not confirmed the operation on other versions.
@@ -90,13 +90,12 @@ See [here](interfaces/ipreparetarget.html) for complete options for `PIXI.animat
 
 ## Change log
 
-### 1.0.0
+### 2.1.0
 
-- Overrides
-
-	|name|class|
-	|:--|:--|
-	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html)|
+- Supports compositeOperation (blendMode in pixi.js)
+  - lighter (`PIXI.BLEND_MODES.ADD`)
+  - multiply (`PIXI.BLEND_MODES.MULTIPLY`)
+  - screen (`PIXI.BLEND_MODES.SCREEN`)
 
 ### 2.0.0
 
@@ -104,3 +103,11 @@ See [here](interfaces/ipreparetarget.html) for complete options for `PIXI.animat
 - Changed the method of linking with pixi.js ticker
 - Supports sound playback
 - Improving accuracy of interaction processing
+
+### 1.0.0
+
+- Overrides
+
+	|name|class|
+	|:--|:--|
+	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html)|

@@ -134,7 +134,7 @@ const T: number = 1000 / 60;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  */
-export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
+export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip, ICreatejsMovieClipParam>(createjs.MovieClip) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiMovieClipData;
 	protected _createjsParams: ICreatejsMovieClipParam;
 	protected _createjsEventManager: CreatejsEventManager;
@@ -203,11 +203,23 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
-		if (this._createjsParams.compositeOperation) return;
+		if (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] === mode) return;
 		this._pixiData.reservedBlendMode = mode;
 		for (let i = 0; i < this.children.length; i++) {
 			this.children[i].updateBlendModeForPixi(mode);
 		}
+	}
+
+	get compositeOperation() {
+		return this._createjsParams.compositeOperation;
+	}
+
+	set compositeOperation(value) {
+		if (this._createjsParams.compositeOperation === value) return;
+
+		const blendMode = (value && blendModes[value]) || this._pixiData.reservedBlendMode;
+		this.updateBlendModeForPixi(blendMode);
+		this._createjsParams.compositeOperation = value;
 	}
 	
 	get filters() {
@@ -333,10 +345,8 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 
 	private _updateChildrenBlendModeForPixi(child: ICreatejsDisplayObjectUpdater) {
 		const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
-		this._createjsParams.compositeOperation && console.warn(this, child)
-		//console.log(blendMode)
 		if (!blendMode) return;
-		child.pixi.updateBlendModeForPixi(blendMode);
+		child.updateBlendModeForPixi(blendMode);
 	}
 	
 	addChild(child: ICreatejsDisplayObjectUpdater) {

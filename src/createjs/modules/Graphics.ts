@@ -85,7 +85,7 @@ const P = createjs.Graphics;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
  */
-export class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
+export class CreatejsGraphics extends mixinCreatejsDisplayObject<PixiGraphics, ICreatejsGraphicsParam>(createjs.Graphics) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiGraphicsData;
 	protected _createjsParams: ICreatejsGraphicsParam;
 	protected _createjsEventManager: CreatejsEventManager;

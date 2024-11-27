@@ -416,7 +416,7 @@ if (reversed == null) { reversed = false; }
 	this.instance.setTransform(31.75,330.8);
 
 	this.shape_77 = new cjs.Shape();
-	this.shape_77.graphics.f().s("#000000").ss(1,1,1,3,true).p("EgnNAAPMBObAAAEgnNAQBMBObAAAEgnNgQAMBObAAA");
+	this.shape_77.graphics.f().s("#000000").ss(1,1,1,3,true).p("EgnNgQAMBObAAAEgnNAQBMBObAAAEgnNAAPMBObAAA");
 	this.shape_77.setTransform(279,200.55);
 
 	this.timeline.addTween(cjs.Tween.get({}).to({state:[{t:this.shape_77},{t:this.instance}]}).wait(87));
@@ -458,9 +458,9 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/bitmap1.png?1710228758099", id:"bitmap1"},
-		{src:"images/bitmap2.png?1710228758099", id:"bitmap2"},
-		{src:"images/bitmap3.png?1710228758099", id:"bitmap3"}
+		{src:"images/bitmap1.png?1732705973851", id:"bitmap1"},
+		{src:"images/bitmap2.png?1732705973851", id:"bitmap2"},
+		{src:"images/bitmap3.png?1732705973851", id:"bitmap3"}
 	],
 	preloads: []
 };

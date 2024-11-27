@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.0.2
+ * pixi-animate-container - v2.1.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -113,6 +113,7 @@ function updateDisplayObjectChildren(cjs, e) {
     }
     return true;
 }
+// export type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
 function mixinCreatejsDisplayObject(superClass) {
     class C extends superClass {
         get pixi() {
@@ -200,7 +201,6 @@ function mixinCreatejsDisplayObject(superClass) {
             return this._createjsParams._off;
         }
         set _off(value) {
-            console.warn(value);
             this._pixiData.instance.renderable = !value;
             this._createjsParams._off = value;
         }
@@ -534,12 +534,22 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         return updateDisplayObjectChildren(this, e);
     }
     updateBlendModeForPixi(mode) {
-        if (this._createjsParams.compositeOperation)
+        if (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] === mode)
             return;
         this._pixiData.reservedBlendMode = mode;
         for (let i = 0; i < this.children.length; i++) {
             this.children[i].updateBlendModeForPixi(mode);
         }
+    }
+    get compositeOperation() {
+        return this._createjsParams.compositeOperation;
+    }
+    set compositeOperation(value) {
+        if (this._createjsParams.compositeOperation === value)
+            return;
+        const blendMode = (value && blendModes[value]) || this._pixiData.reservedBlendMode;
+        this.updateBlendModeForPixi(blendMode);
+        this._createjsParams.compositeOperation = value;
     }
     get filters() {
         return this._createjsParams.filters;
@@ -658,11 +668,9 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
     //*/
     _updateChildrenBlendModeForPixi(child) {
         const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
-        this._createjsParams.compositeOperation && console.warn(this, child);
-        //console.log(blendMode)
         if (!blendMode)
             return;
-        child.pixi.updateBlendModeForPixi(blendMode);
+        child.updateBlendModeForPixi(blendMode);
     }
     addChild(child) {
         this._pixiData.subInstance.addChild(child.pixi);
@@ -751,8 +759,6 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
         return true;
     }
     updateBlendModeForPixi(mode) {
-        if (mode)
-            return;
         this._pixiData.instance.blendMode = mode;
     }
     gotoAndStop(...args) {
@@ -830,8 +836,6 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
     }
     updateBlendModeForPixi(mode) {
         var _a;
-        if (mode)
-            return;
         this._pixiData.reservedBlendMode = mode;
         (_a = this._createjsParams.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(mode);
     }
@@ -926,8 +930,6 @@ class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
         return true;
     }
     updateBlendModeForPixi(mode) {
-        if (mode)
-            return;
         this._pixiData.instance.blendMode = mode;
     }
 }
@@ -1276,8 +1278,6 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
         return true;
     }
     updateBlendModeForPixi(mode) {
-        if (mode)
-            return;
         this._pixiData.instance.text.blendMode = mode;
     }
     get text() {

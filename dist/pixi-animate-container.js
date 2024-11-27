@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.0.2
+ * pixi-animate-container - v2.1.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -181,7 +181,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }, prototypeAccessors._off.get = function() {
                 return this._createjsParams._off;
             }, prototypeAccessors._off.set = function(value) {
-                console.warn(value), this._pixiData.instance.renderable = !value, this._createjsParams._off = value;
+                this._pixiData.instance.renderable = !value, this._createjsParams._off = value;
             }, C.prototype.addEventListener = function(type, cb) {
                 for (var args = [], len = arguments.length - 2; len-- > 0; ) {
                     args[len] = arguments[len + 2];
@@ -394,6 +394,9 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsMovieClip.prototype.constructor = CreatejsMovieClip;
         var prototypeAccessors$1 = {
+            compositeOperation: {
+                configurable: !0
+            },
             filters: {
                 configurable: !0
             }
@@ -423,11 +426,18 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }
             return updateDisplayObjectChildren(this, e);
         }, CreatejsMovieClip.prototype.updateBlendModeForPixi = function(mode) {
-            if (!this._createjsParams.compositeOperation) {
+            if (!this._createjsParams.compositeOperation || blendModes[this._createjsParams.compositeOperation] !== mode) {
                 this._pixiData.reservedBlendMode = mode;
                 for (var i = 0; i < this.children.length; i++) {
                     this.children[i].updateBlendModeForPixi(mode);
                 }
+            }
+        }, prototypeAccessors$1.compositeOperation.get = function() {
+            return this._createjsParams.compositeOperation;
+        }, prototypeAccessors$1.compositeOperation.set = function(value) {
+            if (this._createjsParams.compositeOperation !== value) {
+                var blendMode = value && blendModes[value] || this._pixiData.reservedBlendMode;
+                this.updateBlendModeForPixi(blendMode), this._createjsParams.compositeOperation = value;
             }
         }, prototypeAccessors$1.filters.get = function() {
             return this._createjsParams.filters;
@@ -442,7 +452,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             this._pixiData.instance.filters = list, this._createjsParams.filters = value;
         }, CreatejsMovieClip.prototype._updateChildrenBlendModeForPixi = function(child) {
             var blendMode = this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] || this._pixiData.reservedBlendMode;
-            this._createjsParams.compositeOperation && console.warn(this, child), blendMode && child.pixi.updateBlendModeForPixi(blendMode);
+            blendMode && child.updateBlendModeForPixi(blendMode);
         }, CreatejsMovieClip.prototype.addChild = function(child) {
             return this._pixiData.subInstance.addChild(child.pixi), this._updateChildrenBlendModeForPixi(child), 
             superclass.prototype.addChild.call(this, child);
@@ -531,7 +541,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }, CreatejsSprite.prototype.updateForPixi = function(e) {
             return !0;
         }, CreatejsSprite.prototype.updateBlendModeForPixi = function(mode) {
-            mode || (this._pixiData.instance.blendMode = mode);
+            this._pixiData.instance.blendMode = mode;
         }, CreatejsSprite.prototype.gotoAndStop = function() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
@@ -633,7 +643,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             return !0;
         }, CreatejsShape.prototype.updateBlendModeForPixi = function(mode) {
             var _a;
-            mode || (this._pixiData.reservedBlendMode = mode, null === (_a = this._createjsParams.graphics) || void 0 === _a || _a.updateBlendModeForPixi(mode));
+            this._pixiData.reservedBlendMode = mode, null === (_a = this._createjsParams.graphics) || void 0 === _a || _a.updateBlendModeForPixi(mode);
         }, prototypeAccessors$1.graphics.get = function() {
             return this._createjsParams.graphics;
         }, prototypeAccessors$1.graphics.set = function(value) {
@@ -728,7 +738,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }, CreatejsBitmap.prototype.updateForPixi = function(e) {
             return !0;
         }, CreatejsBitmap.prototype.updateBlendModeForPixi = function(mode) {
-            mode || (this._pixiData.instance.blendMode = mode);
+            this._pixiData.instance.blendMode = mode;
         }, CreatejsBitmap;
     }(mixinCreatejsDisplayObject(createjs.Bitmap));
     Object.defineProperties(CreatejsBitmap.prototype, {
@@ -1057,7 +1067,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         return CreatejsText.prototype.updateForPixi = function(e) {
             return !0;
         }, CreatejsText.prototype.updateBlendModeForPixi = function(mode) {
-            mode || (this._pixiData.instance.text.blendMode = mode);
+            this._pixiData.instance.text.blendMode = mode;
         }, prototypeAccessors$1.text.get = function() {
             return this._createjsParams.text;
         }, prototypeAccessors$1.text.set = function(text) {

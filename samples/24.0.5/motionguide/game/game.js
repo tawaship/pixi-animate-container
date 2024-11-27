@@ -54,14 +54,10 @@ if (reversed == null) { reversed = false; }
 
 	// レイヤー_5
 	this.shape = new cjs.Shape();
-	this.shape.graphics.f().s("#000000").ss(1,1,1).p("EglLAEbUAhZgRrAo+ARr");
-	this.shape.setTransform(282,191.7625);
+	this.shape.graphics.f().s("#000000").ss(1,1,1).p("ARWHeIEni8IhkEuIiqH8Ijbn0IDCh6IDDByIQ4J+AOUJYIiNlAIFPDGEglQAO2QJ5jNKjhTIGwHeQDCrzLfJnIJ3mQEglQgTNMBKXAAAEglQABkUAhZgRqAo+ARq");
+	this.shape.setTransform(282.5,210.025);
 
-	this.shape_1 = new cjs.Shape();
-	this.shape_1.graphics.f().s("#000000").ss(1,1,1).p("ARWHeIEni8IhkEuIiqH8Ijbn0IDCh6IDDByIQ4J+AOUJYIiNlAIFPDGEglQAO2QJ5jNKjhTIGwHeQDCrzLfJnIJ3mQEglQgTNMBKXAAA");
-	this.shape_1.setTransform(282.5,210.025);
-
-	this.timeline.addTween(cjs.Tween.get({}).to({state:[{t:this.shape_1},{t:this.shape}]}).wait(82));
+	this.timeline.addTween(cjs.Tween.get(this.shape).wait(82));
 
 	this._renderFirstFrame();
 

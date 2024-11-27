@@ -667,8 +667,8 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/game_atlas_1.png?1710223034481", id:"game_atlas_1"},
-		{src:"sounds/se.mp3?1710223034495", id:"se"}
+		{src:"images/game_atlas_1.png?1732705999146", id:"game_atlas_1"},
+		{src:"sounds/se.mp3?1732705999159", id:"se"}
 	],
 	preloads: []
 };

@@ -33,12 +33,6 @@
 						this.scale.set(0.7);
 						app.ticker.add(this.handleTick, this);
 						var a = this.addCreatejs(new lib.game());
-						console.log(a)
-						a._listenFrameEvents = {endAnimation:true}
-						a.addEventListener("endAnimation", () => console.log("end"))
-						setTimeout(() => {
-							a.play();
-						}, 1000)
 					}
 				}
 				

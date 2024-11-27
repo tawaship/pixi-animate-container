@@ -53,7 +53,7 @@ const P = createjs.Sprite;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
  */
-export class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
+export class CreatejsSprite extends mixinCreatejsDisplayObject<PixiSprite, ICreatejsSpriteParam>(createjs.Sprite) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiSpriteData;
 	protected _createjsParams: ICreatejsSpriteParam;
 	protected _createjsEventManager: CreatejsEventManager;
@@ -81,7 +81,6 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) 
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
-		if (mode) return;
 		this._pixiData.instance.blendMode = mode;
 	}
 	

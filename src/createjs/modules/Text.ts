@@ -89,7 +89,7 @@ const P = createjs.Text;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
  */
-export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) implements ICreatejsDisplayObjectUpdater {
+export class CreatejsText extends mixinCreatejsDisplayObject<PixiTextContainer, ICreatejsTextParam>(createjs.Text) implements ICreatejsDisplayObjectUpdater {
 	protected _pixiData: IPixiTextData;
 	protected _createjsParams: ICreatejsTextParam;
 	protected _createjsEventManager: CreatejsEventManager;
@@ -122,7 +122,6 @@ export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) impl
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
-		if (mode) return;
 		this._pixiData.instance.text.blendMode = mode;
 	}
 	

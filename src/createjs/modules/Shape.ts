@@ -45,7 +45,7 @@ export interface IPixiShapeData extends IPixiData<PixiShape> {
 /**
  * @ignore
  */
-function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
+function createPixiShapeData(cjs: CreatejsShape) {
 	const pixi = new PixiShape(cjs);
 	
 	return Object.assign(createPixiData<PixiShape>(pixi, pixi.pivot), {
@@ -61,7 +61,7 @@ const P = createjs.Shape;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
  */
-export class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
+export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreatejsShapeParam>(createjs.Shape) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
 	protected _pixiData: IPixiShapeData;
 	protected _createjsParams: ICreatejsShapeParam;
 	protected _createjsEventManager: CreatejsEventManager;
@@ -89,7 +89,6 @@ export class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) im
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
-		if (mode) return;
 		this._pixiData.reservedBlendMode = mode;
 		this._createjsParams.graphics?.updateBlendModeForPixi(mode);
 	}

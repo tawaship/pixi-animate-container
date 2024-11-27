@@ -96,21 +96,21 @@ export function updateDisplayObjectChildren(cjs: ICreatejsDisplayObjectUpdater, 
 	return true;
 }
 
-export interface IMixinedCreatejsDisplayObject extends ICreatejsParam, TCreatejsDisplayObject {
-	pixi: Container;
+export interface IMixinedCreatejsDisplayObject<T extends Container> extends ICreatejsParam, TCreatejsDisplayObject {
+	pixi: T;
 	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]): any;
 	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, ...args: any[]): any;
 	removeAllEventListeners(type?: string, ...args: any[]): any;
 }
 
-export type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
+// export type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
 
-export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => TCreatejsDisplayObject): TMixinedCreatejsDisplayObjectClass {
+export function mixinCreatejsDisplayObject<T extends Container, U extends ICreatejsParam>(superClass: new (...args: any[]) => IMixinedCreatejsDisplayObject<T>): abstract new (...args: any[]) => IMixinedCreatejsDisplayObject<T> {
 	abstract class C extends superClass {
-		protected abstract _pixiData: IPixiData<Container>;
+		protected abstract _pixiData: IPixiData<T>;
 		protected abstract _createjsParams: ICreatejsParam;
 		protected abstract _createjsEventManager: CreatejsEventManager;
-		
+
 		get pixi() {
 			return this._pixiData.instance;
 		}
@@ -220,7 +220,6 @@ export function mixinCreatejsDisplayObject(superClass: new (...args: any[]) => T
 		}
 		
 		set _off(value) {
-			console.warn(value);
 			this._pixiData.instance.renderable = !value;
 			this._createjsParams._off = value;
 		}
