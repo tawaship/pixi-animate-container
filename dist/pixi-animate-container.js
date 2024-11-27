@@ -372,7 +372,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
         }
         return AnimateEvent && (AnimateReachLabelEvent.__proto__ = AnimateEvent), AnimateReachLabelEvent.prototype = Object.create(AnimateEvent && AnimateEvent.prototype), 
         AnimateReachLabelEvent.prototype.constructor = AnimateReachLabelEvent, AnimateReachLabelEvent;
-    }(AnimateEvent), P$6 = createjs.MovieClip, CreatejsMovieClip = function(superclass) {
+    }(AnimateEvent), P$6 = createjs.MovieClip, T = 1e3 / 60, CreatejsMovieClip = function(superclass) {
         function CreatejsMovieClip() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
@@ -398,7 +398,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI) {
             this.framerate = this._framerateBase;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
             var currentFrame = this.currentFrame;
-            if (this.advance(16.666666666666668 * e.delta), this._listenFrameEvents && currentFrame !== this.currentFrame && (this._listenFrameEvents.endAnimation && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new AnimateEvent("endAnimation")), 
+            if (this.advance(T * e.delta), this._listenFrameEvents && currentFrame !== this.currentFrame && (this._listenFrameEvents.endAnimation && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new AnimateEvent("endAnimation")), 
             this._listenFrameEvents.reachLabel)) {
                 for (var i = 0; i < this.labels.length; i++) {
                     var label = this.labels[i];

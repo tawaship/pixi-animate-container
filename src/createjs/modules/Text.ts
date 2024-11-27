@@ -120,6 +120,11 @@ export class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) impl
 	updateForPixi(e: ITickerData) {
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (mode) return;
+		this._pixiData.instance.text.blendMode = mode;
+	}
 	
 	get text() {
 		return this._createjsParams.text;

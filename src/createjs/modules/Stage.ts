@@ -13,4 +13,8 @@ export class CreatejsStage extends createjs.Stage implements ICreatejsDisplayObj
 		
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		
+	}
 }

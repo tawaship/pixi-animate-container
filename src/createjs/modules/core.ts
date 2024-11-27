@@ -18,12 +18,14 @@ export interface ITickerData {
 export interface IPixiData<T extends Container> {
 	regObj: Point;
 	instance: T;
+	reservedBlendMode: PIXI.BLEND_MODES;
 }
 
 export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, regObj: Point): IPixiData<TPixiDisplayObject> {
 	return {
 		regObj,
-		instance: pixi
+		instance: pixi,
+		reservedBlendMode: PIXI.BLEND_MODES.NORMAL
 	};
 }
 
@@ -77,6 +79,7 @@ export type TCreatejsDisplayObject = any/* createjs.DisplayObject */;
 
 export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
 	updateForPixi(e: ITickerData): boolean;
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
 }
 
 export interface ICreatejsDisplayObjectInitializer {

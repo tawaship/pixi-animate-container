@@ -79,6 +79,11 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) 
 	updateForPixi(e: ITickerData) {
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (mode) return;
+		this._pixiData.instance.blendMode = mode;
+	}
 	
 	gotoAndStop(...args: any[]) {
 		super.gotoAndStop(...args);

@@ -35,6 +35,7 @@ export type TCreatejsColorFilters = CreatejsColorFilter[] | null;
 
 export interface ICreatejsMovieClipParam extends ICreatejsParam {
 	filters: TCreatejsColorFilters;
+	compositeOperation: CompositeOpeations | null;
 }
 
 /**
@@ -42,7 +43,8 @@ export interface ICreatejsMovieClipParam extends ICreatejsParam {
  */
 function createCreatejsMovieClipParams(): ICreatejsMovieClipParam {
 	return Object.assign(createCreatejsParams(), {
-		filters: null
+		filters: null,
+		compositeOperation: null
 	});
 }
 
@@ -101,8 +103,32 @@ export interface IAnimateFrameEventOption {
 	reachLabel?: boolean;
 }
 
+/**
+ * @ignore
+ */
 const P = createjs.MovieClip;
 
+/**
+ * @ignore
+ */
+enum CompositeOpeations {
+	Lighter = "lighter",
+	Multiply = "multiply",
+	Screen = "screen"
+};
+
+/**
+ * @ignore
+ */
+const blendModes = {
+	[CompositeOpeations.Lighter]: PIXI.BLEND_MODES.ADD,
+	[CompositeOpeations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
+	[CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
+};
+
+/**
+ * @ignore
+ */
 const T: number = 1000 / 60;
 
 /**
@@ -172,6 +198,14 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 		this._updateState();
 		
 		return updateDisplayObjectChildren(this, e);
+	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (this._createjsParams.compositeOperation) return;
+		this._pixiData.reservedBlendMode = mode;
+		for (let i = 0; i < this.children.length; i++) {
+			this.children[i].updateBlendModeForPixi(mode);
+		}
 	}
 	
 	get filters() {
@@ -294,15 +328,23 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.Movie
 		this._createjsParams.filters = value;
 	}
 	//*/
+
+	private _updateChildrenBlendModeForPixi(child: ICreatejsDisplayObjectUpdater) {
+		const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
+		if (!blendMode) return;
+		child.pixi.updateBlendModeForPixi(blendMode);
+	}
 	
 	addChild(child: ICreatejsDisplayObjectUpdater) {
 		this._pixiData.subInstance.addChild(child.pixi);
-		
+		this._updateChildrenBlendModeForPixi(child);
+
 		return super.addChild(child);
 	}
 	
 	addChildAt(child: ICreatejsDisplayObjectUpdater, index: number) {
 		this._pixiData.subInstance.addChildAt(child.pixi, index);
+		this._updateChildrenBlendModeForPixi(child);
 		
 		return super.addChildAt(child, index);
 	}

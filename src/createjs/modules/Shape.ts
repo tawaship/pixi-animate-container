@@ -87,6 +87,12 @@ export class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) im
 	updateForPixi(e: ITickerData) {
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (mode) return;
+		this._pixiData.reservedBlendMode = mode;
+		this._createjsParams.graphics?.updateBlendModeForPixi(mode);
+	}
 	
 	get graphics() {
 		return this._createjsParams.graphics;

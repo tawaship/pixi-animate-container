@@ -83,6 +83,11 @@ export class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) 
 	updateForPixi(e: ITickerData) {
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (mode) return;
+		this._pixiData.instance.blendMode = mode;
+	}
 }
 
 // temporary prototype

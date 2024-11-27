@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no, minimal-ui">
+		<script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.2/pixi.min.js"></script>
+		<script src="../../../dist/pixi-animate-container.js"></script>
+		<script src="game/game.js"></script>
+	</head>
+	<body>
+		<script>
+			const pRatio = window.devicePixelRatio || 1;
+			const app = new PIXI.Application({
+				width: 450,
+				height: 800,
+				antialias: true,
+				resolution: pRatio,
+				backgroundColor: 0xFFFFFF
+			});
+			
+			PIXI.animate.loadAssetAsync({
+				id: '2FA8E0C7230941478CE2CA3DB82DBEDF',
+				basepath: 'game/',
+				options: {
+					crossOrigin: false
+				}
+			})
+			.then(function(lib) {
+				class Root extends PIXI.animate.Container {
+					constructor() {
+						super();
+						this.scale.set(0.7);
+						app.ticker.add(this.handleTick, this);
+						this.addCreatejs(new lib.game());
+					}
+				}
+				
+				app.stage.addChild(new Root());
+				document.body.appendChild(app.view);
+			});
+		</script>
+	</div>
+	</body>
+</html>

@@ -13,4 +13,8 @@ export class CreatejsStageGL extends createjs.StageGL implements ICreatejsDispla
 		
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		
+	}
 }

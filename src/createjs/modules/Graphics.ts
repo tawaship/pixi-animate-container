@@ -115,6 +115,11 @@ export class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphi
 	updateForPixi(e: ITickerData) {
 		return true;
 	}
+
+	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+		if (!mode) return;
+		this._pixiData.instance.blendMode = mode;
+	}
 	
 	// path methods
 	
