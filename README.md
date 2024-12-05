@@ -110,4 +110,4 @@ See [here](interfaces/ipreparetarget.html) for complete options for `PIXI.animat
 
 	|name|class|
 	|:--|:--|
-	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/createjsmovieclip.html)|
+	|createjs.MovieClip|[CreatejsMovieClip](https://tawaship.github.io/pixi-animate-container/docs/classes/CreatejsMovieClip.html)|

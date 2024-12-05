@@ -1,4 +1,4 @@
 testgame/
 \!*
 node_modules/
-types/
+/types/
