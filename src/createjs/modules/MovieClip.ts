@@ -6,7 +6,7 @@ import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiMovieClip extends Container {
 	private _createjs: CreatejsMovieClip;

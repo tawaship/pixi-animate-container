@@ -6,7 +6,7 @@ import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiShape extends Container {
 	private _createjs: CreatejsShape;
@@ -37,7 +37,7 @@ function createCreatejsShapeParams(graphics: CreatejsGraphics | null): ICreatejs
 
 export interface IPixiShapeData extends IPixiData<PixiShape> {
 	/**
-	 * inherited {@link http://pixijs.download/release/docs/PIXI.DisplayObject.html | PIXI.DisplayObject}
+	 * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.DisplayObject.html | PIXI.DisplayObject}
 	 */
 	masked: DisplayObject[];
 };

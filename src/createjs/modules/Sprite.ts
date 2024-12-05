@@ -5,7 +5,7 @@ import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export class PixiSprite extends Sprite {
 	private _createjs: CreatejsSprite | {};

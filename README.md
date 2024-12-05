@@ -86,7 +86,7 @@ PIXI.animate.loadAssetAsync([{
 });
 ```
 
-See [here](interfaces/ipreparetarget.html) for complete options for `PIXI.animate.loadAssetAsync`.
+See [here](https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAnimatePrepareTarget.html) for complete options for `PIXI.animate.loadAssetAsync`.
 
 ## Change log
 

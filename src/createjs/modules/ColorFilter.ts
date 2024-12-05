@@ -4,7 +4,7 @@ import { ICreatejsParam, createCreatejsParams } from './core';
 import { createObject } from './utils';
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
  */
 export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 	private _createjs: CreatejsColorFilter;
