@@ -4,7 +4,7 @@ import { CreatejsColorFilter } from './ColorFilter';
 import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 export declare class PixiMovieClip extends Container {
     private _createjs;

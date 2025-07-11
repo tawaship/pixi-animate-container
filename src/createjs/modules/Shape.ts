@@ -77,7 +77,7 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 	}
 	
 	initialize(...args: any[]) {
-		this._pixiData = createPixiShapeData(this);
+        this._pixiData = createPixiShapeData(this);
 		this._createjsParams = createCreatejsShapeParams(null);
 		this._createjsEventManager = new CreatejsEventManager(this);
 		
@@ -98,25 +98,29 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 	}
 	
 	set graphics(value) {
-		if (this._pixiData.masked.length) {
-			this._pixiData.instance.removeChildren();
-			
-			if (value) {
-				for (let i = 0; i < this._pixiData.masked.length; i++) {
-					this._pixiData.masked[i].mask = this._pixiData.instance;
-				}
-			} else {
-				for (let i = 0; i < this._pixiData.masked.length; i++) {
-					this._pixiData.masked[i].mask = null;
-				}
-			}
-		}
+        if (this._pixiData !== defaultPixiData) {
+            if (this._pixiData.masked.length) {
+                this._pixiData.instance.removeChildren();
+                
+                if (value) {
+                    for (let i = 0; i < this._pixiData.masked.length; i++) {
+                        this._pixiData.masked[i].mask = this._pixiData.instance;
+                    }
+                } else {
+                    for (let i = 0; i < this._pixiData.masked.length; i++) {
+                        this._pixiData.masked[i].mask = null;
+                    }
+                }
+            }
+
+            if (value) {
+                this._pixiData.instance.addChild(value.pixi);
+            }
+        }
 		
-		if (value) {
-			this._pixiData.instance.addChild(value.pixi);
-		}
-		
-		this._createjsParams.graphics = value;
+        if (this._createjsParams !== defaultCreatejsParams) {
+            this._createjsParams.graphics = value;
+        }
 	}
 	
 	get masked() {
@@ -124,14 +128,24 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 	}
 }
 
+/**
+ * @ignore
+ */
+const defaultCreatejsParams = createCreatejsShapeParams(null);
+
+/**
+ * @ignore
+ */
+const defaultPixiData = createPixiShapeData(createObject<CreatejsShape>(CreatejsShape.prototype));
+
 // temporary prototype
 Object.defineProperties(CreatejsShape.prototype, {
 	_createjsParams: {
-		value: createCreatejsShapeParams(null),
+		value: defaultCreatejsParams,
 		writable: true
 	},
 	_pixiData: {
-		value: createPixiShapeData(createObject<CreatejsShape>(CreatejsShape.prototype)),
+		value: defaultPixiData,
 		writable: true
 	}
 });

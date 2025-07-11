@@ -2,12 +2,12 @@ import { Container, Text } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
  */
 export declare class PixiText extends Text {
 }
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 export declare class PixiTextContainer extends Container {
     private _createjs;

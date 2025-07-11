@@ -2,7 +2,7 @@ import { Sprite } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export declare class PixiBitmap extends Sprite {
     private _createjs;

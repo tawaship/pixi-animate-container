@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.1.0
+ * pixi-animate-container - v2.1.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -427,7 +427,7 @@ class CreatejsEventManager {
 }
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiMovieClip extends PIXI$1.Container {
     constructor(cjs) {
@@ -730,7 +730,7 @@ Object.defineProperties(CreatejsMovieClip.prototype, {
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiSprite extends PIXI$1.Sprite {
     constructor(cjs) {
@@ -802,7 +802,7 @@ Object.defineProperties(CreatejsSprite.prototype, {
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiShape extends PIXI$1.Container {
     constructor(cjs) {
@@ -863,42 +863,54 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
         return this._createjsParams.graphics;
     }
     set graphics(value) {
-        if (this._pixiData.masked.length) {
-            this._pixiData.instance.removeChildren();
+        if (this._pixiData !== defaultPixiData) {
+            if (this._pixiData.masked.length) {
+                this._pixiData.instance.removeChildren();
+                if (value) {
+                    for (let i = 0; i < this._pixiData.masked.length; i++) {
+                        this._pixiData.masked[i].mask = this._pixiData.instance;
+                    }
+                }
+                else {
+                    for (let i = 0; i < this._pixiData.masked.length; i++) {
+                        this._pixiData.masked[i].mask = null;
+                    }
+                }
+            }
             if (value) {
-                for (let i = 0; i < this._pixiData.masked.length; i++) {
-                    this._pixiData.masked[i].mask = this._pixiData.instance;
-                }
-            }
-            else {
-                for (let i = 0; i < this._pixiData.masked.length; i++) {
-                    this._pixiData.masked[i].mask = null;
-                }
+                this._pixiData.instance.addChild(value.pixi);
             }
         }
-        if (value) {
-            this._pixiData.instance.addChild(value.pixi);
+        if (this._createjsParams !== defaultCreatejsParams) {
+            this._createjsParams.graphics = value;
         }
-        this._createjsParams.graphics = value;
     }
     get masked() {
         return this._pixiData.masked;
     }
 }
+/**
+ * @ignore
+ */
+const defaultCreatejsParams = createCreatejsShapeParams(null);
+/**
+ * @ignore
+ */
+const defaultPixiData = createPixiShapeData(createObject(CreatejsShape.prototype));
 // temporary prototype
 Object.defineProperties(CreatejsShape.prototype, {
     _createjsParams: {
-        value: createCreatejsShapeParams(null),
+        value: defaultCreatejsParams,
         writable: true
     },
     _pixiData: {
-        value: createPixiShapeData(createObject(CreatejsShape.prototype)),
+        value: defaultPixiData,
         writable: true
     }
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiBitmap extends PIXI$1.Sprite {
     constructor(cjs) {
@@ -966,7 +978,7 @@ Object.defineProperties(CreatejsBitmap.prototype, {
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Graphics.html | PIXI.Graphics}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
 class PixiGraphics extends PIXI$1.Graphics {
     constructor(cjs) {
@@ -1226,12 +1238,12 @@ Object.defineProperties(CreatejsGraphics.prototype, {
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Text.html | PIXI.Text}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
  */
 class PixiText extends PIXI$1.Text {
 }
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiTextContainer extends PIXI$1.Container {
     constructor(cjs, text) {
@@ -1392,7 +1404,7 @@ Object.defineProperties(CreatejsText.prototype, {
 });
 
 /**
- * inherited {@link http://pixijs.download/release/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
  */
 class PixiColorMatrixFilter extends PIXI$1.filters.ColorMatrixFilter {
     constructor(cjs) {
