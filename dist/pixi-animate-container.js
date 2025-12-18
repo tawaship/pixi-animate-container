@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.3.0
+ * pixi-animate-container - v2.3.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -389,7 +389,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }
             superclass.call(this), this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
             this._createjsEventManager = new CreatejsEventManager(this), P$6.apply(this, args), 
-            this.framerate = this._framerateBase, this._listenFrameEvents = this._listenFrameEvents || {};
+            this.framerate = this._framerateBase, this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
         }
         superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsMovieClip.prototype.constructor = CreatejsMovieClip;
@@ -408,7 +408,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }
             this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
             this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args), 
-            this.framerate = this._framerateBase;
+            this.framerate = this._framerateBase, this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
         }, CreatejsMovieClip.prototype.listenCustomFrameEvent = function(type, value) {
             this._listenFrameEvents[type] = value;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
@@ -1437,7 +1437,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
                 var _a;
                 for (var i in lib) {
                     lib[i].prototype instanceof CreatejsMovieClip && (lib[i].prototype._framerateBase = lib.properties.fps, 
-                    lib[i].prototype._listenFrameEvents = null === (_a = target.options) || void 0 === _a ? void 0 : _a.listenFrameEvents);
+                    lib[i].prototype._listenFrameEventsBase = null === (_a = target.options) || void 0 === _a ? void 0 : _a.listenFrameEvents);
                 }
                 return lib;
             })));

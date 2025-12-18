@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.3.0
+ * pixi-animate-container - v2.3.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -522,7 +522,7 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsEventManager = new CreatejsEventManager(this);
         P$6.apply(this, args);
         this.framerate = this._framerateBase;
-        this._listenFrameEvents = this._listenFrameEvents || {};
+        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
     }
     initialize(...args) {
         this._pixiData = createPixiMovieClipData(this);
@@ -530,7 +530,11 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsEventManager = new CreatejsEventManager(this);
         super.initialize(...args);
         this.framerate = this._framerateBase;
+        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
     }
+    /**
+     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     */
     listenCustomFrameEvent(type, value) {
         this._listenFrameEvents[type] = value;
     }
@@ -1669,7 +1673,7 @@ function loadAssetAsync(targets) {
             for (let i in lib) {
                 if (lib[i].prototype instanceof CreatejsMovieClip) {
                     lib[i].prototype._framerateBase = lib.properties.fps;
-                    lib[i].prototype._listenFrameEvents = (_a = target.options) === null || _a === void 0 ? void 0 : _a.listenFrameEvents;
+                    lib[i].prototype._listenFrameEventsBase = (_a = target.options) === null || _a === void 0 ? void 0 : _a.listenFrameEvents;
                 }
             }
             return lib;

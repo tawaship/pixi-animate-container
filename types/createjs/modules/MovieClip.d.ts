@@ -67,6 +67,7 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
     protected _createjsParams: ICreatejsMovieClipParam;
     protected _createjsEventManager: CreatejsEventManager;
     protected _framerateBase: number;
+    protected _listenFrameEventsBase: IAnimateFrameEventOption;
     protected _listenFrameEvents: IAnimateFrameEventOption;
     /**
      * When the last frame of the timeline is reached.
@@ -82,6 +83,9 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
     reachLabel?(e: AnimateReachLabelEvent): void;
     constructor(...args: any[]);
     initialize(...args: any[]): void;
+    /**
+     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     */
     listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean): void;
     updateForPixi(e: ITickerData): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;

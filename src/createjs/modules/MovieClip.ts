@@ -140,7 +140,8 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 	protected _createjsEventManager: CreatejsEventManager;
 
 	declare protected _framerateBase: number;
-	declare protected _listenFrameEvents: IAnimateFrameEventOption;
+    declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
+	protected _listenFrameEvents: IAnimateFrameEventOption;
 
 	/**
 	 * When the last frame of the timeline is reached.
@@ -164,7 +165,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		this._createjsEventManager = new CreatejsEventManager(this);
 		P.apply(this, args);
 		this.framerate = this._framerateBase;
-        this._listenFrameEvents = this._listenFrameEvents || {};
+        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 	}
 	
 	initialize(...args: any[]) {
@@ -173,8 +174,12 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		this._createjsEventManager = new CreatejsEventManager(this);
 		super.initialize(...args);
 		this.framerate = this._framerateBase;
+        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 	}
 
+    /**
+     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     */
     listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean) {
         this._listenFrameEvents[type] = value;
     }
