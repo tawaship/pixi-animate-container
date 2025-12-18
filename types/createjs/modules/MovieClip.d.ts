@@ -82,6 +82,7 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
     reachLabel?(e: AnimateReachLabelEvent): void;
     constructor(...args: any[]);
     initialize(...args: any[]): void;
+    listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean): void;
     updateForPixi(e: ITickerData): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
     get compositeOperation(): CompositeOpeations | null;

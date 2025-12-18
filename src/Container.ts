@@ -1,5 +1,5 @@
 import { Container as PixiContainer } from 'pixi.js';
-import { CreatejsMovieClip, TCreatejsObject } from './createjs';
+import { CreatejsBitmap, CreatejsMovieClip, TCreatejsObject } from './createjs';
 
 export interface ICreatejsMovieClipDictionary {
 	[id: number]: CreatejsMovieClip;
@@ -7,9 +7,30 @@ export interface ICreatejsMovieClipDictionary {
 
 export interface IAnimateContainer extends PixiContainer {
 	handleTick(delta: number): void;
+    /**
+     * Add a createjs instance as a child.
+     */
 	addCreatejs(cjs: TCreatejsObject): TCreatejsObject;
+    /**
+     * Add a createjs instance as a child to the specified hierarchy.
+     */
 	addCreatejsAt(cjs: TCreatejsObject, index: number): TCreatejsObject;
-	removeCreatejs(cjs: TCreatejsObject): TCreatejsObject;
+	/**
+     * Remove the createjs instance from the child.
+     */
+    removeCreatejs(cjs: TCreatejsObject): TCreatejsObject;
+
+    /**
+     * The playback speed multiplier for the createjs instance managed by this container. <br />
+     * This value multiplied by `delta time` determines the playback speed.
+     */
+    createjsSpeed: number;
+
+    /**
+     * Whether the playback speed of the createjs instance managed by this container can exceed `1`. <br />
+     * If the playback speed exceeds `1`, more than `2` frames may progress in one process, but this may result in unexpected behavior depending on the frame script.
+     */
+    createjsOverSpeed: boolean;
 }
 
 export class CreatejsController {
@@ -18,6 +39,22 @@ export class CreatejsController {
 		targets: ICreatejsMovieClipDictionary;
 		container: IAnimateContainer;
 	};
+
+    private _speed = 1;
+    get speed() {
+        return this._speed;
+    }
+    set speed(value: number) {
+        this._speed = value;
+    }
+
+    private _overSpeed = false;
+    get overSpeed() {
+        return this._overSpeed;
+    }
+    set overSpeed(value: boolean) {
+        this._overSpeed = value;
+    }
 	
 	constructor(container: IAnimateContainer) {
 		this._createjsData = {
@@ -28,8 +65,8 @@ export class CreatejsController {
 	}
 	
 	handleTick(delta: number) {
-		// delta timeが1以上になるとフレーム飛びするので
-		const e = { delta: Math.min(delta, 1)};
+        const d = delta * this._speed;
+		const e = { delta: this._overSpeed ? d : Math.min(d, 1)};
 
 		const targets = this._createjsData.targets;
 		for (let i in targets) {
@@ -56,18 +93,18 @@ export class CreatejsController {
 		}
 	}
 	
-	addCreatejs(cjs: TCreatejsObject) {
+	addCreatejs<T extends TCreatejsObject>(cjs: TCreatejsObject) {
 		this._addCreatejs(cjs);
 		this._createjsData.container.addChild(cjs.pixi);
 		
-		return cjs;
+		return cjs as T;
 	}
 	
-	addCreatejsAt(cjs: TCreatejsObject, index: number) {
+	addCreatejsAt<T extends TCreatejsObject>(cjs: TCreatejsObject, index: number) {
 		this._addCreatejs(cjs);
 		this._createjsData.container.addChildAt(cjs.pixi, index);
 		
-		return cjs;
+		return cjs as T;
 	}
 	
 	removeCreatejs(cjs: TCreatejsObject) {
@@ -92,17 +129,31 @@ export class Container extends PixiContainer implements IAnimateContainer {
 			controller: new CreatejsController(this)
 		};
 	}
+
+    get createjsSpeed() {
+        return this._createjsData.controller.speed;
+    }
+    set createjsSpeed(value: number) {
+        this._createjsData.controller.speed = value;
+    }
+
+    get createjsOverSpeed() {
+        return this._createjsData.controller.overSpeed;
+    }
+    set createjsOverSpeed(value: boolean) {
+        this._createjsData.controller.overSpeed = value;
+    }
 	
 	handleTick(delta: number) {
 		return this._createjsData.controller.handleTick(delta);
 	}
 	
-	addCreatejs(cjs: TCreatejsObject) {
-		return this._createjsData.controller.addCreatejs(cjs);
+	addCreatejs<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject) {
+		return this._createjsData.controller.addCreatejs<T>(cjs);
 	}
 	
-	addCreatejsAt(cjs: TCreatejsObject, index: number) {
-		return this._createjsData.controller.addCreatejsAt(cjs, index);
+	addCreatejsAt<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject, index: number) {
+		return this._createjsData.controller.addCreatejsAt<T>(cjs, index);
 	}
 	
 	removeCreatejs(cjs: TCreatejsObject) {

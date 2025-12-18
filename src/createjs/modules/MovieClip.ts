@@ -164,6 +164,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		this._createjsEventManager = new CreatejsEventManager(this);
 		P.apply(this, args);
 		this.framerate = this._framerateBase;
+        this._listenFrameEvents = this._listenFrameEvents || {};
 	}
 	
 	initialize(...args: any[]) {
@@ -173,6 +174,10 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		super.initialize(...args);
 		this.framerate = this._framerateBase;
 	}
+
+    listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean) {
+        this._listenFrameEvents[type] = value;
+    }
 	
 	updateForPixi(e: ITickerData): boolean {
 		const currentFrame = this.currentFrame;

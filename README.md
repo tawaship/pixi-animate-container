@@ -90,6 +90,13 @@ See [here](https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAn
 
 ## Change log
 
+### 2.3.0
+
+- Control of createjs animation speed
+- Control of createjs custom frame event
+  - `endAnimation`: reach the last frame
+  - `reachLabel`: reach the labeled frame
+
 ### 2.1.0
 
 - Supports compositeOperation (blendMode in pixi.js)

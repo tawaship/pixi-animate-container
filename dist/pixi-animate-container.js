@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.1.1
+ * pixi-animate-container - v2.3.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -389,7 +389,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }
             superclass.call(this), this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
             this._createjsEventManager = new CreatejsEventManager(this), P$6.apply(this, args), 
-            this.framerate = this._framerateBase;
+            this.framerate = this._framerateBase, this._listenFrameEvents = this._listenFrameEvents || {};
         }
         superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsMovieClip.prototype.constructor = CreatejsMovieClip;
@@ -409,6 +409,8 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             this._pixiData = createPixiMovieClipData(this), this._createjsParams = createCreatejsMovieClipParams(), 
             this._createjsEventManager = new CreatejsEventManager(this), superclass.prototype.initialize.apply(this, args), 
             this.framerate = this._framerateBase;
+        }, CreatejsMovieClip.prototype.listenCustomFrameEvent = function(type, value) {
+            this._listenFrameEvents[type] = value;
         }, CreatejsMovieClip.prototype.updateForPixi = function(e) {
             var currentFrame = this.currentFrame;
             if (!this.paused) {
@@ -1280,15 +1282,30 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }
     });
     var CreatejsController = function(container) {
-        this._createjsData = {
+        this._speed = 1, this._overSpeed = !1, this._createjsData = {
             id: 0,
             targets: {},
             container: container
         };
+    }, prototypeAccessors = {
+        speed: {
+            configurable: !0
+        },
+        overSpeed: {
+            configurable: !0
+        }
     };
-    CreatejsController.prototype.handleTick = function(delta) {
-        var e = {
-            delta: Math.min(delta, 1)
+    prototypeAccessors.speed.get = function() {
+        return this._speed;
+    }, prototypeAccessors.speed.set = function(value) {
+        this._speed = value;
+    }, prototypeAccessors.overSpeed.get = function() {
+        return this._overSpeed;
+    }, prototypeAccessors.overSpeed.set = function(value) {
+        this._overSpeed = value;
+    }, CreatejsController.prototype.handleTick = function(delta) {
+        var d = delta * this._speed, e = {
+            delta: this._overSpeed ? d : Math.min(d, 1)
         }, targets = this._createjsData.targets;
         for (var i in targets) {
             targets[i].updateForPixi(e);
@@ -1313,15 +1330,32 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         cjs;
     }, CreatejsController.prototype.removeCreatejs = function(cjs) {
         return this._createjsData.container.removeChild(cjs.pixi), cjs;
-    };
+    }, Object.defineProperties(CreatejsController.prototype, prototypeAccessors);
     var Container = function(PixiContainer) {
         function Container() {
             PixiContainer.call(this), this._createjsData = {
                 controller: new CreatejsController(this)
             };
         }
-        return PixiContainer && (Container.__proto__ = PixiContainer), Container.prototype = Object.create(PixiContainer && PixiContainer.prototype), 
-        Container.prototype.constructor = Container, Container.prototype.handleTick = function(delta) {
+        PixiContainer && (Container.__proto__ = PixiContainer), Container.prototype = Object.create(PixiContainer && PixiContainer.prototype), 
+        Container.prototype.constructor = Container;
+        var prototypeAccessors$1 = {
+            createjsSpeed: {
+                configurable: !0
+            },
+            createjsOverSpeed: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors$1.createjsSpeed.get = function() {
+            return this._createjsData.controller.speed;
+        }, prototypeAccessors$1.createjsSpeed.set = function(value) {
+            this._createjsData.controller.speed = value;
+        }, prototypeAccessors$1.createjsOverSpeed.get = function() {
+            return this._createjsData.controller.overSpeed;
+        }, prototypeAccessors$1.createjsOverSpeed.set = function(value) {
+            this._createjsData.controller.overSpeed = value;
+        }, Container.prototype.handleTick = function(delta) {
             return this._createjsData.controller.handleTick(delta);
         }, Container.prototype.addCreatejs = function(cjs) {
             return this._createjsData.controller.addCreatejs(cjs);
@@ -1329,7 +1363,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             return this._createjsData.controller.addCreatejsAt(cjs, index);
         }, Container.prototype.removeCreatejs = function(cjs) {
             return this._createjsData.controller.removeCreatejs(cjs);
-        }, Container;
+        }, Object.defineProperties(Container.prototype, prototypeAccessors$1), Container;
     }(PIXI$1.Container);
     createjs.Stage = CreatejsStage, createjs.StageGL = CreatejsStageGL, createjs.MovieClip = CreatejsMovieClip, 
     createjs.Sprite = CreatejsSprite, createjs.Shape = CreatejsShape, createjs.Bitmap = CreatejsBitmap, 

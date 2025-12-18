@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.1.1
+ * pixi-animate-container - v2.3.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -502,6 +502,7 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsEventManager = new CreatejsEventManager(this);
         P$6.apply(this, args);
         this.framerate = this._framerateBase;
+        this._listenFrameEvents = this._listenFrameEvents || {};
     }
     initialize(...args) {
         this._pixiData = createPixiMovieClipData(this);
@@ -509,6 +510,9 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsEventManager = new CreatejsEventManager(this);
         super.initialize(...args);
         this.framerate = this._framerateBase;
+    }
+    listenCustomFrameEvent(type, value) {
+        this._listenFrameEvents[type] = value;
     }
     updateForPixi(e) {
         const currentFrame = this.currentFrame;
@@ -1670,7 +1674,21 @@ function handleFileLoad(evt, comp) {
 }
 
 class CreatejsController {
+    get speed() {
+        return this._speed;
+    }
+    set speed(value) {
+        this._speed = value;
+    }
+    get overSpeed() {
+        return this._overSpeed;
+    }
+    set overSpeed(value) {
+        this._overSpeed = value;
+    }
     constructor(container) {
+        this._speed = 1;
+        this._overSpeed = false;
         this._createjsData = {
             id: 0,
             targets: {},
@@ -1678,8 +1696,8 @@ class CreatejsController {
         };
     }
     handleTick(delta) {
-        // delta timeが1以上になるとフレーム飛びするので
-        const e = { delta: Math.min(delta, 1) };
+        const d = delta * this._speed;
+        const e = { delta: this._overSpeed ? d : Math.min(d, 1) };
         const targets = this._createjsData.targets;
         for (let i in targets) {
             targets[i].updateForPixi(e);
@@ -1724,6 +1742,18 @@ class Container extends Container$1 {
         this._createjsData = {
             controller: new CreatejsController(this)
         };
+    }
+    get createjsSpeed() {
+        return this._createjsData.controller.speed;
+    }
+    set createjsSpeed(value) {
+        this._createjsData.controller.speed = value;
+    }
+    get createjsOverSpeed() {
+        return this._createjsData.controller.overSpeed;
+    }
+    set createjsOverSpeed(value) {
+        this._createjsData.controller.overSpeed = value;
     }
     handleTick(delta) {
         return this._createjsData.controller.handleTick(delta);
