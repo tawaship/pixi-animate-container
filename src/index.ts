@@ -2,8 +2,7 @@ import * as PA from './createjs/modules';
 import createjs from '@tawaship/createjs-module';
 
 // overrides
-createjs.Stage = PA.CreatejsStage;
-createjs.StageGL = PA.CreatejsStageGL;
+
 createjs.MovieClip = PA.CreatejsMovieClip;
 createjs.Sprite = PA.CreatejsSprite;
 createjs.Shape = PA.CreatejsShape;

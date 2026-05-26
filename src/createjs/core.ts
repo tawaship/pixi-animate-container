@@ -191,7 +191,7 @@ export function loadAssetAsync(targets: IAnimatePrepareTarget | IAnimatePrepareT
 			.then((lib: IAnimateLibrary) => {
 				for (let i  in lib) {
 					if (lib[i].prototype instanceof PA.CreatejsMovieClip) {
-						lib[i].prototype._framerateBase = lib.properties.fps;
+						lib[i].prototype._fps = lib.properties.fps;
 						lib[i].prototype._listenFrameEventsBase = target.options?.listenFrameEvents;
 					}
 				}

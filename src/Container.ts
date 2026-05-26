@@ -2,7 +2,10 @@ import { Container as PixiContainer } from 'pixi.js';
 import { CreatejsBitmap, CreatejsMovieClip, TCreatejsObject } from './createjs';
 
 export interface ICreatejsMovieClipDictionary {
-	[id: number]: CreatejsMovieClip;
+	[id: number]: {
+        cjs: CreatejsMovieClip;
+        t: number;
+    };
 }
 
 export interface IAnimateContainer extends PixiContainer {
@@ -41,6 +44,9 @@ export class CreatejsController {
 	};
 
     private _speed = 1;
+    /**
+     * Playback speed multiplier
+     */
     get speed() {
         return this._speed;
     }
@@ -48,7 +54,10 @@ export class CreatejsController {
         this._speed = value;
     }
 
-    private _overSpeed = false;
+    private _overSpeed = true;
+    /**
+     * Whether to allow more than two frames to advance in a single process.
+     */
     get overSpeed() {
         return this._overSpeed;
     }
@@ -66,11 +75,18 @@ export class CreatejsController {
 	
 	handleTick(delta: number) {
         const d = delta * this._speed;
-		const e = { delta: this._overSpeed ? d : Math.min(d, 1)};
 
 		const targets = this._createjsData.targets;
 		for (let i in targets) {
-			targets[i].updateForPixi(e);
+            const target = targets[i];
+            target.t += d * target.cjs.fps / 60;
+            const p = target.t | 0;
+            const frame = this._overSpeed ? p : Math.min(p, 1);
+            target.t -= p;
+
+            for (let f = 0; f < frame; f++) {
+                target.cjs.updateForPixi();
+            }
 		}
 	}
 	
@@ -84,7 +100,7 @@ export class CreatejsController {
 				}
 				
 				const id = this._createjsData.id++;
-				this._createjsData.targets[id] = cjs;
+				this._createjsData.targets[id] = { cjs, t: 0 };
 				
 				cjs.pixi.once('removed', () => {
 					delete(this._createjsData.targets[id]);

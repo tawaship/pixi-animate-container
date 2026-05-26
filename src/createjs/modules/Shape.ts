@@ -1,6 +1,6 @@
 import { DisplayObject, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsGraphics } from './Graphics';
 import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
@@ -84,7 +84,7 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 		return super.initialize(...args);
 	}
 	
-	updateForPixi(e: ITickerData) {
+	updateForPixi() {
 		return true;
 	}
 

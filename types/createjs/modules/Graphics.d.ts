@@ -1,5 +1,5 @@
 import { Graphics } from 'pixi.js';
-import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Graphics.html | PIXI.Graphics}
@@ -25,7 +25,7 @@ export declare class CreatejsGraphics extends CreatejsGraphics_base implements I
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
-    updateForPixi(e: ITickerData): boolean;
+    updateForPixi(): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
     moveTo(x: number, y: number): any;
     mt(x: number, y: number): any;

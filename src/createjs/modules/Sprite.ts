@@ -1,6 +1,6 @@
 import { Sprite, Texture, BaseTexture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
@@ -76,7 +76,7 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject<PixiSprite, ICrea
 		return super.initialize(...args);
 	}
 	
-	updateForPixi(e: ITickerData) {
+	updateForPixi() {
 		return true;
 	}
 

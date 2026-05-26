@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.3.1
+ * pixi-animate-container - v2.4.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -125,11 +125,11 @@ function createCreatejsParams() {
         mask: null
     };
 }
-function updateDisplayObjectChildren(cjs, e) {
+function updateDisplayObjectChildren(cjs) {
     const list = cjs.children.slice();
     for (let i = 0, l = list.length; i < l; i++) {
         const child = list[i];
-        child.updateForPixi(e);
+        child.updateForPixi();
     }
     return true;
 }
@@ -261,40 +261,6 @@ function mixinCreatejsDisplayObject(superClass) {
         }
     }
     return C;
-}
-
-/**
- * inherited {@link https://createjs.com/docs/easeljs/classes/Stage.html | createjs.Stage}
- */
-class CreatejsStage extends createjs.Stage {
-    updateForPixi(props) {
-        if (this.tickOnUpdate) {
-            this.tick(props);
-        }
-        this.dispatchEvent("drawstart");
-        updateDisplayObjectChildren(this, props);
-        this.dispatchEvent("drawend");
-        return true;
-    }
-    updateBlendModeForPixi(mode) {
-    }
-}
-
-/**
- * inherited {@link https://createjs.com/docs/easeljs/classes/StageGL.html | createjs.StageGL}
- */
-class CreatejsStageGL extends createjs.StageGL {
-    updateForPixi(props) {
-        if (this.tickOnUpdate) {
-            this.tick(props);
-        }
-        this.dispatchEvent("drawstart");
-        updateDisplayObjectChildren(this, props);
-        this.dispatchEvent("drawend");
-        return true;
-    }
-    updateBlendModeForPixi(mode) {
-    }
 }
 
 exports.createjsInteractionEvents = void 0;
@@ -495,10 +461,7 @@ const blendModes = {
     [CompositeOpeations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
     [CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
 };
-/**
- * @ignore
- */
-const T = 1000 / 60;
+// const T: number = 1000 / 60;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  */
@@ -521,7 +484,6 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsParams = createCreatejsMovieClipParams();
         this._createjsEventManager = new CreatejsEventManager(this);
         P$6.apply(this, args);
-        this.framerate = this._framerateBase;
         this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
     }
     initialize(...args) {
@@ -529,20 +491,35 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
         this._createjsParams = createCreatejsMovieClipParams();
         this._createjsEventManager = new CreatejsEventManager(this);
         super.initialize(...args);
-        this.framerate = this._framerateBase;
         this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
     }
+    get framerate() {
+        return -1;
+    }
+    set framerate(value) {
+        // framerate is disabled
+    }
+    get fps() {
+        return this._fps;
+    }
     /**
-     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     * This changes whether to `listen` for a specified custom event.
      */
     listenCustomFrameEvent(type, value) {
         this._listenFrameEvents[type] = value;
     }
-    updateForPixi(e) {
+    /**
+     * Advances createjs by 1 frame.
+     *
+     * Because framerate is fixed at -1, advance() always advances by 1 frame regardless of delta time.
+     * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
+     * the number of times this function is called (the responsibility of the caller).
+     */
+    updateForPixi() {
         const currentFrame = this.currentFrame;
         // challenge
         if (!this.paused) {
-            this.advance(T * e.delta);
+            this.advance();
             if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
                 if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
                     this.dispatchEvent(new AnimateEvent('endAnimation'));
@@ -559,7 +536,7 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
             }
             this._updateState();
         }
-        return updateDisplayObjectChildren(this, e);
+        return updateDisplayObjectChildren(this);
     }
     updateBlendModeForPixi(mode) {
         if (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] === mode)
@@ -783,7 +760,7 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
-    updateForPixi(e) {
+    updateForPixi() {
         return true;
     }
     updateBlendModeForPixi(mode) {
@@ -859,7 +836,7 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
-    updateForPixi(e) {
+    updateForPixi() {
         return true;
     }
     updateBlendModeForPixi(mode) {
@@ -966,7 +943,7 @@ class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
         this._pixiData.instance.texture = texture;
         return res;
     }
-    updateForPixi(e) {
+    updateForPixi() {
         return true;
     }
     updateBlendModeForPixi(mode) {
@@ -1061,7 +1038,7 @@ class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
-    updateForPixi(e) {
+    updateForPixi() {
         return true;
     }
     updateBlendModeForPixi(mode) {
@@ -1314,7 +1291,7 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
         this._createjsEventManager = new CreatejsEventManager(this);
         P$1.call(this, text, font, color, ...args);
     }
-    updateForPixi(e) {
+    updateForPixi() {
         return true;
     }
     updateBlendModeForPixi(mode) {
@@ -1672,7 +1649,7 @@ function loadAssetAsync(targets) {
             var _a;
             for (let i in lib) {
                 if (lib[i].prototype instanceof CreatejsMovieClip) {
-                    lib[i].prototype._framerateBase = lib.properties.fps;
+                    lib[i].prototype._fps = lib.properties.fps;
                     lib[i].prototype._listenFrameEventsBase = (_a = target.options) === null || _a === void 0 ? void 0 : _a.listenFrameEvents;
                 }
             }
@@ -1698,12 +1675,18 @@ function handleFileLoad(evt, comp) {
 }
 
 class CreatejsController {
+    /**
+     * Playback speed multiplier
+     */
     get speed() {
         return this._speed;
     }
     set speed(value) {
         this._speed = value;
     }
+    /**
+     * Whether to allow more than two frames to advance in a single process.
+     */
     get overSpeed() {
         return this._overSpeed;
     }
@@ -1712,7 +1695,7 @@ class CreatejsController {
     }
     constructor(container) {
         this._speed = 1;
-        this._overSpeed = false;
+        this._overSpeed = true;
         this._createjsData = {
             id: 0,
             targets: {},
@@ -1721,10 +1704,16 @@ class CreatejsController {
     }
     handleTick(delta) {
         const d = delta * this._speed;
-        const e = { delta: this._overSpeed ? d : Math.min(d, 1) };
         const targets = this._createjsData.targets;
         for (let i in targets) {
-            targets[i].updateForPixi(e);
+            const target = targets[i];
+            target.t += d * target.cjs.fps / 60;
+            const p = target.t | 0;
+            const frame = this._overSpeed ? p : Math.min(p, 1);
+            target.t -= p;
+            for (let f = 0; f < frame; f++) {
+                target.cjs.updateForPixi();
+            }
         }
     }
     _addCreatejs(cjs) {
@@ -1735,7 +1724,7 @@ class CreatejsController {
                     cjs.gotoAndPlay(0);
                 }
                 const id = this._createjsData.id++;
-                this._createjsData.targets[id] = cjs;
+                this._createjsData.targets[id] = { cjs, t: 0 };
                 cjs.pixi.once('removed', () => {
                     delete (this._createjsData.targets[id]);
                 });
@@ -1794,8 +1783,6 @@ class Container extends PIXI$1.Container {
 }
 
 // overrides
-createjs.Stage = CreatejsStage;
-createjs.StageGL = CreatejsStageGL;
 createjs.MovieClip = CreatejsMovieClip;
 createjs.Sprite = CreatejsSprite;
 createjs.Shape = CreatejsShape;
@@ -1819,8 +1806,6 @@ exports.CreatejsGraphics = CreatejsGraphics;
 exports.CreatejsMovieClip = CreatejsMovieClip;
 exports.CreatejsShape = CreatejsShape;
 exports.CreatejsSprite = CreatejsSprite;
-exports.CreatejsStage = CreatejsStage;
-exports.CreatejsStageGL = CreatejsStageGL;
 exports.CreatejsText = CreatejsText;
 exports.PixiBitmap = PixiBitmap;
 exports.PixiColorMatrixFilter = PixiColorMatrixFilter;

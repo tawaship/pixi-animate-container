@@ -1,5 +1,5 @@
 import { Sprite } from 'pixi.js';
-import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
@@ -23,7 +23,7 @@ export declare class CreatejsBitmap extends CreatejsBitmap_base implements ICrea
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
-    updateForPixi(e: ITickerData): boolean;
+    updateForPixi(): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
 }
 export {};

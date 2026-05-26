@@ -1,7 +1,5 @@
 import { Container, Point } from 'pixi.js';
 import { CreatejsButtonHelper } from './ButtonHelper';
-import { CreatejsStage } from './Stage';
-import { CreatejsStageGL } from './StageGL';
 import { CreatejsMovieClip } from './MovieClip';
 import { CreatejsSprite } from './Sprite';
 import { CreatejsShape } from './Shape';
@@ -48,8 +46,6 @@ export interface ICreatejsParam {
 }
 
 export type TCreatejsObject =
-	CreatejsStage
-	| CreatejsStageGL
 	| CreatejsMovieClip
 	| CreatejsSprite
 	| CreatejsShape
@@ -78,7 +74,7 @@ export function createCreatejsParams(): ICreatejsParam {
 export type TCreatejsDisplayObject = any/* createjs.DisplayObject */;
 
 export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
-	updateForPixi(e: ITickerData): boolean;
+	updateForPixi(): boolean;
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
 }
 
@@ -86,11 +82,11 @@ export interface ICreatejsDisplayObjectInitializer {
 	initialize(...args: any[]): any;
 }
 
-export function updateDisplayObjectChildren(cjs: ICreatejsDisplayObjectUpdater, e: ITickerData) {
+export function updateDisplayObjectChildren(cjs: ICreatejsDisplayObjectUpdater) {
 	const list = cjs.children.slice();
 	for (let i = 0, l = list.length; i < l; i++) {
 		const child = list[i];
-		child.updateForPixi(e);
+		child.updateForPixi();
 	}
 	
 	return true;

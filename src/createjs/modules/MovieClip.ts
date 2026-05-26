@@ -1,7 +1,7 @@
 import { Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter, PixiColorMatrixFilter } from './ColorFilter';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, updateDisplayObjectChildren, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, updateDisplayObjectChildren, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
@@ -126,10 +126,7 @@ const blendModes = {
 	[CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
 };
 
-/**
- * @ignore
- */
-const T: number = 1000 / 60;
+// const T: number = 1000 / 60;
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
@@ -139,7 +136,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 	protected _createjsParams: ICreatejsMovieClipParam;
 	protected _createjsEventManager: CreatejsEventManager;
 
-	declare protected _framerateBase: number;
+	declare protected _fps: number;
     declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
 	protected _listenFrameEvents: IAnimateFrameEventOption;
 
@@ -164,7 +161,6 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		this._createjsParams = createCreatejsMovieClipParams();
 		this._createjsEventManager = new CreatejsEventManager(this);
 		P.apply(this, args);
-		this.framerate = this._framerateBase;
         this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 	}
 	
@@ -173,23 +169,41 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		this._createjsParams = createCreatejsMovieClipParams();
 		this._createjsEventManager = new CreatejsEventManager(this);
 		super.initialize(...args);
-		this.framerate = this._framerateBase;
         this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 	}
 
+    get framerate() {
+        return -1;
+    }
+
+    set framerate(value: number) {
+        // framerate is disabled
+    }
+
+    get fps() {
+        return this._fps;
+    }
+
     /**
-     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     * This changes whether to `listen` for a specified custom event.
      */
     listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean) {
         this._listenFrameEvents[type] = value;
     }
 	
-	updateForPixi(e: ITickerData): boolean {
+    /**
+     * Advances createjs by 1 frame.
+     *
+     * Because framerate is fixed at -1, advance() always advances by 1 frame regardless of delta time.
+     * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
+     * the number of times this function is called (the responsibility of the caller).
+     */
+	updateForPixi(): boolean {
 		const currentFrame = this.currentFrame;
 		
 		// challenge
 		if (!this.paused) {
-			this.advance(T * e.delta);
+			this.advance();
 			
 			if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
 				if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
@@ -209,7 +223,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 
 			this._updateState();
 		}
-		return updateDisplayObjectChildren(this, e);
+		return updateDisplayObjectChildren(this);
 	}
 
 	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {

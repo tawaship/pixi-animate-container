@@ -1,5 +1,5 @@
 import { DisplayObject, Container } from 'pixi.js';
-import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsGraphics } from './Graphics';
 import { CreatejsEventManager } from './EventManager';
 /**
@@ -29,7 +29,7 @@ export declare class CreatejsShape extends CreatejsShape_base implements ICreate
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
-    updateForPixi(e: ITickerData): boolean;
+    updateForPixi(): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
     get graphics(): CreatejsGraphics | null;
     set graphics(value: CreatejsGraphics | null);

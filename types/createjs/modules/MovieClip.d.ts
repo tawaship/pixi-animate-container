@@ -1,7 +1,7 @@
 import { Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter } from './ColorFilter';
-import { IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
@@ -66,7 +66,7 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
     protected _pixiData: IPixiMovieClipData;
     protected _createjsParams: ICreatejsMovieClipParam;
     protected _createjsEventManager: CreatejsEventManager;
-    protected _framerateBase: number;
+    protected _fps: number;
     protected _listenFrameEventsBase: IAnimateFrameEventOption;
     protected _listenFrameEvents: IAnimateFrameEventOption;
     /**
@@ -83,11 +83,21 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
     reachLabel?(e: AnimateReachLabelEvent): void;
     constructor(...args: any[]);
     initialize(...args: any[]): void;
+    get framerate(): number;
+    set framerate(value: number);
+    get fps(): number;
     /**
-     * 指定のカスタムイベントを `listen` するかどうかを変更します。
+     * This changes whether to `listen` for a specified custom event.
      */
     listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean): void;
-    updateForPixi(e: ITickerData): boolean;
+    /**
+     * Advances createjs by 1 frame.
+     *
+     * Because framerate is fixed at -1, advance() always advances by 1 frame regardless of delta time.
+     * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
+     * the number of times this function is called (the responsibility of the caller).
+     */
+    updateForPixi(): boolean;
     updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
     get compositeOperation(): CompositeOpeations | null;
     set compositeOperation(value: CompositeOpeations | null);

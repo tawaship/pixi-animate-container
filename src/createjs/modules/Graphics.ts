@@ -1,6 +1,6 @@
 import { Graphics, LINE_CAP, LINE_JOIN} from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam,  ITickerData, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject, DEG_TO_RAD } from './utils';
 import { CreatejsEventManager } from './EventManager';
 
@@ -112,7 +112,7 @@ export class CreatejsGraphics extends mixinCreatejsDisplayObject<PixiGraphics, I
 		return super.initialize(...args);
 	}
 	
-	updateForPixi(e: ITickerData) {
+	updateForPixi() {
 		return true;
 	}
 

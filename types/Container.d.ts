@@ -1,7 +1,10 @@
 import { Container as PixiContainer } from 'pixi.js';
 import { CreatejsMovieClip, TCreatejsObject } from './createjs';
 export interface ICreatejsMovieClipDictionary {
-    [id: number]: CreatejsMovieClip;
+    [id: number]: {
+        cjs: CreatejsMovieClip;
+        t: number;
+    };
 }
 export interface IAnimateContainer extends PixiContainer {
     handleTick(delta: number): void;
@@ -31,9 +34,15 @@ export interface IAnimateContainer extends PixiContainer {
 export declare class CreatejsController {
     private _createjsData;
     private _speed;
+    /**
+     * Playback speed multiplier
+     */
     get speed(): number;
     set speed(value: number);
     private _overSpeed;
+    /**
+     * Whether to allow more than two frames to advance in a single process.
+     */
     get overSpeed(): boolean;
     set overSpeed(value: boolean);
     constructor(container: IAnimateContainer);
