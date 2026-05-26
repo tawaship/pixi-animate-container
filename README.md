@@ -90,6 +90,19 @@ See [here](https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAn
 
 ## Change log
 
+### 2.4.0
+
+- Discontinued
+
+	|name|class|
+	|:--|:--|
+    |createjs.Stage|CreatejsStage|
+	|createjs.StageGL|CreatejsStageGL|
+
+- Timeline advancement is now driven by delta time accumulation: each tick, delta time is converted to a frame count and `updateForPixi()` is called once per elapsed frame.
+  - With `createjsOverSpeed` set to `true` (default), the number of calls per tick can exceed one, allowing animation playback speed to be maintained in real time even when the PIXI.js frame rate drops.
+- Fixed an issue where nested MovieClips could advance frames at slightly different timings due to independent time accumulation.
+
 ### 2.3.0
 
 - Control of createjs animation speed
