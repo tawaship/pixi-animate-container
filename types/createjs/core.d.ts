@@ -39,6 +39,5 @@ export interface IAnimateManifest {
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
- * Please run "Pixim.animate.init" before running.
  */
 export declare function loadAssetAsync(targets: IAnimatePrepareTarget | IAnimatePrepareTarget[]): Promise<IAnimateLibrary | IAnimateLibrary[]>;

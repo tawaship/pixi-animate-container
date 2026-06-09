@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.4.1
+ * pixi-animate-container - v2.4.2
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -1556,7 +1556,6 @@ export function dataURLToBlobURL(dataURL: string) {
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
- * Please run "Pixim.animate.init" before running.
  */
 function loadAssetAsync(targets) {
     var _a, _b;
@@ -1747,7 +1746,7 @@ class CreatejsController {
     }
 }
 /**
- * inherited {@link https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 class Container extends PIXI.Container {
     constructor() {

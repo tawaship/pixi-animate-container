@@ -81,7 +81,6 @@ export function dataURLToBlobURL(dataURL: string) {
 /**
  * Load the assets of createjs content published by Adobe Animate.
  * If you use multiple contents, each composition ID must be unique.
- * Please run "Pixim.animate.init" before running.
  */
 export function loadAssetAsync(targets: IAnimatePrepareTarget | IAnimatePrepareTarget[]) {
 	if (!Array.isArray(targets)) {
