@@ -3,14 +3,14 @@
   "compilerOptions": {
     "target": "ES6",
     "moduleResolution": "node",
-    "strict": true,
+    "strict": true
   },
   "typedocOptions": {
     "out": "docs",
     "gitRemote": "docs",
     "gitRevision": "master",
     "entryPoints": ["src/index.ts"],
-    "includeVersion": true,
+    "includeVersion": true
   },
   "exclude": ["node_modules", "src/**/*.d.ts"]
 }

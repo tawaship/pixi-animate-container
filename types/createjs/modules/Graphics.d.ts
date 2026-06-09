@@ -1,4 +1,4 @@
-import { Graphics } from 'pixi.js';
+import { BLEND_MODES, Graphics } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
@@ -26,7 +26,7 @@ export declare class CreatejsGraphics extends CreatejsGraphics_base implements I
     constructor(...args: any[]);
     initialize(...args: any[]): any;
     updateForPixi(): boolean;
-    updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+    updateBlendModeForPixi(mode: BLEND_MODES): void;
     moveTo(x: number, y: number): any;
     mt(x: number, y: number): any;
     lineTo(x: number, y: number): any;

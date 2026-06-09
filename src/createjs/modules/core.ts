@@ -1,4 +1,4 @@
-import { Container, Point } from 'pixi.js';
+import { BLEND_MODES, Container, Point } from 'pixi.js';
 import { CreatejsButtonHelper } from './ButtonHelper';
 import { CreatejsMovieClip } from './MovieClip';
 import { CreatejsSprite } from './Sprite';
@@ -16,14 +16,14 @@ export interface ITickerData {
 export interface IPixiData<T extends Container> {
 	regObj: Point;
 	instance: T;
-	reservedBlendMode: PIXI.BLEND_MODES;
+	reservedBlendMode: BLEND_MODES;
 }
 
 export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, regObj: Point): IPixiData<TPixiDisplayObject> {
 	return {
 		regObj,
 		instance: pixi,
-		reservedBlendMode: PIXI.BLEND_MODES.NORMAL
+		reservedBlendMode: BLEND_MODES.NORMAL
 	};
 }
 
@@ -75,7 +75,7 @@ export type TCreatejsDisplayObject = any/* createjs.DisplayObject */;
 
 export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
 	updateForPixi(): boolean;
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+	updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 
 export interface ICreatejsDisplayObjectInitializer {

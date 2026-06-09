@@ -1,4 +1,4 @@
-import { Container, Text } from 'pixi.js';
+import { BLEND_MODES, Container, Text } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
@@ -42,7 +42,7 @@ export declare class CreatejsText extends CreatejsText_base implements ICreatejs
     protected _createjsEventManager: CreatejsEventManager;
     constructor(text: string, font: string, color?: string, ...args: any[]);
     updateForPixi(): boolean;
-    updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+    updateBlendModeForPixi(mode: BLEND_MODES): void;
     get text(): string;
     set text(text: string);
     private _parseFont;

@@ -1,4 +1,4 @@
-import { Container, Text } from 'pixi.js';
+import { BLEND_MODES, Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ITickerData, ICreatejsDisplayObjectUpdater } from './core';
 import { createObject } from './utils';
@@ -121,7 +121,7 @@ export class CreatejsText extends mixinCreatejsDisplayObject<PixiTextContainer, 
 		return true;
 	}
 
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		this._pixiData.instance.text.blendMode = mode;
 	}
 	

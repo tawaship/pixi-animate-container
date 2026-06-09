@@ -1,14 +1,14 @@
 /*!
- * pixi-animate-container - v2.4.0
+ * pixi-animate-container - v2.4.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
  * @license MIT
  */
 
+import * as PIXI from 'pixi.js';
+import { BLEND_MODES, utils, Container as Container$1, BaseTexture, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text, filters } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import * as PIXI$1 from 'pixi.js';
-import { utils, Container as Container$1, BaseTexture, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text, filters } from 'pixi.js';
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
@@ -85,7 +85,7 @@ function createPixiData(pixi, regObj) {
     return {
         regObj,
         instance: pixi,
-        reservedBlendMode: PIXI.BLEND_MODES.NORMAL
+        reservedBlendMode: BLEND_MODES.NORMAL
     };
 }
 function createCreatejsParams() {
@@ -437,9 +437,9 @@ var CompositeOpeations;
  * @ignore
  */
 const blendModes = {
-    [CompositeOpeations.Lighter]: PIXI.BLEND_MODES.ADD,
-    [CompositeOpeations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
-    [CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
+    [CompositeOpeations.Lighter]: BLEND_MODES.ADD,
+    [CompositeOpeations.Multiply]: BLEND_MODES.MULTIPLY,
+    [CompositeOpeations.Screen]: BLEND_MODES.SCREEN,
 };
 // const T: number = 1000 / 60;
 /**
@@ -1577,7 +1577,7 @@ function loadAssetAsync(targets) {
             else if (manifest.src.indexOf('blob:') === 0) ;
             else if (manifest.src.indexOf('file:') === 0) ;
             else {
-                manifest.src = PIXI$1.utils.url.resolve(target.basepath, manifest.src);
+                manifest.src = PIXI.utils.url.resolve(target.basepath, manifest.src);
             }
         }
         if (crossOrigin) {

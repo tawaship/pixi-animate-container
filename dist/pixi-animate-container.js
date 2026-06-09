@@ -1,11 +1,11 @@
 /*!
- * pixi-animate-container - v2.4.0
+ * pixi-animate-container - v2.4.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
  * @license MIT
  */
-this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
+this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     "use strict";
     function _interopNamespaceDefault(e) {
         var n = Object.create(null);
@@ -21,7 +21,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             }
         })), n.default = e, Object.freeze(n);
     }
-    var PIXI__namespace = _interopNamespaceDefault(PIXI$1), CreatejsButtonHelper = function(superclass) {
+    var PIXI__namespace = _interopNamespaceDefault(PIXI), CreatejsButtonHelper = function(superclass) {
         function CreatejsButtonHelper() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
@@ -219,7 +219,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
     createjsInteractionEvents.rollover = "rollover", createjsInteractionEvents.rollout = "rollout", 
     createjsInteractionEvents.click = "click";
     var CreatejsEventManager = function(cjs) {
-        this._downTarget = null, this._cjs = cjs, this._emitter = new PIXI$1.utils.EventEmitter, 
+        this._downTarget = null, this._cjs = cjs, this._emitter = new PIXI.utils.EventEmitter, 
         cjs.pixi.on("pointerdown", this._onPointerDown, this).on("pointermove", this._onPointerMove, this).on("pointerup", this._onPointerUp, this).on("pointerupoutside", this._onPointerUpOutside, this).on("pointertap", this._onPointerTap, this).on("pointerover", this._onPointerOver, this).on("pointerout", this._onPointerOut, this);
     };
     CreatejsEventManager.prototype._onPointerDown = function(e) {
@@ -316,7 +316,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }, prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiMovieClip.prototype, prototypeAccessors), PixiMovieClip;
-    }(PIXI$1.Container);
+    }(PIXI.Container);
     function createCreatejsMovieClipParams() {
         return Object.assign({
             x: 0,
@@ -485,7 +485,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiSprite.prototype, prototypeAccessors), PixiSprite;
-    }(PIXI$1.Sprite);
+    }(PIXI.Sprite);
     function createPixiSpriteData(cjs) {
         var pixi = new PixiSprite(cjs);
         return createPixiData(pixi, pixi.anchor);
@@ -540,7 +540,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
                 args[len] = arguments[len];
             }
             superclass.prototype.gotoAndStop.apply(this, args);
-            var frame = this.spriteSheet.getFrame(this.currentFrame), baseTexture = PIXI$1.BaseTexture.from(frame.image), texture = new PIXI$1.Texture(baseTexture, frame.rect);
+            var frame = this.spriteSheet.getFrame(this.currentFrame), baseTexture = PIXI.BaseTexture.from(frame.image), texture = new PIXI.Texture(baseTexture, frame.rect);
             this._pixiData.instance.texture = texture;
         }, CreatejsSprite;
     }(mixinCreatejsDisplayObject(createjs.Sprite));
@@ -582,7 +582,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiShape.prototype, prototypeAccessors), PixiShape;
-    }(PIXI$1.Container);
+    }(PIXI.Container);
     function createCreatejsShapeParams(graphics) {
         return Object.assign({
             x: 0,
@@ -683,7 +683,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiBitmap.prototype, prototypeAccessors), PixiBitmap;
-    }(PIXI$1.Sprite);
+    }(PIXI.Sprite);
     function createPixiBitmapData(cjs) {
         var pixi = new PixiBitmap(cjs);
         return createPixiData(pixi, pixi.anchor);
@@ -729,7 +729,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
                 _off: !1,
                 mask: null
             }, this._createjsEventManager = new CreatejsEventManager(this);
-            var res = superclass.prototype.initialize.apply(this, args), texture = PIXI$1.Texture.from(this.image);
+            var res = superclass.prototype.initialize.apply(this, args), texture = PIXI.Texture.from(this.image);
             return this._pixiData.instance.texture = texture, res;
         }, CreatejsBitmap.prototype.updateForPixi = function() {
             return !0;
@@ -775,7 +775,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiGraphics.prototype, prototypeAccessors), PixiGraphics;
-    }(PIXI$1.Graphics);
+    }(PIXI.Graphics);
     function createPixiGraphicsData(cjs) {
         var pixi = new PixiGraphics(cjs);
         return Object.assign(createPixiData(pixi, pixi.pivot), {
@@ -784,13 +784,13 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         });
     }
     var LineCap = {
-        0: PIXI$1.LINE_CAP.BUTT,
-        1: PIXI$1.LINE_CAP.ROUND,
-        2: PIXI$1.LINE_CAP.SQUARE
+        0: PIXI.LINE_CAP.BUTT,
+        1: PIXI.LINE_CAP.ROUND,
+        2: PIXI.LINE_CAP.SQUARE
     }, LineJoin = {
-        0: PIXI$1.LINE_JOIN.MITER,
-        1: PIXI$1.LINE_JOIN.ROUND,
-        2: PIXI$1.LINE_JOIN.BEVEL
+        0: PIXI.LINE_JOIN.MITER,
+        1: PIXI.LINE_JOIN.ROUND,
+        2: PIXI.LINE_JOIN.BEVEL
     }, P$2 = createjs.Graphics, CreatejsGraphics = function(superclass) {
         function CreatejsGraphics() {
             for (var args = [], len = arguments.length; len--; ) {
@@ -973,7 +973,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }
         return Text && (PixiText.__proto__ = Text), PixiText.prototype = Object.create(Text && Text.prototype), 
         PixiText.prototype.constructor = PixiText, PixiText;
-    }(PIXI$1.Text), PixiTextContainer = function(Container) {
+    }(PIXI.Text), PixiTextContainer = function(Container) {
         function PixiTextContainer(cjs, text) {
             Container.call(this), this._createjs = cjs, this._text = text;
         }
@@ -992,7 +992,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }, prototypeAccessors.text.get = function() {
             return this._text;
         }, Object.defineProperties(PixiTextContainer.prototype, prototypeAccessors), PixiTextContainer;
-    }(PIXI$1.Container);
+    }(PIXI.Container);
     function createCreatejsTextParams(text, font, color) {
         return Object.assign({
             x: 0,
@@ -1129,7 +1129,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             return this._createjs;
         }, Object.defineProperties(PixiColorMatrixFilter.prototype, prototypeAccessors), 
         PixiColorMatrixFilter;
-    }(PIXI$1.filters.ColorMatrixFilter);
+    }(PIXI.filters.ColorMatrixFilter);
     function createPixiColorMatrixFilterData(cjs) {
         return {
             instance: new PixiColorMatrixFilter(cjs)
@@ -1362,7 +1362,7 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
         }, Container.prototype.removeCreatejs = function(cjs) {
             return this._createjsData.controller.removeCreatejs(cjs);
         }, Object.defineProperties(Container.prototype, prototypeAccessors$1), Container;
-    }(PIXI$1.Container);
+    }(PIXI.Container);
     createjs.MovieClip = CreatejsMovieClip, createjs.Sprite = CreatejsSprite, createjs.Shape = CreatejsShape, 
     createjs.Bitmap = CreatejsBitmap, createjs.Graphics = CreatejsGraphics, createjs.Text = CreatejsText, 
     createjs.ButtonHelper = CreatejsButtonHelper, createjs.ColorFilter = CreatejsColorFilter, 
@@ -1443,5 +1443,5 @@ this.PIXI = this.PIXI || {}, function(exports, createjs, PIXI$1) {
             return 1 === resolvers.length ? resolvers[0] : resolvers;
         }));
     }, exports.mixinCreatejsDisplayObject = mixinCreatejsDisplayObject, exports.updateDisplayObjectChildren = updateDisplayObjectChildren;
-}(this.PIXI.animate = this.PIXI.animate || {}, createjs, PIXI);
+}(this.PIXI.animate = this.PIXI.animate || {}, PIXI, createjs);
 //# sourceMappingURL=pixi-animate-container.js.map

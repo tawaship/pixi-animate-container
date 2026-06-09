@@ -1,4 +1,4 @@
-import { DisplayObject, Container } from 'pixi.js';
+import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsGraphics } from './Graphics';
 import { CreatejsEventManager } from './EventManager';
@@ -30,7 +30,7 @@ export declare class CreatejsShape extends CreatejsShape_base implements ICreate
     constructor(...args: any[]);
     initialize(...args: any[]): any;
     updateForPixi(): boolean;
-    updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+    updateBlendModeForPixi(mode: BLEND_MODES): void;
     get graphics(): CreatejsGraphics | null;
     set graphics(value: CreatejsGraphics | null);
     get masked(): DisplayObject[];

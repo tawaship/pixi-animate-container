@@ -1,4 +1,4 @@
-import { DisplayObject, Container } from 'pixi.js';
+import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsGraphics } from './Graphics';
@@ -88,7 +88,7 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 		return true;
 	}
 
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		this._pixiData.reservedBlendMode = mode;
 		this._createjsParams.graphics?.updateBlendModeForPixi(mode);
 	}

@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js';
+import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter, PixiColorMatrixFilter } from './ColorFilter';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, updateDisplayObjectChildren, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
@@ -121,9 +121,9 @@ enum CompositeOpeations {
  * @ignore
  */
 const blendModes = {
-	[CompositeOpeations.Lighter]: PIXI.BLEND_MODES.ADD,
-	[CompositeOpeations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
-	[CompositeOpeations.Screen]: PIXI.BLEND_MODES.SCREEN,
+	[CompositeOpeations.Lighter]: BLEND_MODES.ADD,
+	[CompositeOpeations.Multiply]: BLEND_MODES.MULTIPLY,
+	[CompositeOpeations.Screen]: BLEND_MODES.SCREEN,
 };
 
 // const T: number = 1000 / 60;
@@ -226,7 +226,7 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
 		return updateDisplayObjectChildren(this);
 	}
 
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		if (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] === mode) return;
 		this._pixiData.reservedBlendMode = mode;
 		for (let i = 0; i < this.children.length; i++) {

@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js';
+import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter } from './ColorFilter';
 import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
@@ -98,7 +98,7 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
      * the number of times this function is called (the responsibility of the caller).
      */
     updateForPixi(): boolean;
-    updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+    updateBlendModeForPixi(mode: BLEND_MODES): void;
     get compositeOperation(): CompositeOpeations | null;
     set compositeOperation(value: CompositeOpeations | null);
     get filters(): TCreatejsColorFilters;

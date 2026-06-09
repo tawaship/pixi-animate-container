@@ -1,4 +1,4 @@
-import { Sprite } from 'pixi.js';
+import { Sprite, BLEND_MODES } from 'pixi.js';
 import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { CreatejsEventManager } from './EventManager';
 /**
@@ -24,7 +24,7 @@ export declare class CreatejsSprite extends CreatejsSprite_base implements ICrea
     constructor(...args: any[]);
     initialize(...args: any[]): any;
     updateForPixi(): boolean;
-    updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void;
+    updateBlendModeForPixi(mode: BLEND_MODES): void;
     gotoAndStop(...args: any[]): void;
 }
 export {};

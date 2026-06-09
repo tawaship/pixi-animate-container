@@ -1,4 +1,4 @@
-import { Sprite, Texture, BaseTexture } from 'pixi.js';
+import { Sprite, Texture, BaseTexture, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject } from './utils';
@@ -80,7 +80,7 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject<PixiSprite, ICrea
 		return true;
 	}
 
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		this._pixiData.instance.blendMode = mode;
 	}
 	

@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.4.0
+ * pixi-animate-container - v2.4.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -8,8 +8,8 @@
 
 'use strict';
 
+var PIXI = require('pixi.js');
 var createjs = require('@tawaship/createjs-module');
-var PIXI$1 = require('pixi.js');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -28,7 +28,7 @@ function _interopNamespaceDefault(e) {
     return Object.freeze(n);
 }
 
-var PIXI__namespace = /*#__PURE__*/_interopNamespaceDefault(PIXI$1);
+var PIXI__namespace = /*#__PURE__*/_interopNamespaceDefault(PIXI);
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
@@ -276,7 +276,7 @@ class CreatejsEventManager {
     constructor(cjs) {
         this._downTarget = null;
         this._cjs = cjs;
-        this._emitter = new PIXI$1.utils.EventEmitter();
+        this._emitter = new PIXI.utils.EventEmitter();
         const pixi = cjs.pixi;
         pixi
             .on('pointerdown', this._onPointerDown, this)
@@ -395,7 +395,7 @@ class CreatejsEventManager {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
-class PixiMovieClip extends PIXI$1.Container {
+class PixiMovieClip extends PIXI.Container {
     constructor(cjs) {
         super();
         this._filterContainer = null;
@@ -717,7 +717,7 @@ Object.defineProperties(CreatejsMovieClip.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
-class PixiSprite extends PIXI$1.Sprite {
+class PixiSprite extends PIXI.Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
@@ -769,8 +769,8 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
     gotoAndStop(...args) {
         super.gotoAndStop(...args);
         const frame = this.spriteSheet.getFrame(this.currentFrame);
-        const baseTexture = PIXI$1.BaseTexture.from(frame.image);
-        const texture = new PIXI$1.Texture(baseTexture, frame.rect);
+        const baseTexture = PIXI.BaseTexture.from(frame.image);
+        const texture = new PIXI.Texture(baseTexture, frame.rect);
         this._pixiData.instance.texture = texture;
     }
 }
@@ -789,7 +789,7 @@ Object.defineProperties(CreatejsSprite.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
-class PixiShape extends PIXI$1.Container {
+class PixiShape extends PIXI.Container {
     constructor(cjs) {
         super();
         this._createjs = cjs;
@@ -897,7 +897,7 @@ Object.defineProperties(CreatejsShape.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
-class PixiBitmap extends PIXI$1.Sprite {
+class PixiBitmap extends PIXI.Sprite {
     constructor(cjs) {
         super();
         this._createjs = cjs;
@@ -939,7 +939,7 @@ class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
         this._createjsParams = createCreatejsBitmapParams();
         this._createjsEventManager = new CreatejsEventManager(this);
         const res = super.initialize(...args);
-        const texture = PIXI$1.Texture.from(this.image);
+        const texture = PIXI.Texture.from(this.image);
         this._pixiData.instance.texture = texture;
         return res;
     }
@@ -965,7 +965,7 @@ Object.defineProperties(CreatejsBitmap.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
-class PixiGraphics extends PIXI$1.Graphics {
+class PixiGraphics extends PIXI.Graphics {
     constructor(cjs) {
         super();
         this._createjs = cjs;
@@ -1002,17 +1002,17 @@ const COLOR_GREEN = 16 * 16;
  * @ignore
  */
 const LineCap = {
-    0: PIXI$1.LINE_CAP.BUTT,
-    1: PIXI$1.LINE_CAP.ROUND,
-    2: PIXI$1.LINE_CAP.SQUARE
+    0: PIXI.LINE_CAP.BUTT,
+    1: PIXI.LINE_CAP.ROUND,
+    2: PIXI.LINE_CAP.SQUARE
 };
 /**
  * @ignore
  */
 const LineJoin = {
-    0: PIXI$1.LINE_JOIN.MITER,
-    1: PIXI$1.LINE_JOIN.ROUND,
-    2: PIXI$1.LINE_JOIN.BEVEL
+    0: PIXI.LINE_JOIN.MITER,
+    1: PIXI.LINE_JOIN.ROUND,
+    2: PIXI.LINE_JOIN.BEVEL
 };
 /**
  * @ignore
@@ -1225,12 +1225,12 @@ Object.defineProperties(CreatejsGraphics.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
  */
-class PixiText extends PIXI$1.Text {
+class PixiText extends PIXI.Text {
 }
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
-class PixiTextContainer extends PIXI$1.Container {
+class PixiTextContainer extends PIXI.Container {
     constructor(cjs, text) {
         super();
         this._createjs = cjs;
@@ -1391,7 +1391,7 @@ Object.defineProperties(CreatejsText.prototype, {
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
  */
-class PixiColorMatrixFilter extends PIXI$1.filters.ColorMatrixFilter {
+class PixiColorMatrixFilter extends PIXI.filters.ColorMatrixFilter {
     constructor(cjs) {
         super();
         this._createjs = cjs;
@@ -1749,7 +1749,7 @@ class CreatejsController {
 /**
  * inherited {@link https://tawaship.github.io/Pixim.js/classes/container.html | Pixim.Container}
  */
-class Container extends PIXI$1.Container {
+class Container extends PIXI.Container {
     constructor() {
         super();
         this._createjsData = {

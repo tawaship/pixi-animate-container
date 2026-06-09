@@ -1,4 +1,4 @@
-import { Graphics, LINE_CAP, LINE_JOIN} from 'pixi.js';
+import { BLEND_MODES, Graphics, LINE_CAP, LINE_JOIN} from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
 import { createObject, DEG_TO_RAD } from './utils';
@@ -116,7 +116,7 @@ export class CreatejsGraphics extends mixinCreatejsDisplayObject<PixiGraphics, I
 		return true;
 	}
 
-	updateBlendModeForPixi(mode: PIXI.BLEND_MODES): void {
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		if (!mode) return;
 		this._pixiData.instance.blendMode = mode;
 	}
