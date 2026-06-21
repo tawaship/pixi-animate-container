@@ -84,6 +84,8 @@ export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreate
 		return super.initialize(...args);
 	}
 	
+	updateStateForPixi(): void {}
+
 	updateForPixi() {
 		return true;
 	}

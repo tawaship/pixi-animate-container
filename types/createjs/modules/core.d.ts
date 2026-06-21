@@ -37,6 +37,7 @@ export declare function createCreatejsParams(): ICreatejsParam;
 export type TCreatejsDisplayObject = any;
 export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
     updateForPixi(): boolean;
+    updateStateForPixi(): void;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 export interface ICreatejsDisplayObjectInitializer {

@@ -76,6 +76,8 @@ export class CreatejsSprite extends mixinCreatejsDisplayObject<PixiSprite, ICrea
 		return super.initialize(...args);
 	}
 	
+	updateStateForPixi(): void {}
+
 	updateForPixi() {
 		return true;
 	}

@@ -117,6 +117,8 @@ export class CreatejsText extends mixinCreatejsDisplayObject<PixiTextContainer, 
 		P.call(this, text, font, color, ...args);
 	}
 	
+	updateStateForPixi(): void {}
+
 	updateForPixi() {
 		return true;
 	}

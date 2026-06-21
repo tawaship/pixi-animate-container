@@ -25,6 +25,7 @@ export declare class CreatejsGraphics extends CreatejsGraphics_base implements I
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
+    updateStateForPixi(): void;
     updateForPixi(): boolean;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     moveTo(x: number, y: number): any;

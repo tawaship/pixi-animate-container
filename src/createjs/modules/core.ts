@@ -75,6 +75,7 @@ export type TCreatejsDisplayObject = any/* createjs.DisplayObject */;
 
 export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
 	updateForPixi(): boolean;
+	updateStateForPixi(): void;
 	updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 

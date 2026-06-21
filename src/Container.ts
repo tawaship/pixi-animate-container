@@ -5,6 +5,7 @@ export interface ICreatejsMovieClipDictionary {
 	[id: number]: {
         cjs: CreatejsMovieClip;
         t: number;
+        isFirst: boolean;
     };
 }
 
@@ -80,8 +81,15 @@ export class CreatejsController {
 		for (let i in targets) {
             const target = targets[i];
             target.t += d * target.cjs.fps / 60;
-            const p = target.t | 0;
-            const frame = this._overSpeed ? p : Math.min(p, 1);
+            let p = target.t | 0;
+            let frame = this._overSpeed ? p : Math.min(p, 1);
+
+            if (target.isFirst) {
+                target.isFirst = false;
+                target.cjs.updateStateForPixi();
+                continue;
+            }
+
             target.t -= p;
 
             for (let f = 0; f < frame; f++) {
@@ -100,7 +108,7 @@ export class CreatejsController {
 				}
 				
 				const id = this._createjsData.id++;
-				this._createjsData.targets[id] = { cjs, t: 0 };
+				this._createjsData.targets[id] = { cjs, t: 0, isFirst: true };
 				
 				cjs.pixi.once('removed', () => {
 					delete(this._createjsData.targets[id]);

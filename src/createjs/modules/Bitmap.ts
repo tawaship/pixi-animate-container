@@ -80,6 +80,8 @@ export class CreatejsBitmap extends mixinCreatejsDisplayObject<PixiBitmap, ICrea
 		return res;
 	}
 	
+	updateStateForPixi(): void {}
+
 	updateForPixi() {
 		return true;
 	}

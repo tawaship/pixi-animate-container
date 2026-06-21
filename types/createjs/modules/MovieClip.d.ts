@@ -97,6 +97,7 @@ export declare class CreatejsMovieClip extends CreatejsMovieClip_base implements
      * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
      * the number of times this function is called (the responsibility of the caller).
      */
+    updateStateForPixi(): void;
     updateForPixi(): boolean;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     get compositeOperation(): CompositeOpeations | null;

@@ -198,6 +198,14 @@ export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip,
      * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
      * the number of times this function is called (the responsibility of the caller).
      */
+	updateStateForPixi(): void {
+		this._updateState();
+		const list = this.children.slice();
+		for (let i = 0; i < list.length; i++) {
+			list[i].updateStateForPixi();
+		}
+	}
+
 	updateForPixi(): boolean {
 		const currentFrame = this.currentFrame;
 		

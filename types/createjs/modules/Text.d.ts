@@ -41,6 +41,7 @@ export declare class CreatejsText extends CreatejsText_base implements ICreatejs
     protected _createjsParams: ICreatejsTextParam;
     protected _createjsEventManager: CreatejsEventManager;
     constructor(text: string, font: string, color?: string, ...args: any[]);
+    updateStateForPixi(): void;
     updateForPixi(): boolean;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     get text(): string;

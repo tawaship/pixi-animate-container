@@ -112,6 +112,8 @@ export class CreatejsGraphics extends mixinCreatejsDisplayObject<PixiGraphics, I
 		return super.initialize(...args);
 	}
 	
+	updateStateForPixi(): void {}
+
 	updateForPixi() {
 		return true;
 	}

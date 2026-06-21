@@ -29,6 +29,7 @@ export declare class CreatejsShape extends CreatejsShape_base implements ICreate
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
+    updateStateForPixi(): void;
     updateForPixi(): boolean;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     get graphics(): CreatejsGraphics | null;

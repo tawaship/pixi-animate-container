@@ -4,6 +4,7 @@ export interface ICreatejsMovieClipDictionary {
     [id: number]: {
         cjs: CreatejsMovieClip;
         t: number;
+        isFirst: boolean;
     };
 }
 export interface IAnimateContainer extends PixiContainer {

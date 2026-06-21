@@ -23,6 +23,7 @@ export declare class CreatejsSprite extends CreatejsSprite_base implements ICrea
     protected _createjsEventManager: CreatejsEventManager;
     constructor(...args: any[]);
     initialize(...args: any[]): any;
+    updateStateForPixi(): void;
     updateForPixi(): boolean;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     gotoAndStop(...args: any[]): void;

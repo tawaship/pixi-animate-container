@@ -515,6 +515,13 @@ class CreatejsMovieClip extends mixinCreatejsDisplayObject(createjs.MovieClip) {
      * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
      * the number of times this function is called (the responsibility of the caller).
      */
+    updateStateForPixi() {
+        this._updateState();
+        const list = this.children.slice();
+        for (let i = 0; i < list.length; i++) {
+            list[i].updateStateForPixi();
+        }
+    }
     updateForPixi() {
         const currentFrame = this.currentFrame;
         // challenge
@@ -760,6 +767,7 @@ class CreatejsSprite extends mixinCreatejsDisplayObject(createjs.Sprite) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
+    updateStateForPixi() { }
     updateForPixi() {
         return true;
     }
@@ -836,6 +844,7 @@ class CreatejsShape extends mixinCreatejsDisplayObject(createjs.Shape) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
+    updateStateForPixi() { }
     updateForPixi() {
         return true;
     }
@@ -943,6 +952,7 @@ class CreatejsBitmap extends mixinCreatejsDisplayObject(createjs.Bitmap) {
         this._pixiData.instance.texture = texture;
         return res;
     }
+    updateStateForPixi() { }
     updateForPixi() {
         return true;
     }
@@ -1038,6 +1048,7 @@ class CreatejsGraphics extends mixinCreatejsDisplayObject(createjs.Graphics) {
         this._createjsEventManager = new CreatejsEventManager(this);
         return super.initialize(...args);
     }
+    updateStateForPixi() { }
     updateForPixi() {
         return true;
     }
@@ -1291,6 +1302,7 @@ class CreatejsText extends mixinCreatejsDisplayObject(createjs.Text) {
         this._createjsEventManager = new CreatejsEventManager(this);
         P$1.call(this, text, font, color, ...args);
     }
+    updateStateForPixi() { }
     updateForPixi() {
         return true;
     }
@@ -1707,8 +1719,13 @@ class CreatejsController {
         for (let i in targets) {
             const target = targets[i];
             target.t += d * target.cjs.fps / 60;
-            const p = target.t | 0;
-            const frame = this._overSpeed ? p : Math.min(p, 1);
+            let p = target.t | 0;
+            let frame = this._overSpeed ? p : Math.min(p, 1);
+            if (target.isFirst) {
+                target.isFirst = false;
+                target.cjs.updateStateForPixi();
+                continue;
+            }
             target.t -= p;
             for (let f = 0; f < frame; f++) {
                 target.cjs.updateForPixi();
@@ -1723,7 +1740,7 @@ class CreatejsController {
                     cjs.gotoAndPlay(0);
                 }
                 const id = this._createjsData.id++;
-                this._createjsData.targets[id] = { cjs, t: 0 };
+                this._createjsData.targets[id] = { cjs, t: 0, isFirst: true };
                 cjs.pixi.once('removed', () => {
                     delete (this._createjsData.targets[id]);
                 });
