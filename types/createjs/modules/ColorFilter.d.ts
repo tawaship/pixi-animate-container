@@ -26,7 +26,6 @@ export interface ICreatejsColorFilterParam extends ICreatejsParam {
  * inherited {@link https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter}
  */
 export declare class CreatejsColorFilter extends createjs.ColorFilter {
-    static [x: string]: any;
     protected _pixiData: IPixiColorMatrixFilterData;
     protected _createjsParams: ICreatejsColorFilterParam;
     constructor(...args: number[]);

@@ -1,3 +1,4 @@
 testgame/
 \!*
 node_modules/
+*.tgz

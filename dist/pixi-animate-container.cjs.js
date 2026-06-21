@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v2.4.2
+ * pixi-animate-container - v2.5.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)

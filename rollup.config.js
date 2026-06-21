@@ -3,7 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import buble from '@rollup/plugin-buble';
 import terser from '@rollup/plugin-terser';
-import del from 'del';
+import { deleteAsync } from 'del';
 
 const conf = require('./package.json');
 const version = conf.version;
@@ -22,7 +22,7 @@ const banner = [
 
 export default (async () => {
 	if (process.env.PROD) {
-		await del(['./docs/', './dist/', './types/']);
+		await deleteAsync(['./docs/', './dist/', './types/']);
 	}
 
 	return [

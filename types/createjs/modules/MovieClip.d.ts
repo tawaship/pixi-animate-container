@@ -23,7 +23,6 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
     subInstance: Container;
 }
 export declare class AnimateEvent extends createjs.Event {
-    static [x: string]: any;
     constructor(type: string);
 }
 export interface IAnimateReachLabelData {
