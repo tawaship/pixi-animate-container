@@ -20,7 +20,7 @@
     "watch": "npm run rollup -- -w",
     "lint": "eslint src/",
     "test": "jest",
-    "build": "npm run lint && ENV PROD=1 npm run rollup && npm run test && npm run docs && npm run d && echo done."
+    "build": "npm run lint && npm run rollup -- --environment PROD && npm run test && npm run docs && npm run d && echo done."
   },
   "keywords": [
     "pixi.js",
