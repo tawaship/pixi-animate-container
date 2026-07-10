@@ -1,39 +1,51 @@
 import { BLEND_MODES, Sprite, Texture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
-import { createObject } from './utils';
-import { CreatejsEventManager } from './EventManager';
+import {
+	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask,
+	createPixiData, registerPixiData, setMaskForPixi
+} from './core';
+import { CreatejsButtonHelper } from './ButtonHelper';
+import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export class PixiBitmap extends Sprite {
 	private _createjs: CreatejsBitmap;
-	
+
 	constructor(cjs: CreatejsBitmap) {
 		super();
-		
+
 		this._createjs = cjs;
 	}
-	
+
 	get createjs() {
 		return this._createjs;
 	}
 }
 
-export interface ICreatejsBitmapParam extends ICreatejsParam {
+export type TCreatejsBitmapSource = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | string;
 
+export type TCreatejsBitmapConstructorArgs = [TCreatejsBitmapSource?];
+
+/**
+ * Members of the (untyped) createjs.Bitmap runtime that the wrapper relies on.
+ */
+export interface ICreatejsBitmapBase extends ICreatejsDisplayObjectBase {
+	image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+	initialize(...args: TCreatejsBitmapConstructorArgs): void;
+}
+
+export interface ICreatejsBitmapBaseConstructor {
+	new (...args: TCreatejsBitmapConstructorArgs): ICreatejsBitmapBase;
 }
 
 /**
  * @ignore
  */
-function createCreatejsBitmapParams(): ICreatejsBitmapParam {
-	return createCreatejsParams();
-}
+const BitmapBase: ICreatejsBitmapBaseConstructor = createjs.Bitmap;
 
 export interface IPixiBitmapData extends IPixiData<PixiBitmap> {
-
 }
 
 /**
@@ -41,64 +53,87 @@ export interface IPixiBitmapData extends IPixiData<PixiBitmap> {
  */
 function createPixiBitmapData(cjs: CreatejsBitmap): IPixiBitmapData {
 	const pixi = new PixiBitmap(cjs);
-	
+
 	return createPixiData<PixiBitmap>(pixi, pixi.anchor);
 }
 
 /**
  * @ignore
  */
-const P = createjs.Bitmap;
+const dataStore = new WeakMap<CreatejsBitmap, IPixiBitmapData>();
+
+/**
+ * @ignore
+ */
+function resetData(cjs: CreatejsBitmap): IPixiBitmapData {
+	const data = createPixiBitmapData(cjs);
+	dataStore.set(cjs, data);
+	registerPixiData(cjs, data);
+
+	return data;
+}
+
+/**
+ * @ignore
+ */
+function ensureData(cjs: CreatejsBitmap): IPixiBitmapData {
+	const data = dataStore.get(cjs);
+
+	return data ? data : resetData(cjs);
+}
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
  */
-export class CreatejsBitmap extends mixinCreatejsDisplayObject<PixiBitmap, ICreatejsBitmapParam>(createjs.Bitmap) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
-	protected _pixiData: IPixiBitmapData;
-	protected _createjsParams: ICreatejsBitmapParam;
-	protected _createjsEventManager: CreatejsEventManager;
-	 
-	constructor(...args: any[]) {
+export class CreatejsBitmap extends BitmapBase implements ICreatejsDisplayObject<PixiBitmap> {
+	constructor(...args: TCreatejsBitmapConstructorArgs) {
 		super(...args);
-		
-		this._pixiData = createPixiBitmapData(this);
-		this._createjsParams = createCreatejsBitmapParams();
-		this._createjsEventManager = new CreatejsEventManager(this);
-		
-		P.apply(this, args);
+
+		ensureData(this);
 	}
-	
-	initialize(...args: any[]) {
-		this._pixiData = createPixiBitmapData(this);
-		this._createjsParams = createCreatejsBitmapParams();
-		this._createjsEventManager = new CreatejsEventManager(this);
-		
+
+	initialize(...args: TCreatejsBitmapConstructorArgs) {
+		const data = resetData(this);
+
 		const res = super.initialize(...args);
-		const texture = Texture.from(this.image);
-		this._pixiData.instance.texture = texture;
-		
+		data.instance.texture = Texture.from(this.image);
+
 		return res;
 	}
-	
-	updateStateForPixi(): void {}
 
-	updateForPixi() {
-		return true;
+	get pixi() {
+		return ensureData(this).instance;
 	}
 
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		this._pixiData.instance.blendMode = mode;
+		ensureData(this).instance.blendMode = mode;
+	}
+
+	get mask() {
+		return ensureData(this).mask;
+	}
+
+	set mask(value: TCreatejsMask) {
+		setMaskForPixi(ensureData(this), value);
+	}
+
+	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
+		const p = super.addEventListener(type, cb, useCapture);
+
+		if (!(cb instanceof CreatejsButtonHelper)) {
+			addInteractionListener(this, type, cb);
+		}
+
+		return p;
+	}
+
+	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
+		super.removeEventListener(type, cb, useCapture);
+		removeInteractionListener(this, type, cb);
+	}
+
+	removeAllEventListeners(type?: string) {
+		super.removeAllEventListeners(type);
+		removeAllInteractionListeners(this, type);
 	}
 }
-
-// temporary prototype
-Object.defineProperties(CreatejsBitmap.prototype, {
-	_createjsParams: {
-		value: createCreatejsBitmapParams(),
-		writable: true
-	},
-	_pixiData: {
-		value: createPixiBitmapData(createObject<CreatejsBitmap>(CreatejsBitmap.prototype)),
-		writable: true
-	}
-});

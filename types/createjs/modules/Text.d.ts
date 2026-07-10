@@ -1,6 +1,7 @@
 import { BLEND_MODES, Container, Text } from 'pixi.js';
-import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater } from './core';
-import { CreatejsEventManager } from './EventManager';
+import { ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask } from './core';
+import { CreatejsButtonHelper } from './ButtonHelper';
+import { ICreatejsInteractionEventDelegate } from './EventManager';
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
  */
@@ -17,7 +18,25 @@ export declare class PixiTextContainer extends Container {
     get text(): PixiText;
 }
 export type TCreatejsTextAlign = 'left' | 'center' | 'right';
-export interface ICreatejsTextParam extends ICreatejsParam {
+export type TCreatejsTextConstructorArgs = [string?, string?, string?];
+/**
+ * Members of the (untyped) createjs.Text runtime that the wrapper relies on.
+ */
+export interface ICreatejsTextBase extends ICreatejsDisplayObjectBase {
+}
+export interface ICreatejsTextBaseConstructor {
+    new (...args: TCreatejsTextConstructorArgs): ICreatejsTextBase;
+}
+/**
+ * @ignore
+ */
+declare const TextBase: ICreatejsTextBaseConstructor;
+export interface ICreatejsParsedText {
+    fontSize: number;
+    fontFamily: string;
+    fontWeight: string;
+}
+export interface IPixiTextData extends IPixiData<PixiTextContainer> {
     text: string;
     font: string;
     color: string;
@@ -25,24 +44,12 @@ export interface ICreatejsTextParam extends ICreatejsParam {
     lineHeight: number;
     lineWidth: number;
 }
-export interface IPixiTextData extends IPixiData<PixiTextContainer> {
-}
-export interface ICreatejsParsedText {
-    fontSize: number;
-    fontFamily: string;
-    fontWeight?: string | number;
-}
-declare const CreatejsText_base: abstract new (...args: any[]) => import("./core").IMixinedCreatejsDisplayObject<PixiTextContainer>;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
  */
-export declare class CreatejsText extends CreatejsText_base implements ICreatejsDisplayObjectUpdater {
-    protected _pixiData: IPixiTextData;
-    protected _createjsParams: ICreatejsTextParam;
-    protected _createjsEventManager: CreatejsEventManager;
-    constructor(text: string, font: string, color?: string, ...args: any[]);
-    updateStateForPixi(): void;
-    updateForPixi(): boolean;
+export declare class CreatejsText extends TextBase implements ICreatejsDisplayObject<PixiTextContainer> {
+    constructor(text: string, font: string, color?: string);
+    get pixi(): PixiTextContainer;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     get text(): string;
     set text(text: string);
@@ -59,5 +66,10 @@ export declare class CreatejsText extends CreatejsText_base implements ICreatejs
     set lineHeight(height: number);
     get lineWidth(): number;
     set lineWidth(width: number);
+    get mask(): TCreatejsMask;
+    set mask(value: TCreatejsMask);
+    addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): CreatejsButtonHelper | ICreatejsInteractionEventDelegate;
+    removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+    removeAllEventListeners(type?: string): void;
 }
 export {};

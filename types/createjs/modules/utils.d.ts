@@ -1,4 +1,3 @@
-export declare function createObject<T>(proto: object): T;
 /**
  * @ignore
  */

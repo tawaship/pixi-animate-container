@@ -47,10 +47,28 @@ export declare class CreatejsController {
     get overSpeed(): boolean;
     set overSpeed(value: boolean);
     constructor(container: IAnimateContainer);
+    /**
+     * Advances every registered root by the accumulated integer number of
+     * frames, then pull-syncs the whole tree to Pixi.
+     *
+     * Driving is delegated to the original createjs walk: one `_tick(evt)` call
+     * on the root advances the tree by exactly one frame (no delta is passed,
+     * and framerate is fixed at -1, so `advance()` can never consume time
+     * itself). A fresh event object is created per `_tick` call and shared by
+     * the whole traversal, matching the granularity of the original
+     * Stage-driven dispatch.
+     *
+     * The original pipeline is TWO-phase: the tick phase only advances
+     * INDEPENDENT clips, and the draw phase (MovieClip.draw -> _updateState)
+     * resolves SYNCHED / SINGLE_FRAME / first-render state. There is no draw
+     * phase here, so updateStateForPixi() (the recursive _updateState walk)
+     * must run per frame as its substitute — without it, SYNCHED clips never
+     * move at all.
+     */
     handleTick(delta: number): void;
     private _addCreatejs;
-    addCreatejs<T extends TCreatejsObject>(cjs: TCreatejsObject): T;
-    addCreatejsAt<T extends TCreatejsObject>(cjs: TCreatejsObject, index: number): T;
+    addCreatejs<T extends TCreatejsObject>(cjs: T): T;
+    addCreatejsAt<T extends TCreatejsObject>(cjs: T, index: number): T;
     removeCreatejs(cjs: TCreatejsObject): TCreatejsObject;
 }
 /**
@@ -64,7 +82,7 @@ export declare class Container extends PixiContainer implements IAnimateContaine
     get createjsOverSpeed(): boolean;
     set createjsOverSpeed(value: boolean);
     handleTick(delta: number): void;
-    addCreatejs<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject): T;
-    addCreatejsAt<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject, index: number): T;
+    addCreatejs<T extends TCreatejsObject = TCreatejsObject>(cjs: T): T;
+    addCreatejsAt<T extends TCreatejsObject = TCreatejsObject>(cjs: T, index: number): T;
     removeCreatejs(cjs: TCreatejsObject): TCreatejsObject;
 }

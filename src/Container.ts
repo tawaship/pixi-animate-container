@@ -1,5 +1,6 @@
 import { Container as PixiContainer } from 'pixi.js';
-import { CreatejsBitmap, CreatejsMovieClip, TCreatejsObject } from './createjs';
+import createjs from '@tawaship/createjs-module';
+import { CreatejsMovieClip, TCreatejsObject, syncToPixi } from './createjs';
 
 export interface ICreatejsMovieClipDictionary {
 	[id: number]: {
@@ -37,6 +38,11 @@ export interface IAnimateContainer extends PixiContainer {
     createjsOverSpeed: boolean;
 }
 
+/**
+ * @ignore
+ */
+const CreatejsEvent: { new (type: string): object } = createjs.Event;
+
 export class CreatejsController {
 	private _createjsData: {
 		id: number;
@@ -65,7 +71,7 @@ export class CreatejsController {
     set overSpeed(value: boolean) {
         this._overSpeed = value;
     }
-	
+
 	constructor(container: IAnimateContainer) {
 		this._createjsData = {
 			id: 0,
@@ -73,7 +79,25 @@ export class CreatejsController {
 			container
 		};
 	}
-	
+
+	/**
+	 * Advances every registered root by the accumulated integer number of
+	 * frames, then pull-syncs the whole tree to Pixi.
+	 *
+	 * Driving is delegated to the original createjs walk: one `_tick(evt)` call
+	 * on the root advances the tree by exactly one frame (no delta is passed,
+	 * and framerate is fixed at -1, so `advance()` can never consume time
+	 * itself). A fresh event object is created per `_tick` call and shared by
+	 * the whole traversal, matching the granularity of the original
+	 * Stage-driven dispatch.
+	 *
+	 * The original pipeline is TWO-phase: the tick phase only advances
+	 * INDEPENDENT clips, and the draw phase (MovieClip.draw -> _updateState)
+	 * resolves SYNCHED / SINGLE_FRAME / first-render state. There is no draw
+	 * phase here, so updateStateForPixi() (the recursive _updateState walk)
+	 * must run per frame as its substitute — without it, SYNCHED clips never
+	 * move at all.
+	 */
 	handleTick(delta: number) {
         const d = delta * this._speed;
 
@@ -87,53 +111,57 @@ export class CreatejsController {
             if (target.isFirst) {
                 target.isFirst = false;
                 target.cjs.updateStateForPixi();
+                syncToPixi(target.cjs);
                 continue;
             }
 
             target.t -= p;
 
             for (let f = 0; f < frame; f++) {
-                target.cjs.updateForPixi();
+                target.cjs._tick(new CreatejsEvent('tick'));
+                target.cjs.updateStateForPixi();
             }
+
+            syncToPixi(target.cjs);
 		}
 	}
-	
+
 	private _addCreatejs(cjs: TCreatejsObject) {
 		if (cjs instanceof CreatejsMovieClip) {
 			const p = cjs.pixi.parent;
-			
+
 			cjs.pixi.once('added', () => {
 				if (cjs.pixi.parent !== p) {
 					cjs.gotoAndPlay(0);
 				}
-				
+
 				const id = this._createjsData.id++;
 				this._createjsData.targets[id] = { cjs, t: 0, isFirst: true };
-				
+
 				cjs.pixi.once('removed', () => {
 					delete(this._createjsData.targets[id]);
 				});
 			});
 		}
 	}
-	
-	addCreatejs<T extends TCreatejsObject>(cjs: TCreatejsObject) {
+
+	addCreatejs<T extends TCreatejsObject>(cjs: T) {
 		this._addCreatejs(cjs);
 		this._createjsData.container.addChild(cjs.pixi);
-		
-		return cjs as T;
+
+		return cjs;
 	}
-	
-	addCreatejsAt<T extends TCreatejsObject>(cjs: TCreatejsObject, index: number) {
+
+	addCreatejsAt<T extends TCreatejsObject>(cjs: T, index: number) {
 		this._addCreatejs(cjs);
 		this._createjsData.container.addChildAt(cjs.pixi, index);
-		
-		return cjs as T;
+
+		return cjs;
 	}
-	
+
 	removeCreatejs(cjs: TCreatejsObject) {
 		this._createjsData.container.removeChild(cjs.pixi);
-		
+
 		return cjs;
 	}
 }
@@ -145,10 +173,10 @@ export class Container extends PixiContainer implements IAnimateContainer {
 	private _createjsData: {
 		controller: CreatejsController;
 	};
-	
+
 	constructor() {
 		super();
-		
+
 		this._createjsData = {
 			controller: new CreatejsController(this)
 		};
@@ -167,19 +195,19 @@ export class Container extends PixiContainer implements IAnimateContainer {
     set createjsOverSpeed(value: boolean) {
         this._createjsData.controller.overSpeed = value;
     }
-	
+
 	handleTick(delta: number) {
 		return this._createjsData.controller.handleTick(delta);
 	}
-	
-	addCreatejs<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject) {
-		return this._createjsData.controller.addCreatejs<T>(cjs);
+
+	addCreatejs<T extends TCreatejsObject = TCreatejsObject>(cjs: T) {
+		return this._createjsData.controller.addCreatejs(cjs);
 	}
-	
-	addCreatejsAt<T extends TCreatejsObject = TCreatejsObject>(cjs: TCreatejsObject, index: number) {
-		return this._createjsData.controller.addCreatejsAt<T>(cjs, index);
+
+	addCreatejsAt<T extends TCreatejsObject = TCreatejsObject>(cjs: T, index: number) {
+		return this._createjsData.controller.addCreatejsAt(cjs, index);
 	}
-	
+
 	removeCreatejs(cjs: TCreatejsObject) {
 		return this._createjsData.controller.removeCreatejs(cjs);
 	}

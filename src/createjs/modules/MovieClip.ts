@@ -1,9 +1,13 @@
 import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { CreatejsColorFilter, PixiColorMatrixFilter } from './ColorFilter';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, updateDisplayObjectChildren, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
-import { createObject } from './utils';
-import { CreatejsEventManager } from './EventManager';
+import { CreatejsColorFilter, PixiColorMatrixFilter, getPixiColorMatrixFilter } from './ColorFilter';
+import {
+	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, ICreatejsChildNode, ICreatejsBlendModeTarget,
+	ICreatejsLabel, IColorFilterSyncPair, IPixiData, TCreatejsMask,
+	createPixiData, registerPixiData, setMaskForPixi
+} from './core';
+import { CreatejsButtonHelper } from './ButtonHelper';
+import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
@@ -11,21 +15,21 @@ import { CreatejsEventManager } from './EventManager';
 export class PixiMovieClip extends Container {
 	private _createjs: CreatejsMovieClip;
 	private _filterContainer: Container | null = null;
-	
+
 	constructor(cjs: CreatejsMovieClip) {
 		super();
-		
+
 		this._createjs = cjs;
 	}
-	
+
 	get filterContainer() {
 		return this._filterContainer;
 	}
-	
+
 	set filterContainer(value) {
 		this._filterContainer = value;
 	}
-	
+
 	get createjs() {
 		return this._createjs;
 	}
@@ -33,48 +37,18 @@ export class PixiMovieClip extends Container {
 
 export type TCreatejsColorFilters = CreatejsColorFilter[] | null;
 
-export interface ICreatejsMovieClipParam extends ICreatejsParam {
-	filters: TCreatejsColorFilters;
-	compositeOperation: CompositeOpeations | null;
-}
-
-/**
- * @ignore
- */
-function createCreatejsMovieClipParams(): ICreatejsMovieClipParam {
-	return Object.assign(createCreatejsParams(), {
-		filters: null,
-		compositeOperation: null
-	});
-}
-
-export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
-	subInstance: Container;
-}
-
-/**
- * @ignore
- */
-function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
-	const pixi = new PixiMovieClip(cjs);
-	
-	return Object.assign(createPixiData<PixiMovieClip>(pixi, pixi.pivot), {
-		subInstance: pixi
-	});
-}
-
 export class AnimateEvent extends createjs.Event {
 	constructor(type: string) {
 		super(type);
 	}
-};
+}
 
 export interface IAnimateReachLabelData {
 	/**
 	 * Label name.
 	 */
 	label: string;
-	
+
 	/**
 	 * Frame number of label.
 	 */
@@ -83,10 +57,10 @@ export interface IAnimateReachLabelData {
 
 export class AnimateReachLabelEvent extends AnimateEvent {
 	data: IAnimateReachLabelData;
-	
+
 	constructor(type: string, label: IAnimateReachLabelData) {
 		super(type);
-		
+
 		this.data = label;
 	}
 }
@@ -103,329 +77,391 @@ export interface IAnimateFrameEventOption {
 	reachLabel?: boolean;
 }
 
+export type TCreatejsMovieClipMode = 'independent' | 'single' | 'synched';
+
 /**
- * @ignore
+ * The properties object form of the createjs.MovieClip constructor arguments
+ * (the shape produced by current Animate publishes).
  */
-const P = createjs.MovieClip;
+export interface ICreatejsMovieClipProps {
+	mode?: TCreatejsMovieClipMode;
+	startPosition?: number;
+	loop?: boolean;
+	reversed?: boolean;
+	paused?: boolean;
+	position?: number;
+	labels?: { [name: string]: number };
+}
+
+/**
+ * Constructor arguments accepted by createjs.MovieClip across publish
+ * generations: either a single properties object, or the legacy positional
+ * form (mode, startPosition, loop, labels-or-reversed).
+ */
+export type TCreatejsMovieClipConstructorArgs =
+	| [ICreatejsMovieClipProps?]
+	| [TCreatejsMovieClipMode?, number?, boolean?, ({ [name: string]: number } | boolean)?];
+
+/**
+ * The target object of a timeline tween: either a display object (has `x`) or
+ * a state-holder used by publish output for child membership swapping (has
+ * `state`). Both members are optional because either kind can appear.
+ */
+export interface ICreatejsTweenTarget {
+	state?: { t: object }[];
+	x?: number;
+}
+
+export interface ICreatejsTweenLike {
+	target: ICreatejsTweenTarget;
+}
+
+export interface ICreatejsTimelineBase {
+	reversed: boolean;
+	tweens: ICreatejsTweenLike[];
+}
+
+/**
+ * Bounds metadata stamped on symbol prototypes by Animate publish output
+ * (not part of core createjs).
+ */
+export interface ICreatejsNominalBounds {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
+/**
+ * Members of the (untyped) createjs.MovieClip runtime that the wrapper relies on.
+ */
+export interface ICreatejsMovieClipBase extends ICreatejsDisplayObjectBase {
+	children: ICreatejsChildNode[];
+	currentFrame: number;
+	totalFrames: number;
+	labels: ICreatejsLabel[];
+	mode: TCreatejsMovieClipMode;
+	startPosition: number;
+	loop: boolean;
+	timeline: ICreatejsTimelineBase;
+	nominalBounds: ICreatejsNominalBounds;
+	cache(x: number, y: number, width: number, height: number, scale?: number): void;
+	advance(time?: number): void;
+	_updateState(): void;
+	addChild<T extends ICreatejsBlendModeTarget>(child: T): T;
+	addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T;
+	removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean;
+	removeChildAt(index: number): boolean;
+	removeAllChildren(): void;
+	gotoAndPlay(positionOrLabel: string | number): void;
+	gotoAndStop(positionOrLabel: string | number): void;
+	play(): void;
+	stop(): void;
+	initialize(...args: TCreatejsMovieClipConstructorArgs): void;
+}
+
+export interface ICreatejsMovieClipBaseConstructor {
+	new (...args: TCreatejsMovieClipConstructorArgs): ICreatejsMovieClipBase;
+}
 
 /**
  * @ignore
  */
-enum CompositeOpeations {
+const MovieClipBase: ICreatejsMovieClipBaseConstructor = createjs.MovieClip;
+
+export enum CompositeOperations {
 	Lighter = "lighter",
 	Multiply = "multiply",
 	Screen = "screen"
-};
+}
 
 /**
  * @ignore
  */
 const blendModes = {
-	[CompositeOpeations.Lighter]: BLEND_MODES.ADD,
-	[CompositeOpeations.Multiply]: BLEND_MODES.MULTIPLY,
-	[CompositeOpeations.Screen]: BLEND_MODES.SCREEN,
+	[CompositeOperations.Lighter]: BLEND_MODES.ADD,
+	[CompositeOperations.Multiply]: BLEND_MODES.MULTIPLY,
+	[CompositeOperations.Screen]: BLEND_MODES.SCREEN,
 };
 
-// const T: number = 1000 / 60;
+export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
+	subInstance: Container;
+	listenFrameEvents: IAnimateFrameEventOption;
+	filters: TCreatejsColorFilters;
+	compositeOperation: CompositeOperations | null;
+}
+
+/**
+ * @ignore
+ */
+function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
+	const pixi = new PixiMovieClip(cjs);
+
+	return Object.assign(createPixiData<PixiMovieClip>(pixi, pixi.pivot), {
+		subInstance: pixi,
+		listenFrameEvents: {},
+		filters: null,
+		compositeOperation: null
+	});
+}
+
+/**
+ * @ignore
+ */
+const dataStore = new WeakMap<CreatejsMovieClip, IPixiMovieClipData>();
+
+/**
+ * @ignore
+ */
+function resetData(cjs: CreatejsMovieClip): IPixiMovieClipData {
+	const data = createPixiMovieClipData(cjs);
+	dataStore.set(cjs, data);
+	registerPixiData(cjs, data);
+
+	return data;
+}
+
+/**
+ * @ignore
+ */
+function ensureData(cjs: CreatejsMovieClip): IPixiMovieClipData {
+	const data = dataStore.get(cjs);
+
+	return data ? data : resetData(cjs);
+}
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  */
-export class CreatejsMovieClip extends mixinCreatejsDisplayObject<PixiMovieClip, ICreatejsMovieClipParam>(createjs.MovieClip) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
-	protected _pixiData: IPixiMovieClipData;
-	protected _createjsParams: ICreatejsMovieClipParam;
-	protected _createjsEventManager: CreatejsEventManager;
-
+export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplayObject<PixiMovieClip> {
 	declare protected _fps: number;
-    declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
-	protected _listenFrameEvents: IAnimateFrameEventOption;
+	declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
 
 	/**
 	 * When the last frame of the timeline is reached.
-	 * 
+	 *
 	 * @event
 	 */
 	endAnimation?(e: AnimateEvent): void {}
-	
+
 	/**
 	 * When either labels is reached.
-	 * 
+	 *
 	 * @event
 	 */
 	reachLabel?(e: AnimateReachLabelEvent): void {}
 
-	constructor(...args: any[]) {
-		super();
-		
-		this._pixiData = createPixiMovieClipData(this);
-		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsEventManager = new CreatejsEventManager(this);
-		P.apply(this, args);
-        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
-	}
-	
-	initialize(...args: any[]) {
-		this._pixiData = createPixiMovieClipData(this);
-		this._createjsParams = createCreatejsMovieClipParams();
-		this._createjsEventManager = new CreatejsEventManager(this);
-		super.initialize(...args);
-        this._listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
+	constructor(...args: TCreatejsMovieClipConstructorArgs) {
+		super(...args);
+
+		ensureData(this).listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 	}
 
-    get framerate() {
-        return -1;
-    }
+	initialize(...args: TCreatejsMovieClipConstructorArgs) {
+		resetData(this).listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
 
-    set framerate(value: number) {
-        // framerate is disabled
-    }
+		return super.initialize(...args);
+	}
 
-    get fps() {
-        return this._fps;
-    }
+	get pixi() {
+		return ensureData(this).instance;
+	}
 
-    /**
-     * This changes whether to `listen` for a specified custom event.
-     */
-    listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean) {
-        this._listenFrameEvents[type] = value;
-    }
-	
-    /**
-     * Advances createjs by 1 frame.
-     *
-     * Because framerate is fixed at -1, advance() always advances by 1 frame regardless of delta time.
-     * Control such as "advance 0 frames" or "advance 2 or more frames" is achieved by
-     * the number of times this function is called (the responsibility of the caller).
-     */
-	updateStateForPixi(): void {
-		this._updateState();
-		const list = this.children.slice();
-		for (let i = 0; i < list.length; i++) {
-			list[i].updateStateForPixi();
+	get framerate() {
+		return -1;
+	}
+
+	set framerate(value: number) {
+		// framerate is disabled
+	}
+
+	get fps() {
+		return this._fps;
+	}
+
+	/**
+	 * This changes whether to `listen` for a specified custom event.
+	 */
+	listenCustomFrameEvent(type: keyof IAnimateFrameEventOption, value: boolean) {
+		ensureData(this).listenFrameEvents[type] = value;
+	}
+
+	/**
+	 * Advances the timeline (delegated to the original createjs implementation)
+	 * and dispatches the custom frame events right after the frame changes,
+	 * before the children are ticked — the same timing the previous
+	 * self-managed walk provided.
+	 *
+	 * framerate is fixed at -1 and the driver never passes a delta, so one call
+	 * always advances exactly one frame (determinism lives with the caller).
+	 */
+	advance(time?: number): void {
+		const beforeFrame = this.currentFrame;
+
+		super.advance(time);
+
+		if (this.currentFrame === beforeFrame) {
+			return;
 		}
-	}
 
-	updateForPixi(): boolean {
-		const currentFrame = this.currentFrame;
-		
-		// challenge
-		if (!this.paused) {
-			this.advance();
-			
-			if (this._listenFrameEvents && currentFrame !== this.currentFrame) {
-				if (this._listenFrameEvents.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
-					this.dispatchEvent(new AnimateEvent('endAnimation'));
-				}
-				
-				if (this._listenFrameEvents.reachLabel) {
-					for (let i = 0; i < this.labels.length; i++) {
-						const label = this.labels[i];
-						if (this.currentFrame === label.position) {
-							this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
-							break;
-						}
-					}
+		const listen = ensureData(this).listenFrameEvents;
+
+		if (listen.endAnimation && this.currentFrame === (this.totalFrames - 1)) {
+			this.dispatchEvent(new AnimateEvent('endAnimation'));
+		}
+
+		if (listen.reachLabel) {
+			for (let i = 0; i < this.labels.length; i++) {
+				const label = this.labels[i];
+				if (this.currentFrame === label.position) {
+					this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
+					break;
 				}
 			}
-
-			this._updateState();
 		}
-		return updateDisplayObjectChildren(this);
+	}
+
+	/**
+	 * Recursive _updateState walk: the substitute for the draw phase of the
+	 * original pipeline (MovieClip.draw -> _updateState), which is what
+	 * resolves SYNCHED / SINGLE_FRAME / first-render state — advance() only
+	 * moves INDEPENDENT clips. Runs once per frame after _tick, and once when
+	 * a root is registered (frame-0 seating). Walks the live children array in
+	 * reverse, matching the traversal discipline of the original
+	 * Container._tick.
+	 */
+	updateStateForPixi(): void {
+		this._updateState();
+
+		const children = this.children;
+		for (let i = children.length - 1; i >= 0; i--) {
+			const child = children[i];
+			if (child instanceof CreatejsMovieClip) {
+				child.updateStateForPixi();
+			}
+		}
 	}
 
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		if (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation] === mode) return;
-		this._pixiData.reservedBlendMode = mode;
+		const data = ensureData(this);
+
+		if (data.compositeOperation && blendModes[data.compositeOperation] === mode) return;
+
+		data.reservedBlendMode = mode;
 		for (let i = 0; i < this.children.length; i++) {
 			this.children[i].updateBlendModeForPixi(mode);
 		}
 	}
 
 	get compositeOperation() {
-		return this._createjsParams.compositeOperation;
+		return ensureData(this).compositeOperation;
 	}
 
 	set compositeOperation(value) {
-		if (this._createjsParams.compositeOperation === value) return;
+		const data = ensureData(this);
 
-		const blendMode = (value && blendModes[value]) || this._pixiData.reservedBlendMode;
+		if (data.compositeOperation === value) return;
+
+		const blendMode = (value && blendModes[value]) || data.reservedBlendMode;
 		this.updateBlendModeForPixi(blendMode);
-		this._createjsParams.compositeOperation = value;
+		data.compositeOperation = value;
 	}
-	
+
 	get filters() {
-		return this._createjsParams.filters;
+		return ensureData(this).filters;
 	}
-	
-	//*
+
 	set filters(value: TCreatejsColorFilters) {
+		const data = ensureData(this);
 		const list: PixiColorMatrixFilter[] = [];
+		const pairs: IColorFilterSyncPair[] = [];
 
 		if (value && value.length > 0) {
-			for (var i = 0; i < value.length; i++) {
-				let f = value[i];
-				
-				if (!(f instanceof createjs.ColorFilter)) {
-					continue;
-				}
-				
-				list.push(f.pixi);
-			}
-		}
-
-		this._pixiData.instance.filters = list;
-		this._createjsParams.filters = value;
-	}
-	//*/
-	/*
-	set filters(value: TCreatejsColorFilters) {
-		if (value) {
-			const list = [];
-			
-			for (var i = 0; i < value.length; i++) {
+			for (let i = 0; i < value.length; i++) {
 				const f = value[i];
-				
-				if (f instanceof createjs.ColorMatrixFilter) {
+
+				if (!(f instanceof CreatejsColorFilter)) {
 					continue;
 				}
-				
-				const m = new filters.ColorMatrixFilter();
-				m.matrix = [
-					f.redMultiplier, 0, 0, 0, f.redOffset / 255,
-					0, f.greenMultiplier, 0, 0, f.greenOffset / 255,
-					0, 0, f.blueMultiplier, 0, f.blueOffset / 255,
-					0, 0, 0, f.alphaMultiplier, f.alphaOffset / 255,
-					0, 0, 0, 0, 1
-				];
-				list.push(m);
-			}
 
-			for (var i = 0; i < value.length; i++) {
-				let f = value[i];
-				
-				if (!(f instanceof createjs.ColorFilter)) {
-					continue;
-				}
-				
-				list.push(f.pixi);
-			}
-
-			var o = this._pixiData.instance;
-			var c = o.children;
-			var n = new Container();
-			var nc = this._pixiData.subInstance = n.addChild(new Container());
-			
-			while (c.length) {
-				nc.addChild(c[0]);
-			}
-			
-			o.addChild(n);
-			o.filterContainer = nc;
-			
-			nc.updateTransform();
-			nc.calculateBounds();
-			
-			const b = nc.getLocalBounds();
-			const x = b.x;
-			const y = b.y;
-			
-			for (var i = 0; i < nc.children.length; i++) {
-				const child = nc.children[i];
-				
-				child.x -= x;
-				child.y -= y;
-				
-				if (child instanceof PixiMovieClip) {
-					const fc = child.filterContainer;
-					if (fc) {
-						//fc.cacheAsBitmap = false;
-					}
-				}
-			}
-			n.x = x;
-			n.y = y;
-			
-			nc.filters = list;
-			//nc.cacheAsBitmap = true;
-		} else {
-			const o = this._pixiData.instance;
-			
-			if (o.filterContainer) {
-				const nc = this._pixiData.subInstance;
-				const n = nc.parent;
-				const c = nc.children;
-				
-				o.removeChildren();
-				o.filterContainer = null;
-				while (c.length) {
-					const v = o.addChild(c[0]);
-					v.x += n.x;
-					v.y += n.y;
-				}
-				
-				nc.filters = [];
-				//nc.cacheAsBitmap = false;
-				
-				this._pixiData.subInstance = o;
+				const pixiFilter = getPixiColorMatrixFilter(f);
+				list.push(pixiFilter);
+				pairs.push({ source: f, matrix: pixiFilter.matrix });
 			}
 		}
-		
-		this._createjsParams.filters = value;
-	}
-	//*/
 
-	private _updateChildrenBlendModeForPixi(child: ICreatejsDisplayObjectUpdater) {
-		const blendMode = (this._createjsParams.compositeOperation && blendModes[this._createjsParams.compositeOperation]) || this._pixiData.reservedBlendMode;
+		data.instance.filters = list;
+		data.colorFilters = pairs.length ? pairs : null;
+		data.filters = value;
+	}
+
+	get mask() {
+		return ensureData(this).mask;
+	}
+
+	set mask(value: TCreatejsMask) {
+		setMaskForPixi(ensureData(this), value);
+	}
+
+	private _updateChildrenBlendModeForPixi(child: ICreatejsBlendModeTarget) {
+		const data = ensureData(this);
+		const blendMode = (data.compositeOperation && blendModes[data.compositeOperation]) || data.reservedBlendMode;
 		if (!blendMode) return;
 		child.updateBlendModeForPixi(blendMode);
 	}
-	
-	addChild(child: ICreatejsDisplayObjectUpdater) {
-		this._pixiData.subInstance.addChild(child.pixi);
+
+	addChild<T extends ICreatejsBlendModeTarget>(child: T): T {
+		ensureData(this).subInstance.addChild(child.pixi);
 		this._updateChildrenBlendModeForPixi(child);
 
 		return super.addChild(child);
 	}
-	
-	addChildAt(child: ICreatejsDisplayObjectUpdater, index: number) {
-		this._pixiData.subInstance.addChildAt(child.pixi, index);
+
+	addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T {
+		ensureData(this).subInstance.addChildAt(child.pixi, index);
 		this._updateChildrenBlendModeForPixi(child);
-		
+
 		return super.addChildAt(child, index);
 	}
-	
-	removeChild(child: ICreatejsDisplayObjectUpdater) {
-		this._pixiData.subInstance.removeChild(child.pixi);
-		
+
+	removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean {
+		ensureData(this).subInstance.removeChild(child.pixi);
+
 		return super.removeChild(child);
 	}
-	
-	removeChildAt(index: number) {
-		this._pixiData.subInstance.removeChildAt(index);
-		
+
+	removeChildAt(index: number): boolean {
+		ensureData(this).subInstance.removeChildAt(index);
+
 		return super.removeChildAt(index);
 	}
-	
-	removeAllChldren() {
-		this._pixiData.subInstance.removeChildren();
-		
-		return super.removeAllChldren();
+
+	removeAllChldren(): void {
+		ensureData(this).subInstance.removeChildren();
+
+		return super.removeAllChildren();
+	}
+
+	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
+		const p = super.addEventListener(type, cb, useCapture);
+
+		if (!(cb instanceof CreatejsButtonHelper)) {
+			addInteractionListener(this, type, cb);
+		}
+
+		return p;
+	}
+
+	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
+		super.removeEventListener(type, cb, useCapture);
+		removeInteractionListener(this, type, cb);
+	}
+
+	removeAllEventListeners(type?: string) {
+		super.removeAllEventListeners(type);
+		removeAllInteractionListeners(this, type);
 	}
 }
 
 delete(CreatejsMovieClip.prototype.endAnimation);
 delete(CreatejsMovieClip.prototype.reachLabel);
-
-// temporary prototype
-Object.defineProperties(CreatejsMovieClip.prototype, {
-	_createjsParams: {
-		value: createCreatejsMovieClipParams(),
-		writable: true
-	},
-	_pixiData: {
-		value: createPixiMovieClipData(createObject<CreatejsMovieClip>(CreatejsMovieClip.prototype)),
-		writable: true
-	}
-});
-

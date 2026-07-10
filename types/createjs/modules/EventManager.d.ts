@@ -1,4 +1,4 @@
-import { TCreatejsObject } from './core';
+import type { TCreatejsObject } from './core';
 export declare enum createjsInteractionEvents {
     mousedown = "mousedown",
     pressmove = "pressmove",
@@ -43,7 +43,10 @@ export declare class CreatejsEventManager {
     private _onPointerTap;
     private _onPointerOver;
     private _onPointerOut;
-    add(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate): void;
-    remove(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate): void;
+    add(type: string, cb: ICreatejsInteractionEventDelegate): void;
+    remove(type: string, cb: ICreatejsInteractionEventDelegate): void;
     removeAll(type?: string): void;
 }
+export declare function addInteractionListener(cjs: TCreatejsObject, type: string, cb: ICreatejsInteractionEventDelegate): void;
+export declare function removeInteractionListener(cjs: object, type: string, cb: ICreatejsInteractionEventDelegate): void;
+export declare function removeAllInteractionListeners(cjs: object, type?: string): void;

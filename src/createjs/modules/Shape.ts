@@ -1,153 +1,178 @@
 import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { mixinCreatejsDisplayObject, createPixiData, createCreatejsParams, IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
+import {
+	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask,
+	createPixiData, registerPixiData, setMaskForPixi
+} from './core';
 import { CreatejsGraphics } from './Graphics';
-import { createObject } from './utils';
-import { CreatejsEventManager } from './EventManager';
+import { CreatejsButtonHelper } from './ButtonHelper';
+import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiShape extends Container {
 	private _createjs: CreatejsShape;
-	
+
 	constructor(cjs: CreatejsShape) {
 		super();
-		
+
 		this._createjs = cjs;
 	}
-	
+
 	get createjs() {
 		return this._createjs;
 	}
 }
 
-export interface ICreatejsShapeParam extends ICreatejsParam {
-	graphics: CreatejsGraphics | null;
+export type TCreatejsShapeConstructorArgs = [CreatejsGraphics?];
+
+/**
+ * Members of the (untyped) createjs.Shape runtime that the wrapper relies on.
+ */
+export interface ICreatejsShapeBase extends ICreatejsDisplayObjectBase {
+	initialize(...args: TCreatejsShapeConstructorArgs): void;
+}
+
+export interface ICreatejsShapeBaseConstructor {
+	new (...args: TCreatejsShapeConstructorArgs): ICreatejsShapeBase;
 }
 
 /**
  * @ignore
  */
-function createCreatejsShapeParams(graphics: CreatejsGraphics | null): ICreatejsShapeParam {
-	return Object.assign(createCreatejsParams(), {
-		graphics
-	});
-}
+const ShapeBase: ICreatejsShapeBaseConstructor = createjs.Shape;
 
 export interface IPixiShapeData extends IPixiData<PixiShape> {
 	/**
 	 * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.DisplayObject.html | PIXI.DisplayObject}
 	 */
 	masked: DisplayObject[];
-};
+
+	graphics: CreatejsGraphics | null;
+}
 
 /**
  * @ignore
  */
-function createPixiShapeData(cjs: CreatejsShape) {
+function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
 	const pixi = new PixiShape(cjs);
-	
+
 	return Object.assign(createPixiData<PixiShape>(pixi, pixi.pivot), {
-		masked: []
+		masked: [],
+		graphics: null
 	});
 }
 
 /**
  * @ignore
  */
-const P = createjs.Shape;
+const dataStore = new WeakMap<CreatejsShape, IPixiShapeData>();
 
 /**
- * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
+ * @ignore
  */
-export class CreatejsShape extends mixinCreatejsDisplayObject<PixiShape, ICreatejsShapeParam>(createjs.Shape) implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
-	protected _pixiData: IPixiShapeData;
-	protected _createjsParams: ICreatejsShapeParam;
-	protected _createjsEventManager: CreatejsEventManager;
-	
-	constructor(...args: any[]) {
-		super(...args);
-		
-		this._pixiData = createPixiShapeData(this);
-		this._createjsParams = createCreatejsShapeParams(null);
-		this._createjsEventManager = new CreatejsEventManager(this);
-		
-		P.apply(this, args);
-	}
-	
-	initialize(...args: any[]) {
-        this._pixiData = createPixiShapeData(this);
-		this._createjsParams = createCreatejsShapeParams(null);
-		this._createjsEventManager = new CreatejsEventManager(this);
-		
-		return super.initialize(...args);
-	}
-	
-	updateStateForPixi(): void {}
+function resetData(cjs: CreatejsShape): IPixiShapeData {
+	const data = createPixiShapeData(cjs);
+	dataStore.set(cjs, data);
+	registerPixiData(cjs, data);
 
-	updateForPixi() {
-		return true;
-	}
-
-	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		this._pixiData.reservedBlendMode = mode;
-		this._createjsParams.graphics?.updateBlendModeForPixi(mode);
-	}
-	
-	get graphics() {
-		return this._createjsParams.graphics;
-	}
-	
-	set graphics(value) {
-        if (this._pixiData !== defaultPixiData) {
-            if (this._pixiData.masked.length) {
-                this._pixiData.instance.removeChildren();
-                
-                if (value) {
-                    for (let i = 0; i < this._pixiData.masked.length; i++) {
-                        this._pixiData.masked[i].mask = this._pixiData.instance;
-                    }
-                } else {
-                    for (let i = 0; i < this._pixiData.masked.length; i++) {
-                        this._pixiData.masked[i].mask = null;
-                    }
-                }
-            }
-
-            if (value) {
-                this._pixiData.instance.addChild(value.pixi);
-            }
-        }
-		
-        if (this._createjsParams !== defaultCreatejsParams) {
-            this._createjsParams.graphics = value;
-        }
-	}
-	
-	get masked() {
-		return this._pixiData.masked;
-	}
+	return data;
 }
 
 /**
  * @ignore
  */
-const defaultCreatejsParams = createCreatejsShapeParams(null);
+function ensureData(cjs: CreatejsShape): IPixiShapeData {
+	const data = dataStore.get(cjs);
+
+	return data ? data : resetData(cjs);
+}
 
 /**
- * @ignore
+ * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
  */
-const defaultPixiData = createPixiShapeData(createObject<CreatejsShape>(CreatejsShape.prototype));
+export class CreatejsShape extends ShapeBase implements ICreatejsDisplayObject<PixiShape> {
+	constructor(...args: TCreatejsShapeConstructorArgs) {
+		super(...args);
 
-// temporary prototype
-Object.defineProperties(CreatejsShape.prototype, {
-	_createjsParams: {
-		value: defaultCreatejsParams,
-		writable: true
-	},
-	_pixiData: {
-		value: defaultPixiData,
-		writable: true
+		ensureData(this);
 	}
-});
+
+	initialize(...args: TCreatejsShapeConstructorArgs) {
+		resetData(this);
+
+		return super.initialize(...args);
+	}
+
+	get pixi() {
+		return ensureData(this).instance;
+	}
+
+	updateBlendModeForPixi(mode: BLEND_MODES): void {
+		const data = ensureData(this);
+
+		data.reservedBlendMode = mode;
+		data.graphics?.updateBlendModeForPixi(mode);
+	}
+
+	get graphics() {
+		return ensureData(this).graphics;
+	}
+
+	set graphics(value) {
+		const data = ensureData(this);
+
+		if (data.masked.length) {
+			data.instance.removeChildren();
+
+			if (value) {
+				for (let i = 0; i < data.masked.length; i++) {
+					data.masked[i].mask = data.instance;
+				}
+			} else {
+				for (let i = 0; i < data.masked.length; i++) {
+					data.masked[i].mask = null;
+				}
+			}
+		}
+
+		if (value) {
+			data.instance.addChild(value.pixi);
+		}
+
+		data.graphics = value;
+	}
+
+	get masked() {
+		return ensureData(this).masked;
+	}
+
+	get mask() {
+		return ensureData(this).mask;
+	}
+
+	set mask(value: TCreatejsMask) {
+		setMaskForPixi(ensureData(this), value);
+	}
+
+	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
+		const p = super.addEventListener(type, cb, useCapture);
+
+		if (!(cb instanceof CreatejsButtonHelper)) {
+			addInteractionListener(this, type, cb);
+		}
+
+		return p;
+	}
+
+	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
+		super.removeEventListener(type, cb, useCapture);
+		removeInteractionListener(this, type, cb);
+	}
+
+	removeAllEventListeners(type?: string) {
+		super.removeAllEventListeners(type);
+		removeAllInteractionListeners(this, type);
+	}
+}

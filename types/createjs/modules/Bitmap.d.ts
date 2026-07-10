@@ -1,6 +1,7 @@
 import { BLEND_MODES, Sprite } from 'pixi.js';
-import { IPixiData, ICreatejsParam, ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer } from './core';
-import { CreatejsEventManager } from './EventManager';
+import { ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask } from './core';
+import { CreatejsButtonHelper } from './ButtonHelper';
+import { ICreatejsInteractionEventDelegate } from './EventManager';
 /**
  * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
@@ -9,22 +10,36 @@ export declare class PixiBitmap extends Sprite {
     constructor(cjs: CreatejsBitmap);
     get createjs(): CreatejsBitmap;
 }
-export interface ICreatejsBitmapParam extends ICreatejsParam {
+export type TCreatejsBitmapSource = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | string;
+export type TCreatejsBitmapConstructorArgs = [TCreatejsBitmapSource?];
+/**
+ * Members of the (untyped) createjs.Bitmap runtime that the wrapper relies on.
+ */
+export interface ICreatejsBitmapBase extends ICreatejsDisplayObjectBase {
+    image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+    initialize(...args: TCreatejsBitmapConstructorArgs): void;
 }
+export interface ICreatejsBitmapBaseConstructor {
+    new (...args: TCreatejsBitmapConstructorArgs): ICreatejsBitmapBase;
+}
+/**
+ * @ignore
+ */
+declare const BitmapBase: ICreatejsBitmapBaseConstructor;
 export interface IPixiBitmapData extends IPixiData<PixiBitmap> {
 }
-declare const CreatejsBitmap_base: abstract new (...args: any[]) => import("./core").IMixinedCreatejsDisplayObject<PixiBitmap>;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
  */
-export declare class CreatejsBitmap extends CreatejsBitmap_base implements ICreatejsDisplayObjectUpdater, ICreatejsDisplayObjectInitializer {
-    protected _pixiData: IPixiBitmapData;
-    protected _createjsParams: ICreatejsBitmapParam;
-    protected _createjsEventManager: CreatejsEventManager;
-    constructor(...args: any[]);
-    initialize(...args: any[]): any;
-    updateStateForPixi(): void;
-    updateForPixi(): boolean;
+export declare class CreatejsBitmap extends BitmapBase implements ICreatejsDisplayObject<PixiBitmap> {
+    constructor(...args: TCreatejsBitmapConstructorArgs);
+    initialize(...args: TCreatejsBitmapConstructorArgs): void;
+    get pixi(): PixiBitmap;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
+    get mask(): TCreatejsMask;
+    set mask(value: TCreatejsMask);
+    addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): CreatejsButtonHelper | ICreatejsInteractionEventDelegate;
+    removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+    removeAllEventListeners(type?: string): void;
 }
 export {};

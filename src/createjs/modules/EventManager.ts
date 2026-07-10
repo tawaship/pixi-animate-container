@@ -1,17 +1,5 @@
-import { TCreatejsObject } from './core';
+import type { TCreatejsObject } from './core';
 import { utils } from 'pixi.js';
-
-/**
- * @ignore
- */
-const createjsInteractionEventsa = {
-	mousedown: true,
-	pressmove: true,
-	pressup: true,
-	rollover: true,
-	rollout: true,
-	click: true
-};
 
 export enum createjsInteractionEvents {
 	mousedown = "mousedown",
@@ -163,39 +151,84 @@ export class CreatejsEventManager {
 		this._emitter.emit('rollout', ev);
 	}
 	
-	add(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate) {
+	add(type: string, cb: ICreatejsInteractionEventDelegate) {
 		if (!(type in createjsInteractionEvents)) {
 			return;
 		}
-		
+
 		this._emitter.on(type, cb);
-		
+
 		if (this._emitter.eventNames().length > 0) {
 			this._cjs.pixi.interactive = true;
 		}
 	}
-	
-	remove(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate) {
+
+	remove(type: string, cb: ICreatejsInteractionEventDelegate) {
 		if (!(type in createjsInteractionEvents)) {
 			return;
 		}
-		
+
 		this._emitter.off(type, cb);
-		
+
 		if (this._emitter.eventNames().length === 0) {
 			this._cjs.pixi.interactive = false;
 		}
 	}
-	
+
 	removeAll(type?: string) {
 		if (type && !(type in createjsInteractionEvents)) {
 			return;
 		}
-		
+
 		this._emitter.removeAllListeners(type);
-		
+
 		if (this._emitter.eventNames().length === 0) {
 			this._cjs.pixi.interactive = false;
 		}
+	}
+}
+
+/**
+ * External store keyed by the createjs instance. The manager (and its pointer
+ * handlers on the Pixi instance) is created lazily on the first listener
+ * registration, so instances that never listen pay nothing.
+ */
+const eventManagerStore = new WeakMap<object, CreatejsEventManager>();
+
+/**
+ * @ignore
+ */
+function getEventManager(cjs: TCreatejsObject): CreatejsEventManager {
+	let manager = eventManagerStore.get(cjs);
+
+	if (!manager) {
+		manager = new CreatejsEventManager(cjs);
+		eventManagerStore.set(cjs, manager);
+	}
+
+	return manager;
+}
+
+export function addInteractionListener(cjs: TCreatejsObject, type: string, cb: ICreatejsInteractionEventDelegate): void {
+	if (!(type in createjsInteractionEvents)) {
+		return;
+	}
+
+	getEventManager(cjs).add(type, cb);
+}
+
+export function removeInteractionListener(cjs: object, type: string, cb: ICreatejsInteractionEventDelegate): void {
+	const manager = eventManagerStore.get(cjs);
+
+	if (manager) {
+		manager.remove(type, cb);
+	}
+}
+
+export function removeAllInteractionListeners(cjs: object, type?: string): void {
+	const manager = eventManagerStore.get(cjs);
+
+	if (manager) {
+		manager.removeAll(type);
 	}
 }

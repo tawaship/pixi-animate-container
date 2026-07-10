@@ -1,35 +1,33 @@
-import { BLEND_MODES, Container, Point } from 'pixi.js';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { CreatejsMovieClip } from './MovieClip';
-import { CreatejsSprite } from './Sprite';
-import { CreatejsShape } from './Shape';
-import { CreatejsBitmap } from './Bitmap';
-import { CreatejsGraphics } from './Graphics';
-import { CreatejsText } from './Text';
-import { CreatejsEventManager, ICreatejsInteractionEventDelegate, createjsInteractionEvents } from './EventManager';
+import { BLEND_MODES, Container, DisplayObject, Point } from 'pixi.js';
 import { DEG_TO_RAD } from './utils';
+import type { CreatejsMovieClip } from './MovieClip';
+import type { CreatejsSprite } from './Sprite';
+import type { CreatejsShape } from './Shape';
+import type { CreatejsBitmap } from './Bitmap';
+import type { CreatejsGraphics } from './Graphics';
+import type { CreatejsText } from './Text';
+import type { CreatejsButtonHelper } from './ButtonHelper';
+import type { ICreatejsInteractionEventDelegate } from './EventManager';
 
 export interface ITickerData {
 	delta: number;
 }
 
-export interface IPixiData<T extends Container> {
-	regObj: Point;
-	instance: T;
-	reservedBlendMode: BLEND_MODES;
-}
-
-export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, regObj: Point): IPixiData<TPixiDisplayObject> {
-	return {
-		regObj,
-		instance: pixi,
-		reservedBlendMode: BLEND_MODES.NORMAL
-	};
-}
-
 export type TCreatejsMask = CreatejsShape | null;
 
-export interface ICreatejsParam {
+export type TCreatejsObject =
+	| CreatejsMovieClip
+	| CreatejsSprite
+	| CreatejsShape
+	| CreatejsBitmap
+	| CreatejsGraphics
+	| CreatejsText;
+
+/**
+ * Minimal surface of a createjs display object consumed by the pull-sync walk.
+ * All members are plain data properties on the createjs side.
+ */
+export interface ICreatejsSyncNode {
 	x: number;
 	y: number;
 	scaleX: number;
@@ -41,230 +39,197 @@ export interface ICreatejsParam {
 	rotation: number;
 	visible: boolean;
 	alpha: number;
-	_off: boolean;
+	_off?: boolean;
+	children?: ICreatejsSyncNode[];
+}
+
+/**
+ * Members of the (untyped) createjs.DisplayObject runtime that the wrapper relies on.
+ * Base constructors of each wrapper class are typed against extensions of this interface.
+ */
+export interface ICreatejsDisplayObjectBase extends ICreatejsSyncNode {
+	addEventListener(type: string, listener: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): ICreatejsInteractionEventDelegate | CreatejsButtonHelper;
+	removeEventListener(type: string, listener: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+	removeAllEventListeners(type?: string): void;
+	dispatchEvent(evt: object | string): boolean;
+	_tick(evt: object): void;
+}
+
+export interface ICreatejsLabel {
+	label: string;
+	position: number;
+}
+
+/**
+ * Contract of every wrapper display object class.
+ * Implementations are supplied per class (no mixin); this interface makes the
+ * compiler verify that nothing is missing.
+ */
+export interface ICreatejsDisplayObject<T extends Container> {
+	readonly pixi: T;
 	mask: TCreatejsMask;
+	updateBlendModeForPixi(mode: BLEND_MODES): void;
+	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): ICreatejsInteractionEventDelegate | CreatejsButtonHelper;
+	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+	removeAllEventListeners(type?: string): void;
 }
 
-export type TCreatejsObject =
-	| CreatejsMovieClip
-	| CreatejsSprite
-	| CreatejsShape
-	| CreatejsBitmap
-	| CreatejsGraphics
-	| CreatejsText;
-
-export function createCreatejsParams(): ICreatejsParam {
-	return {
-		x: 0,
-		y: 0,
-		scaleX: 0,
-		scaleY: 0,
-		regX: 0,
-		regY: 0,
-		skewX: 0,
-		skewY: 0,
-		rotation: 0,
-		visible: true,
-		alpha: 1,
-		_off: false,
-		mask: null
-	};
-}
-
-export type TCreatejsDisplayObject = any/* createjs.DisplayObject */;
-
-export interface ICreatejsDisplayObjectUpdater extends TCreatejsDisplayObject {
-	updateForPixi(): boolean;
-	updateStateForPixi(): void;
+/**
+ * What a child passed to the overridden structure operations (addChild etc.) must provide.
+ */
+export interface ICreatejsBlendModeTarget {
+	readonly pixi: DisplayObject;
 	updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 
-export interface ICreatejsDisplayObjectInitializer {
-	initialize(...args: any[]): any;
+/**
+ * Shape of the members of `children` as seen from the wrapper (every child in a
+ * wrapper-driven tree is a wrapper class instance).
+ */
+export interface ICreatejsChildNode extends ICreatejsSyncNode {
+	updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 
-export function updateDisplayObjectChildren(cjs: ICreatejsDisplayObjectUpdater) {
-	const list = cjs.children.slice();
-	for (let i = 0, l = list.length; i < l; i++) {
-		const child = list[i];
-		child.updateForPixi();
+/**
+ * Source of the ColorFilter scalar sync (plain data properties, original-faithful).
+ */
+export interface IColorFilterSyncSource {
+	redMultiplier: number;
+	greenMultiplier: number;
+	blueMultiplier: number;
+	alphaMultiplier: number;
+	redOffset: number;
+	greenOffset: number;
+	blueOffset: number;
+	alphaOffset: number;
+}
+
+export interface IColorFilterSyncPair {
+	source: IColorFilterSyncSource;
+	matrix: number[];
+}
+
+export interface IPixiData<T extends Container> {
+	regObj: Point;
+	instance: T;
+	reservedBlendMode: BLEND_MODES;
+	mask: TCreatejsMask;
+	colorFilters: IColorFilterSyncPair[] | null;
+}
+
+export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, regObj: Point): IPixiData<TPixiDisplayObject> {
+	return {
+		regObj,
+		instance: pixi,
+		reservedBlendMode: BLEND_MODES.NORMAL,
+		mask: null,
+		colorFilters: null
+	};
+}
+
+/**
+ * External store keyed by the createjs instance, so that wrapper metadata never
+ * appears as own properties of the createjs object (for-in surface stays original-faithful).
+ * Each class module additionally keeps its own store with a more concrete data type;
+ * this one serves the type-agnostic consumers (pull-sync walk, mask helper).
+ */
+const pixiDataStore = new WeakMap<object, IPixiData<Container>>();
+
+export function registerPixiData(cjs: object, data: IPixiData<Container>): void {
+	pixiDataStore.set(cjs, data);
+}
+
+export function findPixiData(cjs: object): IPixiData<Container> | null {
+	const data = pixiDataStore.get(cjs);
+	return data ? data : null;
+}
+
+/**
+ * Shared implementation of the mask setter (push layer).
+ * Writing a mask re-attaches display objects, so it must fire on change only;
+ * the accessor of each class is the change detector.
+ */
+export function setMaskForPixi(data: IPixiData<Container>, value: TCreatejsMask): void {
+	if (value) {
+		value.masked.push(data.instance);
+		data.instance.mask = value.pixi;
+
+		data.instance.once('added', () => {
+			if (data.instance.parent) {
+				data.instance.parent.addChild(value.pixi);
+			}
+		});
+	} else {
+		data.instance.mask = null;
 	}
-	
-	return true;
+
+	data.mask = value;
 }
 
-export interface IMixinedCreatejsDisplayObject<T extends Container> extends ICreatejsParam, TCreatejsDisplayObject {
-	pixi: T;
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]): any;
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, ...args: any[]): any;
-	removeAllEventListeners(type?: string, ...args: any[]): any;
+/**
+ * Pull-sync: copies the plain display properties of the whole createjs tree to
+ * the Pixi mirror. Runs once at the end of each tick, after `_tick()` has
+ * resolved the createjs state.
+ *
+ * - Invisible nodes are NOT skipped: switching to invisible is itself a state
+ *   that must reach Pixi.
+ * - No dirty tracking: the Pixi setters either are plain fields (renderable,
+ *   visible, alpha) or contain their own equality checks (position, scale,
+ *   skew, rotation, pivot), so unconditional copies never invalidate anything.
+ */
+export function syncToPixi(root: ICreatejsSyncNode): void {
+	syncNode(root);
 }
 
-// export type TMixinedCreatejsDisplayObjectClass = abstract new (...args: any[]) => IMixinedCreatejsDisplayObject;
+function syncNode(cjs: ICreatejsSyncNode): void {
+	const data = pixiDataStore.get(cjs);
 
-export function mixinCreatejsDisplayObject<T extends Container, U extends ICreatejsParam>(superClass: new (...args: any[]) => IMixinedCreatejsDisplayObject<T>): abstract new (...args: any[]) => IMixinedCreatejsDisplayObject<T> {
-	abstract class C extends superClass {
-		protected abstract _pixiData: IPixiData<T>;
-		protected abstract _createjsParams: ICreatejsParam;
-		protected abstract _createjsEventManager: CreatejsEventManager;
+	if (data) {
+		const pixi = data.instance;
 
-		get pixi() {
-			return this._pixiData.instance;
-		}
-		
-		get x() {
-			return this._createjsParams.x;
-		}
-		
-		set x(value) {
-			this._pixiData.instance.x = value;
-			this._createjsParams.x = value;
-		}
-		
-		get y() {
-			return this._createjsParams.y;
-		}
-		
-		set y(value) {
-			this._pixiData.instance.y = value;
-			this._createjsParams.y = value;
-		}
-		
-		get scaleX() {
-			return this._createjsParams.scaleX;
-		}
-			
-		set scaleX(value) {
-			this._pixiData.instance.scale.x = value;
-			this._createjsParams.scaleX = value;
-		}
-		
-		get scaleY() {
-			return this._createjsParams.scaleY;
-		}
-		
-		set scaleY(value) {
-			this._pixiData.instance.scale.y = value;
-			this._createjsParams.scaleY = value;
-		}
-		
-		get skewX() {
-			return this._createjsParams.skewX;
-		}
-		
-		set skewX(value) {
-			this._pixiData.instance.skew.x = -value * DEG_TO_RAD;
-			this._createjsParams.skewX = value;
-		}
-		
-		get skewY() {
-			return this._createjsParams.skewY;
-		}
-		
-		set skewY(value) {
-			this._pixiData.instance.skew.y = value * DEG_TO_RAD;
-			this._createjsParams.skewY = value;
-		}
-		
-		get regX() {
-			return this._createjsParams.regX;
-		}
-		
-		set regX(value) {
-			this._pixiData.regObj.x = value;
-			this._createjsParams.regX = value;
-		}
-		
-		get regY() {
-			return this._createjsParams.regY;
-		}
-		
-		set regY(value) {
-			this._pixiData.regObj.y = value;
-			this._createjsParams.regY = value;
-		}
-		
-		get rotation() {
-			return this._createjsParams.rotation;
-		}
-		
-		set rotation(value) {
-			this._pixiData.instance.rotation = value * DEG_TO_RAD;
-			this._createjsParams.rotation = value;
-		}
-		
-		get visible() {
-			return this._createjsParams.visible;
-		}
-		
-		set visible(value) {
-			value = !!value;
-			this._pixiData.instance.visible = value;
-			this._createjsParams.visible = value;
-		}
-		
-		get alpha() {
-			return this._createjsParams.alpha;
-		}
-		
-		set alpha(value) {
-			this._pixiData.instance.alpha = value;
-			this._createjsParams.alpha = value;
-		}
-		
-		get _off() {
-			return this._createjsParams._off;
-		}
-		
-		set _off(value) {
-			this._pixiData.instance.renderable = !value;
-			this._createjsParams._off = value;
-		}
-		
-		addEventListener(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, ...args: any[]) {
-			const p = super.addEventListener(type, cb, ...args);
-			if (!(cb instanceof CreatejsButtonHelper)) {
-				this._createjsEventManager.add(type, cb);
+		pixi.x = cjs.x;
+		pixi.y = cjs.y;
+		pixi.scale.x = cjs.scaleX;
+		pixi.scale.y = cjs.scaleY;
+		pixi.skew.x = -cjs.skewX * DEG_TO_RAD;
+		pixi.skew.y = cjs.skewY * DEG_TO_RAD;
+		pixi.rotation = cjs.rotation * DEG_TO_RAD;
+		data.regObj.x = cjs.regX;
+		data.regObj.y = cjs.regY;
+		pixi.visible = !!cjs.visible;
+		pixi.alpha = cjs.alpha;
+		pixi.renderable = !cjs._off;
+
+		const colorFilters = data.colorFilters;
+		if (colorFilters) {
+			for (let i = 0; i < colorFilters.length; i++) {
+				const source = colorFilters[i].source;
+				const matrix = colorFilters[i].matrix;
+
+				matrix[0] = source.redMultiplier;
+				matrix[6] = source.greenMultiplier;
+				matrix[12] = source.blueMultiplier;
+				matrix[18] = source.alphaMultiplier;
+				matrix[4] = source.redOffset / 255;
+				matrix[9] = source.greenOffset / 255;
+				matrix[14] = source.blueOffset / 255;
+				matrix[19] = source.alphaOffset / 255;
 			}
+		}
 
-			return p;
-		}
-		
-		removeEventListener(type: createjsInteractionEvents, cb: ICreatejsInteractionEventDelegate, ...args: any[]) {
-			const p = super.removeEventListener(type, cb, ...args);
-			if (!(cb instanceof CreatejsButtonHelper)) {
-				this._createjsEventManager.remove(type, cb);
-			}
-			
-			return p;
-		}
-		
-		removeAllEventListeners(type?: string, ...args: any[]) {
-			const p = super.removeAllEventListeners(type, ...args);
-			this._createjsEventManager.removeAll(type);
-
-			return p;
-		}
-		
-		get mask() {
-			return this._createjsParams.mask;
-		}
-		
-		set mask(value: TCreatejsMask) {
-			if (value) {
-				value.masked.push(this._pixiData.instance);
-				this._pixiData.instance.mask = value.pixi;
-				
-				this._pixiData.instance.once('added', () => {
-					this._pixiData.instance.parent.addChild(value.pixi);
-				});
-			} else {
-				this._pixiData.instance.mask = null;
-			}
-			
-			this._createjsParams.mask = value;
+		// Mask shapes live OUTSIDE the children tree (publish output keeps them
+		// as standalone _off shapes referenced by `mask` only), so the walk must
+		// follow the mask reference explicitly or a tweened/nested mask never
+		// receives its transform.
+		if (data.mask) {
+			syncNode(data.mask);
 		}
 	}
-	
-	return C;
+
+	const children = cjs.children;
+	if (children) {
+		for (let i = 0; i < children.length; i++) {
+			syncNode(children[i]);
+		}
+	}
 }

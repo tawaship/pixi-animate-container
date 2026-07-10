@@ -2,8 +2,11 @@
   "include": ["src/**/*.ts"],
   "compilerOptions": {
     "target": "ES6",
-    "moduleResolution": "node",
-    "strict": true
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    "newLine": "lf",
+    "strict": true,
+    "skipLibCheck": true
   },
   "typedocOptions": {
     "out": "docs",

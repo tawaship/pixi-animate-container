@@ -1,175 +1,94 @@
 import { filters } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { ICreatejsParam, createCreatejsParams } from './core';
-import { createObject } from './utils';
+import { IColorFilterSyncSource } from './core';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.ColorMatrixFilter.html | PIXI.Sprite}
+ * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
  */
 export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 	private _createjs: CreatejsColorFilter;
-	
+
 	constructor(cjs: CreatejsColorFilter) {
 		super();
-		
+
 		this._createjs = cjs;
 	}
-	
+
 	get createjs() {
 		return this._createjs;
 	}
 }
 
-export interface IPixiColorMatrixFilterData {
-	instance: PixiColorMatrixFilter;
-};
-
 /**
- * @ignore
+ * Members of the (untyped) createjs.ColorFilter runtime that the wrapper relies on.
+ * The 8 scalars are plain enumerable data properties written by the original
+ * constructor, exactly as in the original implementation.
  */
-function createPixiColorMatrixFilterData(cjs: CreatejsColorFilter): IPixiColorMatrixFilterData {
-	const pixi = new PixiColorMatrixFilter(cjs);
-	
-	return { instance: pixi };
+export interface ICreatejsColorFilterBase extends IColorFilterSyncSource {
 }
 
-export interface ICreatejsColorFilterParam extends ICreatejsParam {
-	redMultiplier: number;
-    greenMultiplier: number;
-    blueMultiplier: number;
-    alphaMultiplier: number;
-    redOffset: number;
-    greenOffset: number;
-    blueOffset: number;
-    alphaOffset: number;
+export type TCreatejsColorFilterConstructorArgs = [
+	number?, number?, number?, number?,
+	number?, number?, number?, number?
+];
+
+export interface ICreatejsColorFilterBaseConstructor {
+	new (...args: TCreatejsColorFilterConstructorArgs): ICreatejsColorFilterBase;
 }
 
 /**
  * @ignore
  */
-function createCreatejsColorFilterParams(): ICreatejsColorFilterParam {
-	return Object.assign(createCreatejsParams(), {
-		redMultiplier: 1,
-        greenMultiplier: 1,
-        blueMultiplier: 1,
-        alphaMultiplier: 1,
-        redOffset: 0,
-        greenOffset: 0,
-        blueOffset: 0,
-        alphaOffset: 0
-	});
-}
+const ColorFilterBase: ICreatejsColorFilterBaseConstructor = createjs.ColorFilter;
+
+/**
+ * External store for the paired Pixi filter, so that the createjs instance
+ * carries no wrapper metadata (its own properties are exactly the original 8
+ * scalars; tween's for-in sees the same surface as with the original createjs).
+ */
+const pixiFilterStore = new WeakMap<CreatejsColorFilter, PixiColorMatrixFilter>();
 
 /**
  * @ignore
  */
-const P = createjs.ColorFilter;
+function syncMatrix(filter: CreatejsColorFilter, pixi: PixiColorMatrixFilter): void {
+	const matrix = pixi.matrix;
+
+	matrix[0] = filter.redMultiplier;
+	matrix[6] = filter.greenMultiplier;
+	matrix[12] = filter.blueMultiplier;
+	matrix[18] = filter.alphaMultiplier;
+	matrix[4] = filter.redOffset / 255;
+	matrix[9] = filter.greenOffset / 255;
+	matrix[14] = filter.blueOffset / 255;
+	matrix[19] = filter.alphaOffset / 255;
+}
+
+export function getPixiColorMatrixFilter(filter: CreatejsColorFilter): PixiColorMatrixFilter {
+	let pixi = pixiFilterStore.get(filter);
+
+	if (!pixi) {
+		pixi = new PixiColorMatrixFilter(filter);
+		syncMatrix(filter, pixi);
+		pixiFilterStore.set(filter, pixi);
+	}
+
+	return pixi;
+}
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter}
+ *
+ * The 8 scalars (redMultiplier etc.) are plain data properties; they are copied
+ * into the paired Pixi filter's matrix by the pull-sync pass at the end of each
+ * tick (see core.ts syncToPixi), not by accessors.
  */
-export class CreatejsColorFilter extends createjs.ColorFilter {
-    protected _pixiData: IPixiColorMatrixFilterData;
-    protected _createjsParams: ICreatejsColorFilterParam;
-
-    constructor(...args: number[]) {
-        super(args);
-
-        const pixiData = this._pixiData = createPixiColorMatrixFilterData(this);
-        const createjsParams = this._createjsParams = createCreatejsColorFilterParams();
-
-        // ColorFilterのtweenは、列挙可能かつ hasOwnPropery なプロパティにアクセスしてしまうので、enumerableを切っておく
-        Object.defineProperties(this, {
-            _pixiData: {
-                enumerable: false,
-                value: pixiData
-            },
-            _createjsParams: {
-                enumerable: false,
-                value: createjsParams
-            },
-            redMultiplier: {
-                get() {
-                    return this._createjsParams.redMultiplier;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[0] = value, this._createjsParams.redMultiplier = value;
-                }
-            },
-            greenMultiplier: {
-                get() {
-                    return this._createjsParams.greenMultiplier;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[6] = value, this._createjsParams.greenMultiplier = value;
-                }
-            },
-            blueMultiplier: {
-                get() {
-                    return this._createjsParams.blueMultiplier;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[12] = value, this._createjsParams.blueMultiplier = value;
-                }
-            },
-            alphaMultiplier: {
-                get() {
-                    return this._createjsParams.alphaMultiplier;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[18] = value, this._createjsParams.alphaMultiplier = value;
-                },
-            },
-            redOffset: {
-                get() {
-                    return this._createjsParams.redOffset;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[4] = value / 255, this._createjsParams.redOffset = value;
-                }
-            },
-            greenOffset: {
-                get() {
-                    return this._createjsParams.greenOffset;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[9] = value / 255, this._createjsParams.greenOffset = value;
-                }
-            },
-            blueOffset: {
-                get() {
-                    return this._createjsParams.blueOffset;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[14] = value / 255, this._createjsParams.blueOffset = value;
-                }
-            },
-            alphaOffset: {
-                get() {
-                    return this._createjsParams.alphaOffset;
-                },
-                set(value) {
-                    this._pixiData.instance.matrix[19] = value / 255, this._createjsParams.alphaOffset = value;
-                }
-            }
-        });
-
-        P.apply(this, args);
-    }
-    
-    get pixi() {
-        return this._pixiData.instance;
-    }
-}
-
-// temporary prototype
-Object.defineProperties(CreatejsColorFilter.prototype, {
-	_createjsParams: {
-		value: createCreatejsColorFilterParams(),
-		writable: true
-	},
-	_pixiData: {
-		value: createPixiColorMatrixFilterData(createObject<CreatejsColorFilter>(CreatejsColorFilter.prototype)),
-		writable: true
+export class CreatejsColorFilter extends ColorFilterBase {
+	constructor(...args: TCreatejsColorFilterConstructorArgs) {
+		super(...args);
 	}
-});
+
+	get pixi() {
+		return getPixiColorMatrixFilter(this);
+	}
+}

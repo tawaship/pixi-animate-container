@@ -1,4 +1,5 @@
 import createjs from '@tawaship/createjs-module';
+import { syncToPixi } from './core';
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
@@ -6,17 +7,21 @@ import createjs from '@tawaship/createjs-module';
 export class CreatejsButtonHelper extends createjs.ButtonHelper {
 	constructor(...args: any[]) {
 		super(...args);
-		
+
 		const createjs = args[0];
 		const pixi = createjs.pixi;
-		
+
 		const baseFrame = args[1];
 		const overFrame = args[2];
 		const downFrame = args[3];
 		const hit = arguments[5];
 		const hitFrame = args[6];
-		
+
 		hit.gotoAndStop(hitFrame);
+		// The hit clip hangs on the pixi tree only (never on the createjs tree),
+		// so the per-tick pull sync can never reach it. It is static after the
+		// gotoAndStop above, so one explicit sync here is sufficient.
+		syncToPixi(hit);
 		const hitPixi = pixi.addChild(hit.pixi);
 		hitPixi.alpha = 0.00001;
 		
