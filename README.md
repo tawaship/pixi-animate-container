@@ -90,6 +90,27 @@ See [here](https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAn
 
 ## Change log
 
+### 3.0.0
+
+- Timeline ticking is now delegated to the original createjs traversal, so sibling frame scripts run in the same order as pure createjs (reverse walk over the live children array). Content that depends on order-sensitive sibling interactions (siblings sending the shared parent to different frames, reading each other's state, removing each other) now behaves exactly like genuine createjs. Content without such interactions is unaffected.
+- Instances removed from the display list in the middle of a tick are no longer processed once more in that tick.
+- `instance.addEventListener("tick", handler)` now works: tick events are delivered through the original createjs dispatch path.
+- Display properties (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `regX`, `regY`, `alpha`, `visible`, `_off`) are plain data properties again, exactly as in original createjs, and are copied to the pixi mirror once per tick. Two consequences:
+  - Reading `instance.pixi.*` from inside a frame script returns the values synced at the end of the previous tick. Read the createjs-side properties (always current) from frame scripts instead.
+  - Reading `_off` before anything writes it returns `undefined` instead of `false` (equivalent in every boolean context).
+- `createjs.ColorFilter` exposes its 8 color scalars as plain enumerable properties, exactly as in original createjs.
+- Discontinued
+
+	|name|
+	|:--|
+	|mixinCreatejsDisplayObject|
+	|IMixinedCreatejsDisplayObject|
+	|ICreatejsParam|
+	|CreatejsMovieClip.updateForPixi|
+	|updateDisplayObjectChildren|
+
+- This release was implemented with Claude (Anthropic's AI assistant). Its correctness rests on verification rather than authorship: a per-tick full-state differential suite confirms equality with the previous release everywhere except the intended changes above, and equality with pure createjs including sibling-interaction content.
+
 ### 2.4.0
 
 - Discontinued
