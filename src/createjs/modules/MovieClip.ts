@@ -450,10 +450,10 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		return super.removeChildAt(...index);
 	}
 
-	removeAllChldren(): void {
+	removeAllChildren(): void {
 		ensureData(this).subInstance.removeChildren();
 
-		return super.removeAllChildren();
+		super.removeAllChildren();
 	}
 
 	// Every overload of the real EventDispatcher.addEventListener has to be

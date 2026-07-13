@@ -418,8 +418,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 data.subInstance.removeChildAt(index[i]);
             }
             return superclass.prototype.removeChildAt.apply(this, index);
-        }, CreatejsMovieClip.prototype.removeAllChldren = function() {
-            return ensureData$5(this).subInstance.removeChildren(), superclass.prototype.removeAllChildren.call(this);
+        }, CreatejsMovieClip.prototype.removeAllChildren = function() {
+            ensureData$5(this).subInstance.removeChildren(), superclass.prototype.removeAllChildren.call(this);
         }, CreatejsMovieClip.prototype.addEventListener = function(type, listener, useCapture) {
             if ("function" == typeof listener) {
                 var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);

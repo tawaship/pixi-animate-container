@@ -638,9 +638,9 @@ class CreatejsMovieClip extends createjs.MovieClip {
         }
         return super.removeChildAt(...index);
     }
-    removeAllChldren() {
+    removeAllChildren() {
         ensureData$5(this).subInstance.removeChildren();
-        return super.removeAllChildren();
+        super.removeAllChildren();
     }
     addEventListener(type, listener, useCapture) {
         if (typeof listener === 'function') {
