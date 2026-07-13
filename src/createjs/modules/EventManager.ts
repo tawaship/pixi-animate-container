@@ -36,6 +36,23 @@ export interface ICreatejsInteractionEventDelegate {
 	 (e: any): void;
 }
 
+/**
+ * The full listener shape createjs.EventDispatcher's addEventListener /
+ * removeEventListener overloads accept (function or `{ handleEvent }`
+ * object, each returning boolean or void). Wrapper classes that extend a
+ * real createjs class directly must redeclare every one of these overloads
+ * verbatim to override addEventListener/removeEventListener at all -
+ * TypeScript requires an override's overload set to cover every overload of
+ * the base method it replaces, even the shapes a given wrapper class never
+ * actually receives (e.g. Shape can never receive a ButtonHelper, but the
+ * `{ handleEvent }` overloads still have to be declared).
+ */
+export type TCreatejsEventListener =
+	| ((eventObj: Object) => boolean)
+	| ((eventObj: Object) => void)
+	| { handleEvent: (eventObj: Object) => boolean }
+	| { handleEvent: (eventObj: Object) => void };
+
 export class CreatejsEventManager {
 	private _downTarget: TCreatejsObject | null = null;
 	private _emitter: utils.EventEmitter;

@@ -3,7 +3,7 @@ import createjs from '@tawaship/createjs-module';
 import { IColorFilterSyncSource } from './core';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
  */
 export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 	private _createjs: CreatejsColorFilter;

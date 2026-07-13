@@ -113,32 +113,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return getPixiColorMatrixFilter(this);
         }, Object.defineProperties(CreatejsColorFilter.prototype, prototypeAccessors$1), 
         CreatejsColorFilter;
-    }(ColorFilterBase), CreatejsButtonHelper = function(superclass) {
-        function CreatejsButtonHelper() {
-            for (var args = [], len = arguments.length; len--; ) {
-                args[len] = arguments[len];
-            }
-            superclass.apply(this, args);
-            var createjs = args[0], pixi = createjs.pixi, baseFrame = args[1], overFrame = args[2], downFrame = args[3], hit = arguments[5], hitFrame = args[6];
-            hit.gotoAndStop(hitFrame), syncToPixi(hit);
-            var hitPixi = pixi.addChild(hit.pixi);
-            hitPixi.alpha = 1e-5;
-            var isOver = !1, isDown = !1;
-            hitPixi.on("pointerover", function() {
-                isOver = !0, isDown ? createjs.gotoAndStop(downFrame) : createjs.gotoAndStop(overFrame);
-            }), hitPixi.on("pointerout", function() {
-                isOver = !1, isDown ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
-            }), hitPixi.on("pointerdown", function() {
-                isDown = !0, createjs.gotoAndStop(downFrame);
-            }), hitPixi.on("pointerup", function() {
-                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
-            }), hitPixi.on("pointerupoutside", function() {
-                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
-            }), hitPixi.interactive = !0, hitPixi.cursor = "pointer";
-        }
-        return superclass && (CreatejsButtonHelper.__proto__ = superclass), CreatejsButtonHelper.prototype = Object.create(superclass && superclass.prototype), 
-        CreatejsButtonHelper.prototype.constructor = CreatejsButtonHelper, CreatejsButtonHelper;
-    }(createjs.ButtonHelper);
+    }(ColorFilterBase);
     exports.createjsInteractionEvents = void 0, (createjsInteractionEvents = exports.createjsInteractionEvents || (exports.createjsInteractionEvents = {})).mousedown = "mousedown", 
     createjsInteractionEvents.pressmove = "pressmove", createjsInteractionEvents.pressup = "pressup", 
     createjsInteractionEvents.rollover = "rollover", createjsInteractionEvents.rollout = "rollout", 
@@ -236,7 +211,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var manager = eventManagerStore.get(cjs);
         manager && manager.removeAll(type);
     }
-    var CompositeOperations, PixiMovieClip = function(Container) {
+    var PixiMovieClip = function(Container) {
         function PixiMovieClip(cjs) {
             Container.call(this), this._filterContainer = null, this._createjs = cjs;
         }
@@ -263,13 +238,17 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }
         return superclass && (AnimateEvent.__proto__ = superclass), AnimateEvent.prototype = Object.create(superclass && superclass.prototype), 
         AnimateEvent.prototype.constructor = AnimateEvent, AnimateEvent;
-    }(createjs.Event), AnimateReachLabelEvent = function(AnimateEvent) {
+    }(createjs.Event);
+    function isAnimateLabel(value) {
+        return "label" in value && "position" in value;
+    }
+    var CompositeOperations, AnimateReachLabelEvent = function(AnimateEvent) {
         function AnimateReachLabelEvent(type, label) {
             AnimateEvent.call(this, type), this.data = label;
         }
         return AnimateEvent && (AnimateReachLabelEvent.__proto__ = AnimateEvent), AnimateReachLabelEvent.prototype = Object.create(AnimateEvent && AnimateEvent.prototype), 
         AnimateReachLabelEvent.prototype.constructor = AnimateReachLabelEvent, AnimateReachLabelEvent;
-    }(AnimateEvent), MovieClipBase = createjs.MovieClip;
+    }(AnimateEvent);
     exports.CompositeOperations = void 0, (CompositeOperations = exports.CompositeOperations || (exports.CompositeOperations = {})).Lighter = "lighter", 
     CompositeOperations.Multiply = "multiply", CompositeOperations.Screen = "screen";
     var blendModes = {};
@@ -292,14 +271,17 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var data = dataStore$5.get(cjs);
         return data || resetData$5(cjs);
     }
-    var CreatejsMovieClip = function(MovieClipBase) {
+    function isBlendModeChild(child) {
+        return "pixi" in child && "updateBlendModeForPixi" in child;
+    }
+    var CreatejsMovieClip = function(superclass) {
         function CreatejsMovieClip() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            MovieClipBase.apply(this, args), ensureData$5(this).listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
+            superclass.apply(this, args), ensureData$5(this).listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {});
         }
-        MovieClipBase && (CreatejsMovieClip.__proto__ = MovieClipBase), CreatejsMovieClip.prototype = Object.create(MovieClipBase && MovieClipBase.prototype), 
+        superclass && (CreatejsMovieClip.__proto__ = superclass), CreatejsMovieClip.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsMovieClip.prototype.constructor = CreatejsMovieClip;
         var prototypeAccessors$1 = {
             pixi: {
@@ -327,7 +309,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 args[len] = arguments[len];
             }
             return resetData$5(this).listenFrameEvents = Object.assign({}, this._listenFrameEventsBase || {}), 
-            MovieClipBase.prototype.initialize.apply(this, args);
+            superclass.prototype.initialize.apply(this, args);
         }, prototypeAccessors$1.pixi.get = function() {
             return ensureData$5(this).instance;
         }, prototypeAccessors$1.framerate.get = function() {
@@ -338,13 +320,13 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             ensureData$5(this).listenFrameEvents[type] = value;
         }, CreatejsMovieClip.prototype.advance = function(time) {
             var beforeFrame = this.currentFrame;
-            if (MovieClipBase.prototype.advance.call(this, time), this.currentFrame !== beforeFrame) {
+            if (superclass.prototype.advance.call(this, time), this.currentFrame !== beforeFrame) {
                 var listen = ensureData$5(this).listenFrameEvents;
                 if (listen.endAnimation && this.currentFrame === this.totalFrames - 1 && this.dispatchEvent(new AnimateEvent("endAnimation")), 
                 listen.reachLabel) {
                     for (var i = 0; i < this.labels.length; i++) {
                         var label = this.labels[i];
-                        if (this.currentFrame === label.position) {
+                        if (isAnimateLabel(label) && this.currentFrame === label.position) {
                             this.dispatchEvent(new AnimateReachLabelEvent("reachLabel", label));
                             break;
                         }
@@ -362,7 +344,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             if (!data.compositeOperation || blendModes[data.compositeOperation] !== mode) {
                 data.reservedBlendMode = mode;
                 for (var i = 0; i < this.children.length; i++) {
-                    this.children[i].updateBlendModeForPixi(mode);
+                    var child = this.children[i];
+                    isBlendModeChild(child) && child.updateBlendModeForPixi(mode);
                 }
             }
         }, prototypeAccessors$1.compositeOperation.get = function() {
@@ -397,28 +380,62 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }, CreatejsMovieClip.prototype._updateChildrenBlendModeForPixi = function(child) {
             var data = ensureData$5(this), blendMode = data.compositeOperation && blendModes[data.compositeOperation] || data.reservedBlendMode;
             blendMode && child.updateBlendModeForPixi(blendMode);
-        }, CreatejsMovieClip.prototype.addChild = function(child) {
-            return ensureData$5(this).subInstance.addChild(child.pixi), this._updateChildrenBlendModeForPixi(child), 
-            MovieClipBase.prototype.addChild.call(this, child);
-        }, CreatejsMovieClip.prototype.addChildAt = function(child, index) {
-            return ensureData$5(this).subInstance.addChildAt(child.pixi, index), this._updateChildrenBlendModeForPixi(child), 
-            MovieClipBase.prototype.addChildAt.call(this, child, index);
-        }, CreatejsMovieClip.prototype.removeChild = function(child) {
-            return ensureData$5(this).subInstance.removeChild(child.pixi), MovieClipBase.prototype.removeChild.call(this, child);
-        }, CreatejsMovieClip.prototype.removeChildAt = function(index) {
-            return ensureData$5(this).subInstance.removeChildAt(index), MovieClipBase.prototype.removeChildAt.call(this, index);
+        }, CreatejsMovieClip.prototype.addChild = function() {
+            for (var children = [], len = arguments.length; len--; ) {
+                children[len] = arguments[len];
+            }
+            for (var data = ensureData$5(this), i = 0; i < children.length; i++) {
+                var child = children[i];
+                data.subInstance.addChild(child.pixi), this._updateChildrenBlendModeForPixi(child);
+            }
+            return superclass.prototype.addChild.apply(this, children);
+        }, CreatejsMovieClip.prototype.addChildAt = function() {
+            for (var childOrIndex = [], len = arguments.length; len--; ) {
+                childOrIndex[len] = arguments[len];
+            }
+            var data = ensureData$5(this), index = childOrIndex[childOrIndex.length - 1];
+            if ("number" == typeof index) {
+                for (var i = 0; i < childOrIndex.length - 1; i++) {
+                    var child = childOrIndex[i];
+                    "number" != typeof child && (data.subInstance.addChildAt(child.pixi, index), this._updateChildrenBlendModeForPixi(child));
+                }
+            }
+            return superclass.prototype.addChildAt.apply(this, childOrIndex);
+        }, CreatejsMovieClip.prototype.removeChild = function() {
+            for (var children = [], len = arguments.length; len--; ) {
+                children[len] = arguments[len];
+            }
+            for (var data = ensureData$5(this), i = 0; i < children.length; i++) {
+                var child = children[i];
+                isBlendModeChild(child) && data.subInstance.removeChild(child.pixi);
+            }
+            return superclass.prototype.removeChild.apply(this, children);
+        }, CreatejsMovieClip.prototype.removeChildAt = function() {
+            for (var index = [], len = arguments.length; len--; ) {
+                index[len] = arguments[len];
+            }
+            for (var data = ensureData$5(this), i = 0; i < index.length; i++) {
+                data.subInstance.removeChildAt(index[i]);
+            }
+            return superclass.prototype.removeChildAt.apply(this, index);
         }, CreatejsMovieClip.prototype.removeAllChldren = function() {
-            return ensureData$5(this).subInstance.removeChildren(), MovieClipBase.prototype.removeAllChildren.call(this);
-        }, CreatejsMovieClip.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = MovieClipBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsMovieClip.prototype.removeEventListener = function(type, cb, useCapture) {
-            MovieClipBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
+            return ensureData$5(this).subInstance.removeChildren(), superclass.prototype.removeAllChildren.call(this);
+        }, CreatejsMovieClip.prototype.addEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+                return addInteractionListener(this, type, listener), res;
+            }
+            return superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+        }, CreatejsMovieClip.prototype.removeEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                return superclass.prototype.removeEventListener.call(this, type, listener, useCapture), 
+                void removeInteractionListener(this, type, listener);
+            }
+            superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
         }, CreatejsMovieClip.prototype.removeAllEventListeners = function(type) {
-            MovieClipBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
+            superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsMovieClip.prototype, prototypeAccessors$1), CreatejsMovieClip;
-    }(MovieClipBase);
+    }(createjs.MovieClip);
     delete CreatejsMovieClip.prototype.endAnimation, delete CreatejsMovieClip.prototype.reachLabel;
     var PixiSprite = function(Sprite) {
         function PixiSprite(cjs) {
@@ -434,7 +451,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiSprite.prototype, prototypeAccessors), PixiSprite;
-    }(PIXI.Sprite), SpriteBase = createjs.Sprite;
+    }(PIXI.Sprite);
     var dataStore$4 = new WeakMap;
     function resetData$4(cjs) {
         var data = function(cjs) {
@@ -447,14 +464,14 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var data = dataStore$4.get(cjs);
         return data || resetData$4(cjs);
     }
-    var CreatejsSprite = function(SpriteBase) {
+    var CreatejsSprite = function(superclass) {
         function CreatejsSprite() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            SpriteBase.apply(this, args), ensureData$4(this);
+            superclass.apply(this, args), ensureData$4(this);
         }
-        SpriteBase && (CreatejsSprite.__proto__ = SpriteBase), CreatejsSprite.prototype = Object.create(SpriteBase && SpriteBase.prototype), 
+        superclass && (CreatejsSprite.__proto__ = superclass), CreatejsSprite.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsSprite.prototype.constructor = CreatejsSprite;
         var prototypeAccessors$1 = {
             pixi: {
@@ -468,29 +485,35 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            return resetData$4(this), SpriteBase.prototype.initialize.apply(this, args);
+            return resetData$4(this), superclass.prototype.initialize.apply(this, args);
         }, prototypeAccessors$1.pixi.get = function() {
             return ensureData$4(this).instance;
         }, CreatejsSprite.prototype.advance = function(time) {}, CreatejsSprite.prototype.updateBlendModeForPixi = function(mode) {
             ensureData$4(this).instance.blendMode = mode;
         }, CreatejsSprite.prototype.gotoAndStop = function(frameOrAnimation) {
-            SpriteBase.prototype.gotoAndStop.call(this, frameOrAnimation);
-            var frame = this.spriteSheet.getFrame(this.currentFrame), baseTexture = PIXI.BaseTexture.from(frame.image), texture = new PIXI.Texture(baseTexture, frame.rect);
+            superclass.prototype.gotoAndStop.call(this, frameOrAnimation);
+            var frame = this.spriteSheet.getFrame(this.currentFrame), baseTexture = PIXI.BaseTexture.from(frame.image), rect = new PIXI.Rectangle(frame.rect.x, frame.rect.y, frame.rect.width, frame.rect.height), texture = new PIXI.Texture(baseTexture, rect);
             ensureData$4(this).instance.texture = texture;
         }, prototypeAccessors$1.mask.get = function() {
             return ensureData$4(this).mask;
         }, prototypeAccessors$1.mask.set = function(value) {
             setMaskForPixi(ensureData$4(this), value);
-        }, CreatejsSprite.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = SpriteBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsSprite.prototype.removeEventListener = function(type, cb, useCapture) {
-            SpriteBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
+        }, CreatejsSprite.prototype.addEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+                return addInteractionListener(this, type, listener), res;
+            }
+            return superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+        }, CreatejsSprite.prototype.removeEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                return superclass.prototype.removeEventListener.call(this, type, listener, useCapture), 
+                void removeInteractionListener(this, type, listener);
+            }
+            superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
         }, CreatejsSprite.prototype.removeAllEventListeners = function(type) {
-            SpriteBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
+            superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsSprite.prototype, prototypeAccessors$1), CreatejsSprite;
-    }(SpriteBase), PixiShape = function(Container) {
+    }(createjs.Sprite), PixiShape = function(Container) {
         function PixiShape(cjs) {
             Container.call(this), this._createjs = cjs;
         }
@@ -504,7 +527,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiShape.prototype, prototypeAccessors), PixiShape;
-    }(PIXI.Container), ShapeBase = createjs.Shape;
+    }(PIXI.Container);
     var dataStore$3 = new WeakMap;
     function resetData$3(cjs) {
         var data = function(cjs) {
@@ -520,14 +543,11 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var data = dataStore$3.get(cjs);
         return data || resetData$3(cjs);
     }
-    var CreatejsShape = function(ShapeBase) {
-        function CreatejsShape() {
-            for (var args = [], len = arguments.length; len--; ) {
-                args[len] = arguments[len];
-            }
-            ShapeBase.apply(this, args), ensureData$3(this);
+    var CreatejsShape = function(superclass) {
+        function CreatejsShape(graphics) {
+            superclass.call(this, graphics), ensureData$3(this);
         }
-        ShapeBase && (CreatejsShape.__proto__ = ShapeBase), CreatejsShape.prototype = Object.create(ShapeBase && ShapeBase.prototype), 
+        superclass && (CreatejsShape.__proto__ = superclass), CreatejsShape.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsShape.prototype.constructor = CreatejsShape;
         var prototypeAccessors$1 = {
             pixi: {
@@ -543,12 +563,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 configurable: !0
             }
         };
-        return CreatejsShape.prototype.initialize = function() {
-            for (var args = [], len = arguments.length; len--; ) {
-                args[len] = arguments[len];
-            }
-            return resetData$3(this), ShapeBase.prototype.initialize.apply(this, args);
-        }, prototypeAccessors$1.pixi.get = function() {
+        return prototypeAccessors$1.pixi.get = function() {
             return ensureData$3(this).instance;
         }, CreatejsShape.prototype.updateBlendModeForPixi = function(mode) {
             var _a, data = ensureData$3(this);
@@ -575,16 +590,22 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return ensureData$3(this).mask;
         }, prototypeAccessors$1.mask.set = function(value) {
             setMaskForPixi(ensureData$3(this), value);
-        }, CreatejsShape.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = ShapeBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsShape.prototype.removeEventListener = function(type, cb, useCapture) {
-            ShapeBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
+        }, CreatejsShape.prototype.addEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+                return addInteractionListener(this, type, listener), res;
+            }
+            return superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+        }, CreatejsShape.prototype.removeEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                return superclass.prototype.removeEventListener.call(this, type, listener, useCapture), 
+                void removeInteractionListener(this, type, listener);
+            }
+            superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
         }, CreatejsShape.prototype.removeAllEventListeners = function(type) {
-            ShapeBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
+            superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsShape.prototype, prototypeAccessors$1), CreatejsShape;
-    }(ShapeBase), PixiBitmap = function(Sprite) {
+    }(createjs.Shape), PixiBitmap = function(Sprite) {
         function PixiBitmap(cjs) {
             Sprite.call(this), this._createjs = cjs;
         }
@@ -598,7 +619,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiBitmap.prototype, prototypeAccessors), PixiBitmap;
-    }(PIXI.Sprite), BitmapBase = createjs.Bitmap;
+    }(PIXI.Sprite);
     var dataStore$2 = new WeakMap;
     function resetData$2(cjs) {
         var data = function(cjs) {
@@ -611,14 +632,14 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var data = dataStore$2.get(cjs);
         return data || resetData$2(cjs);
     }
-    var CreatejsBitmap = function(BitmapBase) {
+    var CreatejsBitmap = function(superclass) {
         function CreatejsBitmap() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            BitmapBase.apply(this, args), ensureData$2(this);
+            superclass.apply(this, args), ensureData$2(this);
         }
-        BitmapBase && (CreatejsBitmap.__proto__ = BitmapBase), CreatejsBitmap.prototype = Object.create(BitmapBase && BitmapBase.prototype), 
+        superclass && (CreatejsBitmap.__proto__ = superclass), CreatejsBitmap.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsBitmap.prototype.constructor = CreatejsBitmap;
         var prototypeAccessors$1 = {
             pixi: {
@@ -632,7 +653,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            var data = resetData$2(this), res = BitmapBase.prototype.initialize.apply(this, args);
+            var data = resetData$2(this), res = superclass.prototype.initialize.apply(this, args);
             return data.instance.texture = PIXI.Texture.from(this.image), res;
         }, prototypeAccessors$1.pixi.get = function() {
             return ensureData$2(this).instance;
@@ -642,16 +663,22 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return ensureData$2(this).mask;
         }, prototypeAccessors$1.mask.set = function(value) {
             setMaskForPixi(ensureData$2(this), value);
-        }, CreatejsBitmap.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = BitmapBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsBitmap.prototype.removeEventListener = function(type, cb, useCapture) {
-            BitmapBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
+        }, CreatejsBitmap.prototype.addEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+                return addInteractionListener(this, type, listener), res;
+            }
+            return superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+        }, CreatejsBitmap.prototype.removeEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                return superclass.prototype.removeEventListener.call(this, type, listener, useCapture), 
+                void removeInteractionListener(this, type, listener);
+            }
+            superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
         }, CreatejsBitmap.prototype.removeAllEventListeners = function(type) {
-            BitmapBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
+            superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsBitmap.prototype, prototypeAccessors$1), CreatejsBitmap;
-    }(BitmapBase), PixiGraphics = function(Graphics) {
+    }(createjs.Bitmap), PixiGraphics = function(Graphics) {
         function PixiGraphics(cjs) {
             Graphics.call(this), this._createjs = cjs;
         }
@@ -665,7 +692,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiGraphics.prototype, prototypeAccessors), PixiGraphics;
-    }(PIXI.Graphics), GraphicsBase = createjs.Graphics;
+    }(PIXI.Graphics);
     var dataStore$1 = new WeakMap;
     function resetData$1(cjs) {
         var data = function(cjs) {
@@ -689,16 +716,16 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         0: PIXI.LINE_JOIN.MITER,
         1: PIXI.LINE_JOIN.ROUND,
         2: PIXI.LINE_JOIN.BEVEL
-    }, CreatejsGraphics = function(GraphicsBase) {
+    }, CreatejsGraphics = function(superclass) {
         function CreatejsGraphics() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            GraphicsBase.apply(this, args);
+            superclass.apply(this, args);
             var data = ensureData$1(this);
             data.instance.beginFill(16772846, 1), data.strokeFill = 0, data.strokeAlpha = 1;
         }
-        GraphicsBase && (CreatejsGraphics.__proto__ = GraphicsBase), CreatejsGraphics.prototype = Object.create(GraphicsBase && GraphicsBase.prototype), 
+        superclass && (CreatejsGraphics.__proto__ = superclass), CreatejsGraphics.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsGraphics.prototype.constructor = CreatejsGraphics;
         var prototypeAccessors$1 = {
             pixi: {
@@ -708,12 +735,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 configurable: !0
             }
         };
-        return CreatejsGraphics.prototype.initialize = function() {
-            for (var args = [], len = arguments.length; len--; ) {
-                args[len] = arguments[len];
-            }
-            return resetData$1(this), GraphicsBase.prototype.initialize.apply(this, args);
-        }, prototypeAccessors$1.pixi.get = function() {
+        return prototypeAccessors$1.pixi.get = function() {
             return ensureData$1(this).instance;
         }, CreatejsGraphics.prototype.updateBlendModeForPixi = function(mode) {
             mode && (ensureData$1(this).instance.blendMode = mode);
@@ -722,35 +744,41 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return pixi.clone().endFill().containsPoint({
                 x: x,
                 y: y
-            }) ? pixi.beginHole() : pixi.endHole(), pixi.moveTo(x, y), GraphicsBase.prototype.moveTo.call(this, x, y);
+            }) ? pixi.beginHole() : pixi.endHole(), pixi.moveTo(x, y), superclass.prototype.moveTo.call(this, x, y), 
+            this;
         }, CreatejsGraphics.prototype.mt = function(x, y) {
             return this.moveTo(x, y);
         }, CreatejsGraphics.prototype.lineTo = function(x, y) {
-            return ensureData$1(this).instance.lineTo(x, y), GraphicsBase.prototype.lineTo.call(this, x, y);
+            return ensureData$1(this).instance.lineTo(x, y), superclass.prototype.lineTo.call(this, x, y), 
+            this;
         }, CreatejsGraphics.prototype.lt = function(x, y) {
             return this.lineTo(x, y);
         }, CreatejsGraphics.prototype.arcTo = function(x1, y1, x2, y2, radius) {
-            return ensureData$1(this).instance.arcTo(x1, y1, x2, y2, radius), GraphicsBase.prototype.arcTo.call(this, x1, y1, x2, y2, radius);
+            return ensureData$1(this).instance.arcTo(x1, y1, x2, y2, radius), superclass.prototype.arcTo.call(this, x1, y1, x2, y2, radius), 
+            this;
         }, CreatejsGraphics.prototype.at = function(x1, y1, x2, y2, radius) {
             return this.arcTo(x1, y1, x2, y2, radius);
         }, CreatejsGraphics.prototype.arc = function(x, y, radius, startAngle, endAngle, anticlockwise) {
             return ensureData$1(this).instance.arc(x, y, radius, startAngle, endAngle, anticlockwise), 
-            GraphicsBase.prototype.arc.call(this, x, y, radius, startAngle, endAngle, anticlockwise);
+            superclass.prototype.arc.call(this, x, y, radius, startAngle, endAngle, anticlockwise), 
+            this;
         }, CreatejsGraphics.prototype.a = function(x, y, radius, startAngle, endAngle, anticlockwise) {
             return this.arc(x, y, radius, startAngle, endAngle, anticlockwise);
         }, CreatejsGraphics.prototype.quadraticCurveTo = function(cpx, cpy, x, y) {
-            return ensureData$1(this).instance.quadraticCurveTo(cpx, cpy, x, y), GraphicsBase.prototype.quadraticCurveTo.call(this, cpx, cpy, x, y);
+            return ensureData$1(this).instance.quadraticCurveTo(cpx, cpy, x, y), superclass.prototype.quadraticCurveTo.call(this, cpx, cpy, x, y), 
+            this;
         }, CreatejsGraphics.prototype.qt = function(cpx, cpy, x, y) {
             return this.quadraticCurveTo(cpx, cpy, x, y);
         }, CreatejsGraphics.prototype.curveTo = function(cpx, cpy, x, y) {
             return this.quadraticCurveTo(cpx, cpy, x, y);
         }, CreatejsGraphics.prototype.bezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) {
             return ensureData$1(this).instance.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y), 
-            GraphicsBase.prototype.bezierCurveTo.call(this, cp1x, cp1y, cp2x, cp2y, x, y);
+            superclass.prototype.bezierCurveTo.call(this, cp1x, cp1y, cp2x, cp2y, x, y), this;
         }, CreatejsGraphics.prototype.bt = function(cp1x, cp1y, cp2x, cp2y, x, y) {
             return this.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
         }, CreatejsGraphics.prototype.rect = function(x, y, w, h) {
-            return ensureData$1(this).instance.drawRect(x, y, w, h), GraphicsBase.prototype.rect.call(this, x, y, w, h);
+            return ensureData$1(this).instance.drawRect(x, y, w, h), superclass.prototype.rect.call(this, x, y, w, h), 
+            this;
         }, CreatejsGraphics.prototype.r = function(x, y, w, h) {
             return this.rect(x, y, w, h);
         }, CreatejsGraphics.prototype.drawRect = function(x, y, w, h) {
@@ -758,11 +786,13 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }, CreatejsGraphics.prototype.dr = function(x, y, w, h) {
             return this.rect(x, y, w, h);
         }, CreatejsGraphics.prototype.closePath = function() {
-            return ensureData$1(this).instance.closePath(), GraphicsBase.prototype.closePath.call(this);
+            return ensureData$1(this).instance.closePath(), superclass.prototype.closePath.call(this), 
+            this;
         }, CreatejsGraphics.prototype.cp = function() {
             return this.closePath();
         }, CreatejsGraphics.prototype.clear = function() {
-            return ensureData$1(this).instance.clear(), GraphicsBase.prototype.clear.call(this);
+            return ensureData$1(this).instance.clear(), superclass.prototype.clear.call(this), 
+            this;
         }, CreatejsGraphics.prototype.c = function() {
             return this.clear();
         }, CreatejsGraphics.prototype._parseColor = function(color) {
@@ -781,11 +811,13 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             res.alpha = Number(colors[3]), res;
         }, CreatejsGraphics.prototype.beginFill = function(color) {
             var c = this._parseColor(color);
-            return ensureData$1(this).instance.beginFill(c.color, c.alpha), GraphicsBase.prototype.beginFill.call(this, color);
+            return ensureData$1(this).instance.beginFill(c.color, c.alpha), superclass.prototype.beginFill.call(this, color), 
+            this;
         }, CreatejsGraphics.prototype.f = function(color) {
             return this.beginFill(color);
         }, CreatejsGraphics.prototype.endFill = function() {
-            return ensureData$1(this).instance.endFill(), GraphicsBase.prototype.endFill.call(this);
+            return ensureData$1(this).instance.endFill(), superclass.prototype.endFill.call(this), 
+            this;
         }, CreatejsGraphics.prototype.ef = function() {
             return this.endFill();
         }, CreatejsGraphics.prototype.setStrokeStyle = function(thickness, caps, joints, miterLimit, ignoreScale) {
@@ -797,45 +829,43 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 cap: caps in LineCap ? LineCap[caps] : LineCap[0],
                 join: joints in LineJoin ? LineJoin[joints] : LineJoin[0],
                 miterLimit: miterLimit
-            }), GraphicsBase.prototype.setStrokeStyle.call(this, thickness, caps, joints, miterLimit, ignoreScale);
+            }), superclass.prototype.setStrokeStyle.call(this, thickness, caps, joints, miterLimit, ignoreScale), 
+            this;
         }, CreatejsGraphics.prototype.ss = function(thickness, caps, joints, miterLimit, ignoreScale) {
             return this.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
         }, CreatejsGraphics.prototype.beginStroke = function(color) {
             var data = ensureData$1(this), c = this._parseColor(color);
-            return data.strokeFill = c.color, data.strokeAlpha = c.alpha, GraphicsBase.prototype.beginStroke.call(this, color);
+            return data.strokeFill = c.color, data.strokeAlpha = c.alpha, superclass.prototype.beginStroke.call(this, color), 
+            this;
         }, CreatejsGraphics.prototype.s = function(color) {
             return this.beginStroke(color);
         }, CreatejsGraphics.prototype.drawRoundRect = function(x, y, w, h, radius) {
-            return ensureData$1(this).instance.drawRoundedRect(x, y, w, h, radius), GraphicsBase.prototype.drawRoundRect.call(this, x, y, w, h, radius);
+            return ensureData$1(this).instance.drawRoundedRect(x, y, w, h, radius), superclass.prototype.drawRoundRect.call(this, x, y, w, h, radius), 
+            this;
         }, CreatejsGraphics.prototype.rr = function(x, y, w, h, radius) {
             return this.drawRoundRect(x, y, w, h, radius);
         }, CreatejsGraphics.prototype.drawCircle = function(x, y, radius) {
-            return ensureData$1(this).instance.drawCircle(x, y, radius), GraphicsBase.prototype.drawCircle.call(this, x, y, radius);
+            return ensureData$1(this).instance.drawCircle(x, y, radius), superclass.prototype.drawCircle.call(this, x, y, radius), 
+            this;
         }, CreatejsGraphics.prototype.dc = function(x, y, radius) {
             return this.drawCircle(x, y, radius);
         }, CreatejsGraphics.prototype.drawEllipse = function(x, y, w, h) {
-            return ensureData$1(this).instance.drawEllipse(x, y, w, h), GraphicsBase.prototype.drawEllipse.call(this, x, y, w, h);
+            return ensureData$1(this).instance.drawEllipse(x, y, w, h), superclass.prototype.drawEllipse.call(this, x, y, w, h), 
+            this;
         }, CreatejsGraphics.prototype.de = function(x, y, w, h) {
             return this.drawEllipse(x, y, w, h);
         }, CreatejsGraphics.prototype.drawPolyStar = function(x, y, radius, sides, pointSize, angle) {
             return ensureData$1(this).instance.drawRegularPolygon(x, y, radius, sides, angle * DEG_TO_RAD), 
-            GraphicsBase.prototype.drawPolyStar.call(this, x, y, radius, sides, pointSize, angle);
+            superclass.prototype.drawPolyStar.call(this, x, y, radius, sides, pointSize, angle), 
+            this;
         }, CreatejsGraphics.prototype.dp = function(x, y, radius, sides, pointSize, angle) {
             return this.drawPolyStar(x, y, radius, sides, pointSize, angle);
         }, prototypeAccessors$1.mask.get = function() {
             return ensureData$1(this).mask;
         }, prototypeAccessors$1.mask.set = function(value) {
             setMaskForPixi(ensureData$1(this), value);
-        }, CreatejsGraphics.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = GraphicsBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsGraphics.prototype.removeEventListener = function(type, cb, useCapture) {
-            GraphicsBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
-        }, CreatejsGraphics.prototype.removeAllEventListeners = function(type) {
-            GraphicsBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsGraphics.prototype, prototypeAccessors$1), CreatejsGraphics;
-    }(GraphicsBase), PixiText = function(Text) {
+    }(createjs.Graphics), PixiText = function(Text) {
         function PixiText() {
             Text.apply(this, arguments);
         }
@@ -860,7 +890,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }, prototypeAccessors.text.get = function() {
             return this._text;
         }, Object.defineProperties(PixiTextContainer.prototype, prototypeAccessors), PixiTextContainer;
-    }(PIXI.Container), TextBase = createjs.Text;
+    }(PIXI.Container);
     var dataStore = new WeakMap;
     function resetData(cjs) {
         var data = function(cjs) {
@@ -882,12 +912,12 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         var data = dataStore.get(cjs);
         return data || resetData(cjs);
     }
-    var CreatejsText = function(TextBase) {
+    var CreatejsText = function(superclass) {
         function CreatejsText(text, font, color) {
-            void 0 === color && (color = "#000000"), TextBase.call(this, text, font, color), 
+            void 0 === color && (color = "#000000"), superclass.call(this, text, font, color), 
             ensureData(this);
         }
-        TextBase && (CreatejsText.__proto__ = TextBase), CreatejsText.prototype = Object.create(TextBase && TextBase.prototype), 
+        superclass && (CreatejsText.__proto__ = superclass), CreatejsText.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsText.prototype.constructor = CreatejsText;
         var prototypeAccessors$1 = {
             pixi: {
@@ -966,16 +996,47 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return ensureData(this).mask;
         }, prototypeAccessors$1.mask.set = function(value) {
             setMaskForPixi(ensureData(this), value);
-        }, CreatejsText.prototype.addEventListener = function(type, cb, useCapture) {
-            var p = TextBase.prototype.addEventListener.call(this, type, cb, useCapture);
-            return cb instanceof CreatejsButtonHelper || addInteractionListener(this, type, cb), 
-            p;
-        }, CreatejsText.prototype.removeEventListener = function(type, cb, useCapture) {
-            TextBase.prototype.removeEventListener.call(this, type, cb, useCapture), removeInteractionListener(this, type, cb);
+        }, CreatejsText.prototype.addEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                var res = superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+                return addInteractionListener(this, type, listener), res;
+            }
+            return superclass.prototype.addEventListener.call(this, type, listener, useCapture);
+        }, CreatejsText.prototype.removeEventListener = function(type, listener, useCapture) {
+            if ("function" == typeof listener) {
+                return superclass.prototype.removeEventListener.call(this, type, listener, useCapture), 
+                void removeInteractionListener(this, type, listener);
+            }
+            superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
         }, CreatejsText.prototype.removeAllEventListeners = function(type) {
-            TextBase.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
+            superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsText.prototype, prototypeAccessors$1), CreatejsText;
-    }(TextBase);
+    }(createjs.Text), CreatejsButtonHelper = function(superclass) {
+        function CreatejsButtonHelper() {
+            for (var args = [], len = arguments.length; len--; ) {
+                args[len] = arguments[len];
+            }
+            superclass.apply(this, args);
+            var createjs = args[0], pixi = createjs.pixi, baseFrame = args[1], overFrame = args[2], downFrame = args[3], hit = arguments[5], hitFrame = args[6];
+            hit.gotoAndStop(hitFrame), syncToPixi(hit);
+            var hitPixi = pixi.addChild(hit.pixi);
+            hitPixi.alpha = 1e-5;
+            var isOver = !1, isDown = !1;
+            hitPixi.on("pointerover", function() {
+                isOver = !0, isDown ? createjs.gotoAndStop(downFrame) : createjs.gotoAndStop(overFrame);
+            }), hitPixi.on("pointerout", function() {
+                isOver = !1, isDown ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+            }), hitPixi.on("pointerdown", function() {
+                isDown = !0, createjs.gotoAndStop(downFrame);
+            }), hitPixi.on("pointerup", function() {
+                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+            }), hitPixi.on("pointerupoutside", function() {
+                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+            }), hitPixi.interactive = !0, hitPixi.cursor = "pointer";
+        }
+        return superclass && (CreatejsButtonHelper.__proto__ = superclass), CreatejsButtonHelper.prototype = Object.create(superclass && superclass.prototype), 
+        CreatejsButtonHelper.prototype.constructor = CreatejsButtonHelper, CreatejsButtonHelper;
+    }(createjs.ButtonHelper);
     function playSound(id, loop, offset) {
         return createjs.Sound.play(id, {
             interrupt: createjs.Sound.INTERRUPT_EARLY,

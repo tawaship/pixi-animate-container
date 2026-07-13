@@ -1,14 +1,13 @@
 import { BLEND_MODES, Sprite, Texture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
-	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask,
+	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 export class PixiBitmap extends Sprite {
 	private _createjs: CreatejsBitmap;
@@ -27,23 +26,6 @@ export class PixiBitmap extends Sprite {
 export type TCreatejsBitmapSource = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | string;
 
 export type TCreatejsBitmapConstructorArgs = [TCreatejsBitmapSource?];
-
-/**
- * Members of the (untyped) createjs.Bitmap runtime that the wrapper relies on.
- */
-export interface ICreatejsBitmapBase extends ICreatejsDisplayObjectBase {
-	image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
-	initialize(...args: TCreatejsBitmapConstructorArgs): void;
-}
-
-export interface ICreatejsBitmapBaseConstructor {
-	new (...args: TCreatejsBitmapConstructorArgs): ICreatejsBitmapBase;
-}
-
-/**
- * @ignore
- */
-const BitmapBase: ICreatejsBitmapBaseConstructor = createjs.Bitmap;
 
 export interface IPixiBitmapData extends IPixiData<PixiBitmap> {
 }
@@ -84,8 +66,13 @@ function ensureData(cjs: CreatejsBitmap): IPixiBitmapData {
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
-export class CreatejsBitmap extends BitmapBase implements ICreatejsDisplayObject<PixiBitmap> {
+export class CreatejsBitmap extends createjs.Bitmap implements ICreatejsDisplayObject<PixiBitmap> {
 	constructor(...args: TCreatejsBitmapConstructorArgs) {
 		super(...args);
 
@@ -109,27 +96,53 @@ export class CreatejsBitmap extends BitmapBase implements ICreatejsDisplayObject
 		ensureData(this).instance.blendMode = mode;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	get mask() {
 		return ensureData(this).mask;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
 
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
-		const p = super.addEventListener(type, cb, useCapture);
+	// Every overload of the real EventDispatcher.addEventListener has to be
+	// redeclared verbatim to override it at all (see TCreatejsEventListener).
+	// Bitmap only ever receives the function-listener shapes in practice (the
+	// `{ handleEvent }` shapes exist for ButtonHelper, which can only target
+	// a Sprite/MovieClip) - that branch just forwards to the real
+	// implementation with no interaction bridging.
+	addEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): Function | Object {
+		if (typeof listener === 'function') {
+			const res = super.addEventListener(type, listener, useCapture);
+			addInteractionListener(this, type, listener);
 
-		if (!(cb instanceof CreatejsButtonHelper)) {
-			addInteractionListener(this, type, cb);
+			return res;
 		}
 
-		return p;
+		return super.addEventListener(type, listener, useCapture);
 	}
 
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
-		super.removeEventListener(type, cb, useCapture);
-		removeInteractionListener(this, type, cb);
+	// See the class-level removeEventListener comment on CreatejsShape for why
+	// the real 5th `Function` catch-all overload is intentionally not
+	// redeclared here.
+	removeEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			super.removeEventListener(type, listener, useCapture);
+			removeInteractionListener(this, type, listener);
+
+			return;
+		}
+
+		super.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {

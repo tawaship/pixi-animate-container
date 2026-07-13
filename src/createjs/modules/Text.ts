@@ -1,19 +1,18 @@
 import { BLEND_MODES, Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
-	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask,
+	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
  */
 export class PixiText extends Text {}
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiTextContainer extends Container {
 	private _createjs: CreatejsText;
@@ -43,21 +42,6 @@ export type TCreatejsTextAlign = 'left' | 'center' | 'right';
 const DEF_ALIGN: TCreatejsTextAlign = 'left';
 
 export type TCreatejsTextConstructorArgs = [string?, string?, string?];
-
-/**
- * Members of the (untyped) createjs.Text runtime that the wrapper relies on.
- */
-export interface ICreatejsTextBase extends ICreatejsDisplayObjectBase {
-}
-
-export interface ICreatejsTextBaseConstructor {
-	new (...args: TCreatejsTextConstructorArgs): ICreatejsTextBase;
-}
-
-/**
- * @ignore
- */
-const TextBase: ICreatejsTextBaseConstructor = createjs.Text;
 
 export interface ICreatejsParsedText {
 	fontSize: number;
@@ -121,8 +105,14 @@ function ensureData(cjs: CreatejsText): IPixiTextData {
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
+ *
+ * `text`/`font`/`color`/`textAlign`/`lineHeight`/`lineWidth`/`mask` are all
+ * plain data properties on the real createjs.Text/DisplayObject, but this
+ * wrapper must intercept get/set on each to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
-export class CreatejsText extends TextBase implements ICreatejsDisplayObject<PixiTextContainer> {
+export class CreatejsText extends createjs.Text implements ICreatejsDisplayObject<PixiTextContainer> {
 	constructor(text: string, font: string, color: string = '#000000') {
 		super(text, font, color);
 
@@ -137,6 +127,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		ensureData(this).instance.text.blendMode = mode;
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get text() {
 		return ensureData(this).text;
 	}
@@ -168,6 +159,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		};
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get font() {
 		return ensureData(this).font;
 	}
@@ -187,6 +179,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		return parseInt(color.slice(1), 16);
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get color() {
 		return ensureData(this).color;
 	}
@@ -218,6 +211,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		}
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get textAlign() {
 		return ensureData(this).textAlign;
 	}
@@ -231,6 +225,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		data.textAlign = align;
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get lineHeight() {
 		return ensureData(this).lineHeight;
 	}
@@ -243,6 +238,7 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		data.lineHeight = height;
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment above
 	get lineWidth() {
 		return ensureData(this).lineWidth;
 	}
@@ -256,27 +252,53 @@ export class CreatejsText extends TextBase implements ICreatejsDisplayObject<Pix
 		data.lineWidth = width;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	get mask() {
 		return ensureData(this).mask;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
 
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
-		const p = super.addEventListener(type, cb, useCapture);
+	// Every overload of the real EventDispatcher.addEventListener has to be
+	// redeclared verbatim to override it at all (see TCreatejsEventListener).
+	// Text only ever receives the function-listener shapes in practice (the
+	// `{ handleEvent }` shapes exist for ButtonHelper, which can only target
+	// a Sprite/MovieClip) - that branch just forwards to the real
+	// implementation with no interaction bridging.
+	addEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): Function | Object {
+		if (typeof listener === 'function') {
+			const res = super.addEventListener(type, listener, useCapture);
+			addInteractionListener(this, type, listener);
 
-		if (!(cb instanceof CreatejsButtonHelper)) {
-			addInteractionListener(this, type, cb);
+			return res;
 		}
 
-		return p;
+		return super.addEventListener(type, listener, useCapture);
 	}
 
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
-		super.removeEventListener(type, cb, useCapture);
-		removeInteractionListener(this, type, cb);
+	// See the class-level removeEventListener comment on CreatejsShape for why
+	// the real 5th `Function` catch-all overload is intentionally not
+	// redeclared here.
+	removeEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			super.removeEventListener(type, listener, useCapture);
+			removeInteractionListener(this, type, listener);
+
+			return;
+		}
+
+		super.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {

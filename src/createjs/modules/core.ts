@@ -64,23 +64,30 @@ export interface ICreatejsLabel {
  * Contract of every wrapper display object class.
  * Implementations are supplied per class (no mixin); this interface makes the
  * compiler verify that nothing is missing.
+ *
+ * Only members createjs itself does not provide at all belong here. `pixi`
+ * and `updateBlendModeForPixi` have no createjs counterpart. `mask` (and
+ * addEventListener / removeEventListener / removeAllEventListeners) are real
+ * createjs.Xxx members - guaranteed to exist by `extends`, once a wrapper
+ * class extends the real class - so redeclaring them here would just be a
+ * second, redundant constraint on top of the override check `extends`
+ * already performs. (This interface only guarantees a member's *signature*
+ * exists when the class is used, not that the override behind it does the
+ * right thing - that part is left to each class's own implementation and its
+ * `@ts-expect-error` justification comments.)
  */
-export interface ICreatejsDisplayObject<T extends Container> {
+export interface ICreatejsDisplayObject<T extends DisplayObject> {
 	readonly pixi: T;
-	mask: TCreatejsMask;
 	updateBlendModeForPixi(mode: BLEND_MODES): void;
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): ICreatejsInteractionEventDelegate | CreatejsButtonHelper;
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
-	removeAllEventListeners(type?: string): void;
 }
 
 /**
- * What a child passed to the overridden structure operations (addChild etc.) must provide.
+ * What a child passed to the overridden structure operations (addChild etc.)
+ * must provide - the same contract as ICreatejsDisplayObject, just widened to
+ * DisplayObject since heterogeneous children each have a different concrete
+ * Pixi type.
  */
-export interface ICreatejsBlendModeTarget {
-	readonly pixi: DisplayObject;
-	updateBlendModeForPixi(mode: BLEND_MODES): void;
-}
+export type ICreatejsBlendModeTarget = ICreatejsDisplayObject<DisplayObject>;
 
 /**
  * Shape of the members of `children` as seen from the wrapper (every child in a

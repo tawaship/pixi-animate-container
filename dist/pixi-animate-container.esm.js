@@ -7,7 +7,7 @@
  */
 
 import * as PIXI from 'pixi.js';
-import { BLEND_MODES, filters, utils, Container as Container$1, BaseTexture, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text } from 'pixi.js';
+import { BLEND_MODES, filters, utils, Container as Container$1, BaseTexture, Rectangle, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 
 /**
@@ -120,7 +120,7 @@ function syncNode(cjs) {
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
  */
 class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
     constructor(cjs) {
@@ -177,73 +177,6 @@ class CreatejsColorFilter extends ColorFilterBase {
     }
     get pixi() {
         return getPixiColorMatrixFilter(this);
-    }
-}
-
-/**
- * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
- */
-class CreatejsButtonHelper extends createjs.ButtonHelper {
-    constructor(...args) {
-        super(...args);
-        const createjs = args[0];
-        const pixi = createjs.pixi;
-        const baseFrame = args[1];
-        const overFrame = args[2];
-        const downFrame = args[3];
-        const hit = arguments[5];
-        const hitFrame = args[6];
-        hit.gotoAndStop(hitFrame);
-        // The hit clip hangs on the pixi tree only (never on the createjs tree),
-        // so the per-tick pull sync can never reach it. It is static after the
-        // gotoAndStop above, so one explicit sync here is sufficient.
-        syncToPixi(hit);
-        const hitPixi = pixi.addChild(hit.pixi);
-        hitPixi.alpha = 0.00001;
-        let isOver = false;
-        let isDown = false;
-        hitPixi.on('pointerover', function () {
-            isOver = true;
-            if (isDown) {
-                createjs.gotoAndStop(downFrame);
-            }
-            else {
-                createjs.gotoAndStop(overFrame);
-            }
-        });
-        hitPixi.on('pointerout', function () {
-            isOver = false;
-            if (isDown) {
-                createjs.gotoAndStop(overFrame);
-            }
-            else {
-                createjs.gotoAndStop(baseFrame);
-            }
-        });
-        hitPixi.on('pointerdown', function () {
-            isDown = true;
-            createjs.gotoAndStop(downFrame);
-        });
-        hitPixi.on('pointerup', function () {
-            isDown = false;
-            if (isOver) {
-                createjs.gotoAndStop(overFrame);
-            }
-            else {
-                createjs.gotoAndStop(baseFrame);
-            }
-        });
-        hitPixi.on('pointerupoutside', function () {
-            isDown = false;
-            if (isOver) {
-                createjs.gotoAndStop(overFrame);
-            }
-            else {
-                createjs.gotoAndStop(baseFrame);
-            }
-        });
-        hitPixi.interactive = true;
-        hitPixi.cursor = 'pointer';
     }
 }
 
@@ -412,7 +345,7 @@ function removeAllInteractionListeners(cjs, type) {
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiMovieClip extends Container$1 {
     constructor(cjs) {
@@ -435,16 +368,20 @@ class AnimateEvent extends createjs.Event {
         super(type);
     }
 }
+/**
+ * The real createjs.MovieClip declares `labels` as the untyped `Object[]`,
+ * but the oracle always populates it with `{ label, position }` entries -
+ * this guard recovers that shape without widening to `any`.
+ */
+function isAnimateLabel(value) {
+    return 'label' in value && 'position' in value;
+}
 class AnimateReachLabelEvent extends AnimateEvent {
     constructor(type, label) {
         super(type);
         this.data = label;
     }
 }
-/**
- * @ignore
- */
-const MovieClipBase = createjs.MovieClip;
 var CompositeOperations;
 (function (CompositeOperations) {
     CompositeOperations["Lighter"] = "lighter";
@@ -492,9 +429,24 @@ function ensureData$5(cjs) {
     return data ? data : resetData$5(cjs);
 }
 /**
- * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
+ * The real `children: DisplayObject[]` (createjs's own DisplayObject) does
+ * not carry the Pixi bridge - every child actually added through this
+ * wrapper's own addChild/addChildAt is one of the CreatejsXxx classes, which
+ * always satisfy ICreatejsBlendModeTarget too, but the type system needs this
+ * checked explicitly to recover that guarantee.
  */
-class CreatejsMovieClip extends MovieClipBase {
+function isBlendModeChild(child) {
+    return 'pixi' in child && 'updateBlendModeForPixi' in child;
+}
+/**
+ * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
+ */
+class CreatejsMovieClip extends createjs.MovieClip {
     /**
      * When the last frame of the timeline is reached.
      *
@@ -518,6 +470,7 @@ class CreatejsMovieClip extends MovieClipBase {
     get pixi() {
         return ensureData$5(this).instance;
     }
+    // @ts-expect-error TS2611 - see the class-level comment on CreatejsShape for why a data-property-vs-accessor override is safe here
     get framerate() {
         return -1;
     }
@@ -555,7 +508,7 @@ class CreatejsMovieClip extends MovieClipBase {
         if (listen.reachLabel) {
             for (let i = 0; i < this.labels.length; i++) {
                 const label = this.labels[i];
-                if (this.currentFrame === label.position) {
+                if (isAnimateLabel(label) && this.currentFrame === label.position) {
                     this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
                     break;
                 }
@@ -587,12 +540,17 @@ class CreatejsMovieClip extends MovieClipBase {
             return;
         data.reservedBlendMode = mode;
         for (let i = 0; i < this.children.length; i++) {
-            this.children[i].updateBlendModeForPixi(mode);
+            const child = this.children[i];
+            if (isBlendModeChild(child)) {
+                child.updateBlendModeForPixi(mode);
+            }
         }
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     get compositeOperation() {
         return ensureData$5(this).compositeOperation;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set compositeOperation(value) {
         const data = ensureData$5(this);
         if (data.compositeOperation === value)
@@ -601,9 +559,11 @@ class CreatejsMovieClip extends MovieClipBase {
         this.updateBlendModeForPixi(blendMode);
         data.compositeOperation = value;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     get filters() {
         return ensureData$5(this).filters;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set filters(value) {
         const data = ensureData$5(this);
         const list = [];
@@ -623,9 +583,11 @@ class CreatejsMovieClip extends MovieClipBase {
         data.colorFilters = pairs.length ? pairs : null;
         data.filters = value;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     get mask() {
         return ensureData$5(this).mask;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set mask(value) {
         setMaskForPixi(ensureData$5(this), value);
     }
@@ -636,38 +598,65 @@ class CreatejsMovieClip extends MovieClipBase {
             return;
         child.updateBlendModeForPixi(blendMode);
     }
-    addChild(child) {
-        ensureData$5(this).subInstance.addChild(child.pixi);
-        this._updateChildrenBlendModeForPixi(child);
-        return super.addChild(child);
+    addChild(...children) {
+        const data = ensureData$5(this);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            data.subInstance.addChild(child.pixi);
+            this._updateChildrenBlendModeForPixi(child);
+        }
+        return super.addChild(...children);
     }
-    addChildAt(child, index) {
-        ensureData$5(this).subInstance.addChildAt(child.pixi, index);
-        this._updateChildrenBlendModeForPixi(child);
-        return super.addChildAt(child, index);
+    addChildAt(...childOrIndex) {
+        const data = ensureData$5(this);
+        const index = childOrIndex[childOrIndex.length - 1];
+        if (typeof index === 'number') {
+            for (let i = 0; i < childOrIndex.length - 1; i++) {
+                const child = childOrIndex[i];
+                if (typeof child !== 'number') {
+                    data.subInstance.addChildAt(child.pixi, index);
+                    this._updateChildrenBlendModeForPixi(child);
+                }
+            }
+        }
+        return super.addChildAt(...childOrIndex);
     }
-    removeChild(child) {
-        ensureData$5(this).subInstance.removeChild(child.pixi);
-        return super.removeChild(child);
+    removeChild(...children) {
+        const data = ensureData$5(this);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (isBlendModeChild(child)) {
+                data.subInstance.removeChild(child.pixi);
+            }
+        }
+        return super.removeChild(...children);
     }
-    removeChildAt(index) {
-        ensureData$5(this).subInstance.removeChildAt(index);
-        return super.removeChildAt(index);
+    removeChildAt(...index) {
+        const data = ensureData$5(this);
+        for (let i = 0; i < index.length; i++) {
+            data.subInstance.removeChildAt(index[i]);
+        }
+        return super.removeChildAt(...index);
     }
     removeAllChldren() {
         ensureData$5(this).subInstance.removeChildren();
         return super.removeAllChildren();
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
+    addEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            const res = super.addEventListener(type, listener, useCapture);
+            addInteractionListener(this, type, listener);
+            return res;
         }
-        return p;
+        return super.addEventListener(type, listener, useCapture);
     }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
+    removeEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            super.removeEventListener(type, listener, useCapture);
+            removeInteractionListener(this, type, listener);
+            return;
+        }
+        super.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -678,7 +667,7 @@ delete (CreatejsMovieClip.prototype.endAnimation);
 delete (CreatejsMovieClip.prototype.reachLabel);
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiSprite extends Sprite {
     constructor(cjs) {
@@ -689,10 +678,6 @@ class PixiSprite extends Sprite {
         return this._createjs;
     }
 }
-/**
- * @ignore
- */
-const SpriteBase = createjs.Sprite;
 /**
  * @ignore
  */
@@ -722,8 +707,13 @@ function ensureData$4(cjs) {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
-class CreatejsSprite extends SpriteBase {
+class CreatejsSprite extends createjs.Sprite {
     constructor(...args) {
         super(...args);
         ensureData$4(this);
@@ -751,25 +741,35 @@ class CreatejsSprite extends SpriteBase {
         super.gotoAndStop(frameOrAnimation);
         const frame = this.spriteSheet.getFrame(this.currentFrame);
         const baseTexture = BaseTexture.from(frame.image);
-        const texture = new Texture(baseTexture, frame.rect);
+        // frame.rect is a createjs.Rectangle (plain x/y/width/height), not a
+        // PIXI.Rectangle - Texture needs the latter, so convert by value.
+        const rect = new Rectangle(frame.rect.x, frame.rect.y, frame.rect.width, frame.rect.height);
+        const texture = new Texture(baseTexture, rect);
         ensureData$4(this).instance.texture = texture;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get mask() {
         return ensureData$4(this).mask;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$4(this), value);
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
+    addEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            const res = super.addEventListener(type, listener, useCapture);
+            addInteractionListener(this, type, listener);
+            return res;
         }
-        return p;
+        return super.addEventListener(type, listener, useCapture);
     }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
+    removeEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            super.removeEventListener(type, listener, useCapture);
+            removeInteractionListener(this, type, listener);
+            return;
+        }
+        super.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -778,7 +778,7 @@ class CreatejsSprite extends SpriteBase {
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiShape extends Container$1 {
     constructor(cjs) {
@@ -789,10 +789,6 @@ class PixiShape extends Container$1 {
         return this._createjs;
     }
 }
-/**
- * @ignore
- */
-const ShapeBase = createjs.Shape;
 /**
  * @ignore
  */
@@ -825,15 +821,21 @@ function ensureData$3(cjs) {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
+ *
+ * `graphics` and `mask` are declared as plain data properties on the real
+ * createjs.Shape/DisplayObject, but this wrapper must intercept get/set to
+ * route the assigned value into the Pixi mirror. TypeScript's
+ * accessor-over-property check (TS2611/TS2416) guards against real class-field
+ * semantics; createjs.Shape is a legacy ES5 prototype constructor with no
+ * class fields, so a prototype accessor correctly intercepts the plain
+ * `this.graphics = x` / `this.mask = x` assignments the real base constructor
+ * makes, with no runtime hazard - confirmed by the wrapper smoke and
+ * verification-C suites, which exercise both assignments.
  */
-class CreatejsShape extends ShapeBase {
-    constructor(...args) {
-        super(...args);
+class CreatejsShape extends createjs.Shape {
+    constructor(graphics) {
+        super(graphics);
         ensureData$3(this);
-    }
-    initialize(...args) {
-        resetData$3(this);
-        return super.initialize(...args);
     }
     get pixi() {
         return ensureData$3(this).instance;
@@ -844,9 +846,11 @@ class CreatejsShape extends ShapeBase {
         data.reservedBlendMode = mode;
         (_a = data.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(mode);
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get graphics() {
         return ensureData$3(this).graphics;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set graphics(value) {
         const data = ensureData$3(this);
         if (data.masked.length) {
@@ -870,22 +874,29 @@ class CreatejsShape extends ShapeBase {
     get masked() {
         return ensureData$3(this).masked;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get mask() {
         return ensureData$3(this).mask;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$3(this), value);
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
+    addEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            const res = super.addEventListener(type, listener, useCapture);
+            addInteractionListener(this, type, listener);
+            return res;
         }
-        return p;
+        return super.addEventListener(type, listener, useCapture);
     }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
+    removeEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            super.removeEventListener(type, listener, useCapture);
+            removeInteractionListener(this, type, listener);
+            return;
+        }
+        super.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -894,7 +905,7 @@ class CreatejsShape extends ShapeBase {
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Sprite.html | PIXI.Sprite}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
 class PixiBitmap extends Sprite {
     constructor(cjs) {
@@ -905,10 +916,6 @@ class PixiBitmap extends Sprite {
         return this._createjs;
     }
 }
-/**
- * @ignore
- */
-const BitmapBase = createjs.Bitmap;
 /**
  * @ignore
  */
@@ -938,8 +945,13 @@ function ensureData$2(cjs) {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
-class CreatejsBitmap extends BitmapBase {
+class CreatejsBitmap extends createjs.Bitmap {
     constructor(...args) {
         super(...args);
         ensureData$2(this);
@@ -956,22 +968,29 @@ class CreatejsBitmap extends BitmapBase {
     updateBlendModeForPixi(mode) {
         ensureData$2(this).instance.blendMode = mode;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get mask() {
         return ensureData$2(this).mask;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$2(this), value);
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
+    addEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            const res = super.addEventListener(type, listener, useCapture);
+            addInteractionListener(this, type, listener);
+            return res;
         }
-        return p;
+        return super.addEventListener(type, listener, useCapture);
     }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
+    removeEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            super.removeEventListener(type, listener, useCapture);
+            removeInteractionListener(this, type, listener);
+            return;
+        }
+        super.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -980,7 +999,7 @@ class CreatejsBitmap extends BitmapBase {
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Graphics.html | PIXI.Graphics}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
 class PixiGraphics extends Graphics {
     constructor(cjs) {
@@ -991,10 +1010,6 @@ class PixiGraphics extends Graphics {
         return this._createjs;
     }
 }
-/**
- * @ignore
- */
-const GraphicsBase = createjs.Graphics;
 /**
  * @ignore
  */
@@ -1051,18 +1066,19 @@ const LineJoin = {
 };
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
+ *
+ * createjs.Graphics is a command object, not a display object (no
+ * EventDispatcher, no initialize) - a Shape holds it rather than it being
+ * added to a container directly, so this wrapper does not implement
+ * ICreatejsDisplayObject.
  */
-class CreatejsGraphics extends GraphicsBase {
+class CreatejsGraphics extends createjs.Graphics {
     constructor(...args) {
         super(...args);
         const data = ensureData$1(this);
         data.instance.beginFill(0xFFEEEE, 1);
         data.strokeFill = 0;
         data.strokeAlpha = 1;
-    }
-    initialize(...args) {
-        resetData$1(this);
-        return super.initialize(...args);
     }
     get pixi() {
         return ensureData$1(this).instance;
@@ -1073,6 +1089,11 @@ class CreatejsGraphics extends GraphicsBase {
         ensureData$1(this).instance.blendMode = mode;
     }
     // path methods
+    //
+    // Each overrides mirrors the command to the Pixi side, forwards it to the
+    // real createjs.Graphics command list via super, then returns `this` so
+    // the wrapper (not the real Graphics's own return type) keeps flowing
+    // through chained calls (e.g. `graphics.f('#000').dr(0, 0, 20, 20)`).
     moveTo(x, y) {
         const pixi = ensureData$1(this).instance;
         if (pixi.clone().endFill().containsPoint({ x: x, y: y })) {
@@ -1082,35 +1103,40 @@ class CreatejsGraphics extends GraphicsBase {
             pixi.endHole();
         }
         pixi.moveTo(x, y);
-        return super.moveTo(x, y);
+        super.moveTo(x, y);
+        return this;
     }
     mt(x, y) {
         return this.moveTo(x, y);
     }
     lineTo(x, y) {
         ensureData$1(this).instance.lineTo(x, y);
-        return super.lineTo(x, y);
+        super.lineTo(x, y);
+        return this;
     }
     lt(x, y) {
         return this.lineTo(x, y);
     }
     arcTo(x1, y1, x2, y2, radius) {
         ensureData$1(this).instance.arcTo(x1, y1, x2, y2, radius);
-        return super.arcTo(x1, y1, x2, y2, radius);
+        super.arcTo(x1, y1, x2, y2, radius);
+        return this;
     }
     at(x1, y1, x2, y2, radius) {
         return this.arcTo(x1, y1, x2, y2, radius);
     }
     arc(x, y, radius, startAngle, endAngle, anticlockwise) {
         ensureData$1(this).instance.arc(x, y, radius, startAngle, endAngle, anticlockwise);
-        return super.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+        super.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+        return this;
     }
     a(x, y, radius, startAngle, endAngle, anticlockwise) {
         return this.arc(x, y, radius, startAngle, endAngle, anticlockwise);
     }
     quadraticCurveTo(cpx, cpy, x, y) {
         ensureData$1(this).instance.quadraticCurveTo(cpx, cpy, x, y);
-        return super.quadraticCurveTo(cpx, cpy, x, y);
+        super.quadraticCurveTo(cpx, cpy, x, y);
+        return this;
     }
     qt(cpx, cpy, x, y) {
         return this.quadraticCurveTo(cpx, cpy, x, y);
@@ -1120,14 +1146,16 @@ class CreatejsGraphics extends GraphicsBase {
     }
     bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y) {
         ensureData$1(this).instance.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
-        return super.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+        super.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+        return this;
     }
     bt(cp1x, cp1y, cp2x, cp2y, x, y) {
         return this.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
     }
     rect(x, y, w, h) {
         ensureData$1(this).instance.drawRect(x, y, w, h);
-        return super.rect(x, y, w, h);
+        super.rect(x, y, w, h);
+        return this;
     }
     r(x, y, w, h) {
         return this.rect(x, y, w, h);
@@ -1140,14 +1168,16 @@ class CreatejsGraphics extends GraphicsBase {
     }
     closePath() {
         ensureData$1(this).instance.closePath();
-        return super.closePath();
+        super.closePath();
+        return this;
     }
     cp() {
         return this.closePath();
     }
     clear() {
         ensureData$1(this).instance.clear();
-        return super.clear();
+        super.clear();
+        return this;
     }
     c() {
         return this.clear();
@@ -1173,14 +1203,16 @@ class CreatejsGraphics extends GraphicsBase {
     beginFill(color) {
         const c = this._parseColor(color);
         ensureData$1(this).instance.beginFill(c.color, c.alpha);
-        return super.beginFill(color);
+        super.beginFill(color);
+        return this;
     }
     f(color) {
         return this.beginFill(color);
     }
     endFill() {
         ensureData$1(this).instance.endFill();
-        return super.endFill();
+        super.endFill();
+        return this;
     }
     ef() {
         return this.endFill();
@@ -1195,7 +1227,8 @@ class CreatejsGraphics extends GraphicsBase {
             join: (joints in LineJoin) ? LineJoin[joints] : LineJoin[0],
             miterLimit
         });
-        return super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
+        super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
+        return this;
     }
     ss(thickness, caps, joints, miterLimit, ignoreScale) {
         return this.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
@@ -1205,35 +1238,40 @@ class CreatejsGraphics extends GraphicsBase {
         const c = this._parseColor(color);
         data.strokeFill = c.color;
         data.strokeAlpha = c.alpha;
-        return super.beginStroke(color);
+        super.beginStroke(color);
+        return this;
     }
     s(color) {
         return this.beginStroke(color);
     }
     drawRoundRect(x, y, w, h, radius) {
         ensureData$1(this).instance.drawRoundedRect(x, y, w, h, radius);
-        return super.drawRoundRect(x, y, w, h, radius);
+        super.drawRoundRect(x, y, w, h, radius);
+        return this;
     }
     rr(x, y, w, h, radius) {
         return this.drawRoundRect(x, y, w, h, radius);
     }
     drawCircle(x, y, radius) {
         ensureData$1(this).instance.drawCircle(x, y, radius);
-        return super.drawCircle(x, y, radius);
+        super.drawCircle(x, y, radius);
+        return this;
     }
     dc(x, y, radius) {
         return this.drawCircle(x, y, radius);
     }
     drawEllipse(x, y, w, h) {
         ensureData$1(this).instance.drawEllipse(x, y, w, h);
-        return super.drawEllipse(x, y, w, h);
+        super.drawEllipse(x, y, w, h);
+        return this;
     }
     de(x, y, w, h) {
         return this.drawEllipse(x, y, w, h);
     }
     drawPolyStar(x, y, radius, sides, pointSize, angle) {
         ensureData$1(this).instance.drawRegularPolygon(x, y, radius, sides, angle * DEG_TO_RAD);
-        return super.drawPolyStar(x, y, radius, sides, pointSize, angle);
+        super.drawPolyStar(x, y, radius, sides, pointSize, angle);
+        return this;
     }
     dp(x, y, radius, sides, pointSize, angle) {
         return this.drawPolyStar(x, y, radius, sides, pointSize, angle);
@@ -1244,30 +1282,15 @@ class CreatejsGraphics extends GraphicsBase {
     set mask(value) {
         setMaskForPixi(ensureData$1(this), value);
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
-        }
-        return p;
-    }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
-    }
-    removeAllEventListeners(type) {
-        super.removeAllEventListeners(type);
-        removeAllInteractionListeners(this, type);
-    }
 }
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
  */
 class PixiText extends Text {
 }
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 class PixiTextContainer extends Container$1 {
     constructor(cjs, text) {
@@ -1286,10 +1309,6 @@ class PixiTextContainer extends Container$1 {
  * @ignore
  */
 const DEF_ALIGN = 'left';
-/**
- * @ignore
- */
-const TextBase = createjs.Text;
 /**
  * @ignore
  */
@@ -1330,8 +1349,14 @@ function ensureData(cjs) {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
+ *
+ * `text`/`font`/`color`/`textAlign`/`lineHeight`/`lineWidth`/`mask` are all
+ * plain data properties on the real createjs.Text/DisplayObject, but this
+ * wrapper must intercept get/set on each to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
-class CreatejsText extends TextBase {
+class CreatejsText extends createjs.Text {
     constructor(text, font, color = '#000000') {
         super(text, font, color);
         ensureData(this);
@@ -1342,6 +1367,7 @@ class CreatejsText extends TextBase {
     updateBlendModeForPixi(mode) {
         ensureData(this).instance.text.blendMode = mode;
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get text() {
         return ensureData(this).text;
     }
@@ -1365,6 +1391,7 @@ class CreatejsText extends TextBase {
             fontFamily: p.join(' ').replace(/'/g, '') //'
         };
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get font() {
         return ensureData(this).font;
     }
@@ -1379,6 +1406,7 @@ class CreatejsText extends TextBase {
     _parseColor(color) {
         return parseInt(color.slice(1), 16);
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get color() {
         return ensureData(this).color;
     }
@@ -1402,6 +1430,7 @@ class CreatejsText extends TextBase {
             return;
         }
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get textAlign() {
         return ensureData(this).textAlign;
     }
@@ -1411,6 +1440,7 @@ class CreatejsText extends TextBase {
         this._align(align);
         data.textAlign = align;
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get lineHeight() {
         return ensureData(this).lineHeight;
     }
@@ -1419,6 +1449,7 @@ class CreatejsText extends TextBase {
         data.instance.text.style.lineHeight = height;
         data.lineHeight = height;
     }
+    // @ts-expect-error TS2611 - see the class-level comment above
     get lineWidth() {
         return ensureData(this).lineWidth;
     }
@@ -1428,26 +1459,100 @@ class CreatejsText extends TextBase {
         this._align(data.textAlign);
         data.lineWidth = width;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get mask() {
         return ensureData(this).mask;
     }
+    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData(this), value);
     }
-    addEventListener(type, cb, useCapture) {
-        const p = super.addEventListener(type, cb, useCapture);
-        if (!(cb instanceof CreatejsButtonHelper)) {
-            addInteractionListener(this, type, cb);
+    addEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            const res = super.addEventListener(type, listener, useCapture);
+            addInteractionListener(this, type, listener);
+            return res;
         }
-        return p;
+        return super.addEventListener(type, listener, useCapture);
     }
-    removeEventListener(type, cb, useCapture) {
-        super.removeEventListener(type, cb, useCapture);
-        removeInteractionListener(this, type, cb);
+    removeEventListener(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            super.removeEventListener(type, listener, useCapture);
+            removeInteractionListener(this, type, listener);
+            return;
+        }
+        super.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
         removeAllInteractionListeners(this, type);
+    }
+}
+
+/**
+ * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
+ */
+class CreatejsButtonHelper extends createjs.ButtonHelper {
+    constructor(...args) {
+        super(...args);
+        const createjs = args[0];
+        const pixi = createjs.pixi;
+        const baseFrame = args[1];
+        const overFrame = args[2];
+        const downFrame = args[3];
+        const hit = arguments[5];
+        const hitFrame = args[6];
+        hit.gotoAndStop(hitFrame);
+        // The hit clip hangs on the pixi tree only (never on the createjs tree),
+        // so the per-tick pull sync can never reach it. It is static after the
+        // gotoAndStop above, so one explicit sync here is sufficient.
+        syncToPixi(hit);
+        const hitPixi = pixi.addChild(hit.pixi);
+        hitPixi.alpha = 0.00001;
+        let isOver = false;
+        let isDown = false;
+        hitPixi.on('pointerover', function () {
+            isOver = true;
+            if (isDown) {
+                createjs.gotoAndStop(downFrame);
+            }
+            else {
+                createjs.gotoAndStop(overFrame);
+            }
+        });
+        hitPixi.on('pointerout', function () {
+            isOver = false;
+            if (isDown) {
+                createjs.gotoAndStop(overFrame);
+            }
+            else {
+                createjs.gotoAndStop(baseFrame);
+            }
+        });
+        hitPixi.on('pointerdown', function () {
+            isDown = true;
+            createjs.gotoAndStop(downFrame);
+        });
+        hitPixi.on('pointerup', function () {
+            isDown = false;
+            if (isOver) {
+                createjs.gotoAndStop(overFrame);
+            }
+            else {
+                createjs.gotoAndStop(baseFrame);
+            }
+        });
+        hitPixi.on('pointerupoutside', function () {
+            isDown = false;
+            if (isOver) {
+                createjs.gotoAndStop(overFrame);
+            }
+            else {
+                createjs.gotoAndStop(baseFrame);
+            }
+        });
+        hitPixi.interactive = true;
+        hitPixi.cursor = 'pointer';
     }
 }
 

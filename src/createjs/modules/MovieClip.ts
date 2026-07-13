@@ -2,15 +2,14 @@ import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter, PixiColorMatrixFilter, getPixiColorMatrixFilter } from './ColorFilter';
 import {
-	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, ICreatejsChildNode, ICreatejsBlendModeTarget,
-	ICreatejsLabel, IColorFilterSyncPair, IPixiData, TCreatejsMask,
+	ICreatejsDisplayObject, ICreatejsBlendModeTarget,
+	IColorFilterSyncPair, IPixiData, TCreatejsMask,
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 export class PixiMovieClip extends Container {
 	private _createjs: CreatejsMovieClip;
@@ -53,6 +52,15 @@ export interface IAnimateReachLabelData {
 	 * Frame number of label.
 	 */
 	position: number;
+}
+
+/**
+ * The real createjs.MovieClip declares `labels` as the untyped `Object[]`,
+ * but the oracle always populates it with `{ label, position }` entries -
+ * this guard recovers that shape without widening to `any`.
+ */
+function isAnimateLabel(value: Object): value is IAnimateReachLabelData {
+	return 'label' in value && 'position' in value;
 }
 
 export class AnimateReachLabelEvent extends AnimateEvent {
@@ -101,73 +109,6 @@ export interface ICreatejsMovieClipProps {
 export type TCreatejsMovieClipConstructorArgs =
 	| [ICreatejsMovieClipProps?]
 	| [TCreatejsMovieClipMode?, number?, boolean?, ({ [name: string]: number } | boolean)?];
-
-/**
- * The target object of a timeline tween: either a display object (has `x`) or
- * a state-holder used by publish output for child membership swapping (has
- * `state`). Both members are optional because either kind can appear.
- */
-export interface ICreatejsTweenTarget {
-	state?: { t: object }[];
-	x?: number;
-}
-
-export interface ICreatejsTweenLike {
-	target: ICreatejsTweenTarget;
-}
-
-export interface ICreatejsTimelineBase {
-	reversed: boolean;
-	tweens: ICreatejsTweenLike[];
-}
-
-/**
- * Bounds metadata stamped on symbol prototypes by Animate publish output
- * (not part of core createjs).
- */
-export interface ICreatejsNominalBounds {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-/**
- * Members of the (untyped) createjs.MovieClip runtime that the wrapper relies on.
- */
-export interface ICreatejsMovieClipBase extends ICreatejsDisplayObjectBase {
-	children: ICreatejsChildNode[];
-	currentFrame: number;
-	totalFrames: number;
-	labels: ICreatejsLabel[];
-	mode: TCreatejsMovieClipMode;
-	startPosition: number;
-	loop: boolean;
-	timeline: ICreatejsTimelineBase;
-	nominalBounds: ICreatejsNominalBounds;
-	cache(x: number, y: number, width: number, height: number, scale?: number): void;
-	advance(time?: number): void;
-	_updateState(): void;
-	addChild<T extends ICreatejsBlendModeTarget>(child: T): T;
-	addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T;
-	removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean;
-	removeChildAt(index: number): boolean;
-	removeAllChildren(): void;
-	gotoAndPlay(positionOrLabel: string | number): void;
-	gotoAndStop(positionOrLabel: string | number): void;
-	play(): void;
-	stop(): void;
-	initialize(...args: TCreatejsMovieClipConstructorArgs): void;
-}
-
-export interface ICreatejsMovieClipBaseConstructor {
-	new (...args: TCreatejsMovieClipConstructorArgs): ICreatejsMovieClipBase;
-}
-
-/**
- * @ignore
- */
-const MovieClipBase: ICreatejsMovieClipBaseConstructor = createjs.MovieClip;
 
 export enum CompositeOperations {
 	Lighter = "lighter",
@@ -231,9 +172,25 @@ function ensureData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 }
 
 /**
- * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
+ * The real `children: DisplayObject[]` (createjs's own DisplayObject) does
+ * not carry the Pixi bridge - every child actually added through this
+ * wrapper's own addChild/addChildAt is one of the CreatejsXxx classes, which
+ * always satisfy ICreatejsBlendModeTarget too, but the type system needs this
+ * checked explicitly to recover that guarantee.
  */
-export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplayObject<PixiMovieClip> {
+function isBlendModeChild(child: createjs.DisplayObject): child is createjs.DisplayObject & ICreatejsBlendModeTarget {
+	return 'pixi' in child && 'updateBlendModeForPixi' in child;
+}
+
+/**
+ * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
+ */
+export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
 	declare protected _fps: number;
 	declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
 
@@ -267,6 +224,7 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		return ensureData(this).instance;
 	}
 
+	// @ts-expect-error TS2611 - see the class-level comment on CreatejsShape for why a data-property-vs-accessor override is safe here
 	get framerate() {
 		return -1;
 	}
@@ -313,7 +271,7 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		if (listen.reachLabel) {
 			for (let i = 0; i < this.labels.length; i++) {
 				const label = this.labels[i];
-				if (this.currentFrame === label.position) {
+				if (isAnimateLabel(label) && this.currentFrame === label.position) {
 					this.dispatchEvent(new AnimateReachLabelEvent('reachLabel', label));
 					break;
 				}
@@ -349,14 +307,20 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 
 		data.reservedBlendMode = mode;
 		for (let i = 0; i < this.children.length; i++) {
-			this.children[i].updateBlendModeForPixi(mode);
+			const child = this.children[i];
+
+			if (isBlendModeChild(child)) {
+				child.updateBlendModeForPixi(mode);
+			}
 		}
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	get compositeOperation() {
 		return ensureData(this).compositeOperation;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set compositeOperation(value) {
 		const data = ensureData(this);
 
@@ -367,10 +331,12 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		data.compositeOperation = value;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	get filters() {
 		return ensureData(this).filters;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set filters(value: TCreatejsColorFilters) {
 		const data = ensureData(this);
 		const list: PixiColorMatrixFilter[] = [];
@@ -395,10 +361,12 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		data.filters = value;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	get mask() {
 		return ensureData(this).mask;
 	}
 
+	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
@@ -410,30 +378,76 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		child.updateBlendModeForPixi(blendMode);
 	}
 
-	addChild<T extends ICreatejsBlendModeTarget>(child: T): T {
-		ensureData(this).subInstance.addChild(child.pixi);
-		this._updateChildrenBlendModeForPixi(child);
+	// Every real Container.addChild overload has to be redeclared verbatim to
+	// override it at all. The 1-4 fixed-arity forms exist upstream only to
+	// keep the last argument's specific type as the return type; this
+	// wrapper's own children are always both a real createjs.DisplayObject
+	// (guaranteed by `extends`) and ICreatejsBlendModeTarget (the Pixi
+	// bridge), so `T` is constrained to the intersection of both.
+	addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child: T): T;
+	addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+	addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+	addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, child2: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+	addChild(...children: (createjs.DisplayObject & ICreatejsBlendModeTarget)[]): createjs.DisplayObject;
+	addChild(...children: (createjs.DisplayObject & ICreatejsBlendModeTarget)[]): createjs.DisplayObject {
+		const data = ensureData(this);
 
-		return super.addChild(child);
+		for (let i = 0; i < children.length; i++) {
+			const child = children[i];
+
+			data.subInstance.addChild(child.pixi);
+			this._updateChildrenBlendModeForPixi(child);
+		}
+
+		return super.addChild(...children);
 	}
 
-	addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T {
-		ensureData(this).subInstance.addChildAt(child.pixi, index);
-		this._updateChildrenBlendModeForPixi(child);
+	// See the addChild comment above for why every real overload (including
+	// the messy `(...child, index)` catch-all) has to be redeclared.
+	addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child: T, index: number): T;
+	addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T, index: number): T;
+	addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T, index: number): T;
+	addChildAt(...childOrIndex: ((createjs.DisplayObject & ICreatejsBlendModeTarget) | number)[]): createjs.DisplayObject;
+	addChildAt(...childOrIndex: ((createjs.DisplayObject & ICreatejsBlendModeTarget) | number)[]): createjs.DisplayObject {
+		const data = ensureData(this);
+		const index = childOrIndex[childOrIndex.length - 1];
 
-		return super.addChildAt(child, index);
+		if (typeof index === 'number') {
+			for (let i = 0; i < childOrIndex.length - 1; i++) {
+				const child = childOrIndex[i];
+
+				if (typeof child !== 'number') {
+					data.subInstance.addChildAt(child.pixi, index);
+					this._updateChildrenBlendModeForPixi(child);
+				}
+			}
+		}
+
+		return super.addChildAt(...childOrIndex);
 	}
 
-	removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean {
-		ensureData(this).subInstance.removeChild(child.pixi);
+	removeChild(...children: createjs.DisplayObject[]): boolean {
+		const data = ensureData(this);
 
-		return super.removeChild(child);
+		for (let i = 0; i < children.length; i++) {
+			const child = children[i];
+
+			if (isBlendModeChild(child)) {
+				data.subInstance.removeChild(child.pixi);
+			}
+		}
+
+		return super.removeChild(...children);
 	}
 
-	removeChildAt(index: number): boolean {
-		ensureData(this).subInstance.removeChildAt(index);
+	removeChildAt(...index: number[]): boolean {
+		const data = ensureData(this);
 
-		return super.removeChildAt(index);
+		for (let i = 0; i < index.length; i++) {
+			data.subInstance.removeChildAt(index[i]);
+		}
+
+		return super.removeChildAt(...index);
 	}
 
 	removeAllChldren(): void {
@@ -442,19 +456,45 @@ export class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplay
 		return super.removeAllChildren();
 	}
 
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
-		const p = super.addEventListener(type, cb, useCapture);
+	// Every overload of the real EventDispatcher.addEventListener has to be
+	// redeclared verbatim to override it at all (see TCreatejsEventListener).
+	// Unlike Shape/Bitmap/Text, the `{ handleEvent }` branch here is not
+	// theoretical: ButtonHelper's target can be a MovieClip, and ButtonHelper
+	// registers itself (a `handleEvent`-shaped instance) directly - that
+	// branch forwards to the real implementation with no interaction
+	// bridging, matching this class's original `instanceof CreatejsButtonHelper`
+	// check.
+	addEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): Function;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): Object;
+	addEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): Function | Object {
+		if (typeof listener === 'function') {
+			const res = super.addEventListener(type, listener, useCapture);
+			addInteractionListener(this, type, listener);
 
-		if (!(cb instanceof CreatejsButtonHelper)) {
-			addInteractionListener(this, type, cb);
+			return res;
 		}
 
-		return p;
+		return super.addEventListener(type, listener, useCapture);
 	}
 
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
-		super.removeEventListener(type, cb, useCapture);
-		removeInteractionListener(this, type, cb);
+	// See the class-level removeEventListener comment on CreatejsShape for why
+	// the real 5th `Function` catch-all overload is intentionally not
+	// redeclared here.
+	removeEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	removeEventListener(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			super.removeEventListener(type, listener, useCapture);
+			removeInteractionListener(this, type, listener);
+
+			return;
+		}
+
+		super.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {

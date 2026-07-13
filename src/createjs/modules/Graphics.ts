@@ -1,15 +1,13 @@
 import { BLEND_MODES, Graphics, LINE_CAP, LINE_JOIN } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
-	ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask,
+	IPixiData, TCreatejsMask,
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
 import { DEG_TO_RAD } from './utils';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Graphics.html | PIXI.Graphics}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
 export class PixiGraphics extends Graphics {
 	private _createjs: CreatejsGraphics;
@@ -26,49 +24,6 @@ export class PixiGraphics extends Graphics {
 }
 
 export type TCreatejsGraphicsConstructorArgs = [];
-
-/**
- * Members of the (untyped) createjs.Graphics runtime that the wrapper relies on.
- * createjs.Graphics is a command object (not a display object); the drawing
- * methods below are overridden to mirror each path command to the Pixi side.
- */
-export interface ICreatejsGraphicsBase {
-	moveTo(x: number, y: number): ICreatejsGraphicsBase;
-	lineTo(x: number, y: number): ICreatejsGraphicsBase;
-	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): ICreatejsGraphicsBase;
-	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean): ICreatejsGraphicsBase;
-	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): ICreatejsGraphicsBase;
-	bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): ICreatejsGraphicsBase;
-	rect(x: number, y: number, w: number, h: number): ICreatejsGraphicsBase;
-	closePath(): ICreatejsGraphicsBase;
-	clear(): ICreatejsGraphicsBase;
-	beginFill(color: string): ICreatejsGraphicsBase;
-	endFill(): ICreatejsGraphicsBase;
-	setStrokeStyle(thickness: number, caps: 0 | 1 | 2, joints: 0 | 1 | 2, miterLimit: number, ignoreScale: boolean): ICreatejsGraphicsBase;
-	beginStroke(color: string): ICreatejsGraphicsBase;
-	drawRoundRect(x: number, y: number, w: number, h: number, radius: number): ICreatejsGraphicsBase;
-	drawCircle(x: number, y: number, radius: number): ICreatejsGraphicsBase;
-	drawEllipse(x: number, y: number, w: number, h: number): ICreatejsGraphicsBase;
-	drawPolyStar(x: number, y: number, radius: number, sides: number, pointSize: number, angle: number): ICreatejsGraphicsBase;
-
-	// Note: the original createjs.Graphics is not an EventDispatcher and has no
-	// initialize; these members are declared to keep the wrapper surface that the
-	// previous (untyped) implementation exposed. Calling them reaches the original
-	// prototype, exactly as before.
-	initialize(...args: TCreatejsGraphicsConstructorArgs): void;
-	addEventListener(type: string, listener: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): ICreatejsInteractionEventDelegate | CreatejsButtonHelper;
-	removeEventListener(type: string, listener: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
-	removeAllEventListeners(type?: string): void;
-}
-
-export interface ICreatejsGraphicsBaseConstructor {
-	new (...args: TCreatejsGraphicsConstructorArgs): ICreatejsGraphicsBase;
-}
-
-/**
- * @ignore
- */
-const GraphicsBase: ICreatejsGraphicsBaseConstructor = createjs.Graphics;
 
 export interface IPixiGraphicsData extends IPixiData<PixiGraphics> {
 	strokeFill: number;
@@ -142,8 +97,13 @@ const LineJoin = {
 
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
+ *
+ * createjs.Graphics is a command object, not a display object (no
+ * EventDispatcher, no initialize) - a Shape holds it rather than it being
+ * added to a container directly, so this wrapper does not implement
+ * ICreatejsDisplayObject.
  */
-export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayObject<PixiGraphics> {
+export class CreatejsGraphics extends createjs.Graphics {
 	constructor(...args: TCreatejsGraphicsConstructorArgs) {
 		super(...args);
 
@@ -151,12 +111,6 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 		data.instance.beginFill(0xFFEEEE, 1);
 		data.strokeFill = 0;
 		data.strokeAlpha = 1;
-	}
-
-	initialize(...args: TCreatejsGraphicsConstructorArgs) {
-		resetData(this);
-
-		return super.initialize(...args);
 	}
 
 	get pixi() {
@@ -169,8 +123,13 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 	}
 
 	// path methods
+	//
+	// Each overrides mirrors the command to the Pixi side, forwards it to the
+	// real createjs.Graphics command list via super, then returns `this` so
+	// the wrapper (not the real Graphics's own return type) keeps flowing
+	// through chained calls (e.g. `graphics.f('#000').dr(0, 0, 20, 20)`).
 
-	moveTo(x: number, y: number) {
+	moveTo(x: number, y: number): this {
 		const pixi = ensureData(this).instance;
 
 		if (pixi.clone().endFill().containsPoint({ x: x, y: y })) {
@@ -180,48 +139,53 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 		}
 
 		pixi.moveTo(x, y);
+		super.moveTo(x, y);
 
-		return super.moveTo(x, y);
+		return this;
 	}
 
 	mt(x: number, y: number) {
 		return this.moveTo(x, y);
 	}
 
-	lineTo(x: number, y: number) {
+	lineTo(x: number, y: number): this {
 		ensureData(this).instance.lineTo(x, y);
+		super.lineTo(x, y);
 
-		return super.lineTo(x, y);
+		return this;
 	}
 
 	lt(x: number, y: number) {
 		return this.lineTo(x, y);
 	}
 
-	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number) {
+	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): this {
 		ensureData(this).instance.arcTo(x1, y1, x2, y2, radius);
+		super.arcTo(x1, y1, x2, y2, radius);
 
-		return super.arcTo(x1, y1, x2, y2, radius);
+		return this;
 	}
 
 	at(x1: number, y1: number, x2: number, y2: number, radius: number) {
 		return this.arcTo(x1, y1, x2, y2, radius);
 	}
 
-	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean) {
+	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean): this {
 		ensureData(this).instance.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+		super.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 
-		return super.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+		return this;
 	}
 
 	a(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean) {
 		return this.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 	}
 
-	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number) {
+	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): this {
 		ensureData(this).instance.quadraticCurveTo(cpx, cpy, x, y);
+		super.quadraticCurveTo(cpx, cpy, x, y);
 
-		return super.quadraticCurveTo(cpx, cpy, x, y);
+		return this;
 	}
 
 	qt(cpx: number, cpy: number, x: number, y: number) {
@@ -232,20 +196,22 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 		return this.quadraticCurveTo(cpx, cpy, x, y);
 	}
 
-	bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
+	bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): this {
 		ensureData(this).instance.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+		super.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 
-		return super.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+		return this;
 	}
 
 	bt(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) {
 		return this.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 	}
 
-	rect(x: number, y: number, w: number, h: number) {
+	rect(x: number, y: number, w: number, h: number): this {
 		ensureData(this).instance.drawRect(x, y, w, h);
+		super.rect(x, y, w, h);
 
-		return super.rect(x, y, w, h);
+		return this;
 	}
 
 	r(x: number, y: number, w: number, h: number) {
@@ -260,20 +226,22 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 		return this.rect(x, y, w, h);
 	}
 
-	closePath() {
+	closePath(): this {
 		ensureData(this).instance.closePath();
+		super.closePath();
 
-		return super.closePath();
+		return this;
 	}
 
 	cp() {
 		return this.closePath();
 	}
 
-	clear() {
+	clear(): this {
 		ensureData(this).instance.clear();
+		super.clear();
 
-		return super.clear();
+		return this;
 	}
 
 	c() {
@@ -304,28 +272,30 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 		return res;
 	}
 
-	beginFill(color: string) {
+	beginFill(color: string): this {
 		const c = this._parseColor(color);
 		ensureData(this).instance.beginFill(c.color, c.alpha);
+		super.beginFill(color);
 
-		return super.beginFill(color);
+		return this;
 	}
 
 	f(color: string) {
 		return this.beginFill(color);
 	}
 
-	endFill() {
+	endFill(): this {
 		ensureData(this).instance.endFill();
+		super.endFill();
 
-		return super.endFill();
+		return this;
 	}
 
 	ef() {
 		return this.endFill();
 	}
 
-	setStrokeStyle(thickness: number, caps: 0 | 1 | 2, joints: 0 | 1 | 2, miterLimit: number, ignoreScale: boolean) {
+	setStrokeStyle(thickness: number, caps: 0 | 1 | 2, joints: 0 | 1 | 2, miterLimit: number, ignoreScale: boolean): this {
 		const data = ensureData(this);
 
 		data.instance.lineTextureStyle({
@@ -337,60 +307,68 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 			miterLimit
 		});
 
-		return super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
+		super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
+
+		return this;
 	}
 
 	ss(thickness: number, caps: 0 | 1 | 2, joints: 0 | 1 | 2, miterLimit: number, ignoreScale: boolean) {
 		return this.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
 	}
 
-	beginStroke(color: string) {
+	beginStroke(color: string): this {
 		const data = ensureData(this);
 		const c = this._parseColor(color);
 		data.strokeFill = c.color;
 		data.strokeAlpha = c.alpha;
 
-		return super.beginStroke(color);
+		super.beginStroke(color);
+
+		return this;
 	}
 
 	s(color: string) {
 		return this.beginStroke(color);
 	}
 
-	drawRoundRect(x: number, y: number, w: number, h: number, radius: number) {
+	drawRoundRect(x: number, y: number, w: number, h: number, radius: number): this {
 		ensureData(this).instance.drawRoundedRect(x, y, w, h, radius);
+		super.drawRoundRect(x, y, w, h, radius);
 
-		return super.drawRoundRect(x, y, w, h, radius);
+		return this;
 	}
 
 	rr(x: number, y: number, w: number, h: number, radius: number) {
 		return this.drawRoundRect(x, y, w, h, radius);
 	}
 
-	drawCircle(x: number, y: number, radius: number) {
+	drawCircle(x: number, y: number, radius: number): this {
 		ensureData(this).instance.drawCircle(x, y, radius);
+		super.drawCircle(x, y, radius);
 
-		return super.drawCircle(x, y, radius);
+		return this;
 	}
 
 	dc(x: number, y: number, radius: number) {
 		return this.drawCircle(x, y, radius);
 	}
 
-	drawEllipse(x: number, y: number, w: number, h: number) {
+	drawEllipse(x: number, y: number, w: number, h: number): this {
 		ensureData(this).instance.drawEllipse(x, y, w, h);
+		super.drawEllipse(x, y, w, h);
 
-		return super.drawEllipse(x, y, w, h);
+		return this;
 	}
 
 	de(x: number, y: number, w: number, h: number) {
 		return this.drawEllipse(x, y, w, h);
 	}
 
-	drawPolyStar(x: number, y: number, radius: number, sides: number, pointSize: number, angle: number) {
+	drawPolyStar(x: number, y: number, radius: number, sides: number, pointSize: number, angle: number): this {
 		ensureData(this).instance.drawRegularPolygon(x, y, radius, sides, angle * DEG_TO_RAD);
+		super.drawPolyStar(x, y, radius, sides, pointSize, angle);
 
-		return super.drawPolyStar(x, y, radius, sides, pointSize, angle);
+		return this;
 	}
 
 	dp(x: number, y: number, radius: number, sides: number, pointSize: number, angle: number) {
@@ -403,25 +381,5 @@ export class CreatejsGraphics extends GraphicsBase implements ICreatejsDisplayOb
 
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
-	}
-
-	addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean) {
-		const p = super.addEventListener(type, cb, useCapture);
-
-		if (!(cb instanceof CreatejsButtonHelper)) {
-			addInteractionListener(this, type, cb);
-		}
-
-		return p;
-	}
-
-	removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean) {
-		super.removeEventListener(type, cb, useCapture);
-		removeInteractionListener(this, type, cb);
-	}
-
-	removeAllEventListeners(type?: string) {
-		super.removeAllEventListeners(type);
-		removeAllInteractionListeners(this, type);
 	}
 }
