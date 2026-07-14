@@ -17,3 +17,9 @@ createjs.MotionGuidePlugin.install();
 
 export * from './createjs';
 export * from './Container';
+
+// The typed createjs runtime (with the wrapper classes installed by the
+// assignments above). Re-exported so consumers don't need a second import
+// for it; the ambient `createjs` namespace types come along with this
+// package's type definitions either way.
+export { createjs };

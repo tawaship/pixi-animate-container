@@ -1,6 +1,5 @@
 import { filters } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { IColorFilterSyncSource } from './core';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
@@ -19,27 +18,8 @@ export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 	}
 }
 
-/**
- * Members of the (untyped) createjs.ColorFilter runtime that the wrapper relies on.
- * The 8 scalars are plain enumerable data properties written by the original
- * constructor, exactly as in the original implementation.
- */
-export interface ICreatejsColorFilterBase extends IColorFilterSyncSource {
-}
-
-export type TCreatejsColorFilterConstructorArgs = [
-	number?, number?, number?, number?,
-	number?, number?, number?, number?
-];
-
-export interface ICreatejsColorFilterBaseConstructor {
-	new (...args: TCreatejsColorFilterConstructorArgs): ICreatejsColorFilterBase;
-}
-
-/**
- * @ignore
- */
-const ColorFilterBase: ICreatejsColorFilterBaseConstructor = createjs.ColorFilter;
+// Derived from the real constructor so there is a single source of truth.
+export type TCreatejsColorFilterConstructorArgs = ConstructorParameters<typeof createjs.ColorFilter>;
 
 /**
  * External store for the paired Pixi filter, so that the createjs instance
@@ -83,7 +63,7 @@ export function getPixiColorMatrixFilter(filter: CreatejsColorFilter): PixiColor
  * into the paired Pixi filter's matrix by the pull-sync pass at the end of each
  * tick (see core.ts syncToPixi), not by accessors.
  */
-export class CreatejsColorFilter extends ColorFilterBase {
+export class CreatejsColorFilter extends createjs.ColorFilter {
 	constructor(...args: TCreatejsColorFilterConstructorArgs) {
 		super(...args);
 	}

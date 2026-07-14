@@ -106,7 +106,6 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 		return ensureData(this).graphics;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	set graphics(value) {
 		const data = ensureData(this);
 
@@ -140,7 +139,6 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 		return ensureData(this).mask;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
@@ -186,6 +184,29 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 		}
 
 		super.removeEventListener(type, listener, useCapture);
+	}
+
+	// The original defines `off` as a prototype ALIAS of removeEventListener
+	// (`p.off = p.removeEventListener`), captured when EventDispatcher was
+	// defined - so calling off() on a wrapper skips the removeEventListener
+	// override above entirely, and the pixi-side interaction bridge would
+	// never detach (the handler keeps firing from the pixi side after off()).
+	// Delegating through `this.removeEventListener` puts off() back on the
+	// virtual dispatch path. The typeof split only exists so each call site
+	// sees a non-union listener type that resolves against one overload
+	// family; both branches make the identical call.
+	off(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	off(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	off(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			this.removeEventListener(type, listener, useCapture);
+
+			return;
+		}
+
+		this.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {

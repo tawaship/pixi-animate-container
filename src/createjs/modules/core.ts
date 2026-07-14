@@ -4,10 +4,7 @@ import type { CreatejsMovieClip } from './MovieClip';
 import type { CreatejsSprite } from './Sprite';
 import type { CreatejsShape } from './Shape';
 import type { CreatejsBitmap } from './Bitmap';
-import type { CreatejsGraphics } from './Graphics';
 import type { CreatejsText } from './Text';
-import type { CreatejsButtonHelper } from './ButtonHelper';
-import type { ICreatejsInteractionEventDelegate } from './EventManager';
 
 export interface ITickerData {
 	delta: number;
@@ -15,12 +12,21 @@ export interface ITickerData {
 
 export type TCreatejsMask = CreatejsShape | null;
 
+/**
+ * The wrapper display object classes - what addCreatejs and friends accept.
+ * The contract is "wraps a real createjs.DisplayObject": Animate's library
+ * can only publish symbols (MovieClip) and image assets (Bitmap / Sprite)
+ * as lib classes, and Shape / Text exist as inline members of published
+ * symbols, but all of them are display objects. CreatejsGraphics is
+ * deliberately NOT part of this union: the real createjs.Graphics is a
+ * drawing-command container, not a DisplayObject (it is reached through
+ * `shape.graphics`, never placed on a display list).
+ */
 export type TCreatejsObject =
 	| CreatejsMovieClip
 	| CreatejsSprite
 	| CreatejsShape
 	| CreatejsBitmap
-	| CreatejsGraphics
 	| CreatejsText;
 
 /**
@@ -41,23 +47,6 @@ export interface ICreatejsSyncNode {
 	alpha: number;
 	_off?: boolean;
 	children?: ICreatejsSyncNode[];
-}
-
-/**
- * Members of the (untyped) createjs.DisplayObject runtime that the wrapper relies on.
- * Base constructors of each wrapper class are typed against extensions of this interface.
- */
-export interface ICreatejsDisplayObjectBase extends ICreatejsSyncNode {
-	addEventListener(type: string, listener: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): ICreatejsInteractionEventDelegate | CreatejsButtonHelper;
-	removeEventListener(type: string, listener: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
-	removeAllEventListeners(type?: string): void;
-	dispatchEvent(evt: object | string): boolean;
-	_tick(evt: object): void;
-}
-
-export interface ICreatejsLabel {
-	label: string;
-	position: number;
 }
 
 /**
@@ -90,26 +79,14 @@ export interface ICreatejsDisplayObject<T extends DisplayObject> {
 export type ICreatejsBlendModeTarget = ICreatejsDisplayObject<DisplayObject>;
 
 /**
- * Shape of the members of `children` as seen from the wrapper (every child in a
- * wrapper-driven tree is a wrapper class instance).
+ * Source of the ColorFilter scalar sync (plain data properties,
+ * original-faithful) - the 8 color scalars of the real createjs.ColorFilter,
+ * referenced instead of redeclared so there is a single source of truth.
  */
-export interface ICreatejsChildNode extends ICreatejsSyncNode {
-	updateBlendModeForPixi(mode: BLEND_MODES): void;
-}
-
-/**
- * Source of the ColorFilter scalar sync (plain data properties, original-faithful).
- */
-export interface IColorFilterSyncSource {
-	redMultiplier: number;
-	greenMultiplier: number;
-	blueMultiplier: number;
-	alphaMultiplier: number;
-	redOffset: number;
-	greenOffset: number;
-	blueOffset: number;
-	alphaOffset: number;
-}
+export type IColorFilterSyncSource = Pick<createjs.ColorFilter,
+	| 'redMultiplier' | 'greenMultiplier' | 'blueMultiplier' | 'alphaMultiplier'
+	| 'redOffset' | 'greenOffset' | 'blueOffset' | 'alphaOffset'
+>;
 
 export interface IColorFilterSyncPair {
 	source: IColorFilterSyncSource;

@@ -1,14 +1,13 @@
 import { BLEND_MODES, Container, Text } from 'pixi.js';
-import { ICreatejsDisplayObject, ICreatejsDisplayObjectBase, IPixiData, TCreatejsMask } from './core';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate } from './EventManager';
+import createjs from '@tawaship/createjs-module';
+import { ICreatejsDisplayObject, IPixiData, TCreatejsMask } from './core';
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Text.html | PIXI.Text}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
  */
 export declare class PixiText extends Text {
 }
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 export declare class PixiTextContainer extends Container {
     private _createjs;
@@ -18,19 +17,7 @@ export declare class PixiTextContainer extends Container {
     get text(): PixiText;
 }
 export type TCreatejsTextAlign = 'left' | 'center' | 'right';
-export type TCreatejsTextConstructorArgs = [string?, string?, string?];
-/**
- * Members of the (untyped) createjs.Text runtime that the wrapper relies on.
- */
-export interface ICreatejsTextBase extends ICreatejsDisplayObjectBase {
-}
-export interface ICreatejsTextBaseConstructor {
-    new (...args: TCreatejsTextConstructorArgs): ICreatejsTextBase;
-}
-/**
- * @ignore
- */
-declare const TextBase: ICreatejsTextBaseConstructor;
+export type TCreatejsTextConstructorArgs = ConstructorParameters<typeof createjs.Text>;
 export interface ICreatejsParsedText {
     fontSize: number;
     fontFamily: string;
@@ -46,8 +33,14 @@ export interface IPixiTextData extends IPixiData<PixiTextContainer> {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
+ *
+ * `text`/`font`/`color`/`textAlign`/`lineHeight`/`lineWidth`/`mask` are all
+ * plain data properties on the real createjs.Text/DisplayObject, but this
+ * wrapper must intercept get/set on each to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
-export declare class CreatejsText extends TextBase implements ICreatejsDisplayObject<PixiTextContainer> {
+export declare class CreatejsText extends createjs.Text implements ICreatejsDisplayObject<PixiTextContainer> {
     constructor(text: string, font: string, color?: string);
     get pixi(): PixiTextContainer;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
@@ -68,8 +61,29 @@ export declare class CreatejsText extends TextBase implements ICreatejsDisplayOb
     set lineWidth(width: number);
     get mask(): TCreatejsMask;
     set mask(value: TCreatejsMask);
-    addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): CreatejsButtonHelper | ICreatejsInteractionEventDelegate;
-    removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+    addEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): Function;
+    addEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): Function;
+    addEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): Object;
+    addEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): Object;
+    removeEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): void;
+    off(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+    off(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+    off(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): void;
+    off(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): void;
     removeAllEventListeners(type?: string): void;
 }
-export {};

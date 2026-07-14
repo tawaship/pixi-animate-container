@@ -23,7 +23,8 @@ export class PixiSprite extends Sprite {
 	}
 }
 
-export type TCreatejsSpriteConstructorArgs = [createjs.SpriteSheet?, (string | number)?];
+// Derived from the real constructor so there is a single source of truth.
+export type TCreatejsSpriteConstructorArgs = ConstructorParameters<typeof createjs.Sprite>;
 
 export interface IPixiSpriteData extends IPixiData<PixiSprite> {
 }
@@ -119,7 +120,6 @@ export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayO
 		return ensureData(this).mask;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
@@ -163,6 +163,23 @@ export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayO
 		}
 
 		super.removeEventListener(type, listener, useCapture);
+	}
+
+	// See the off comment on CreatejsShape: the original's `off` is a
+	// prototype alias of removeEventListener and would bypass the override
+	// above, leaking the pixi-side interaction bridge.
+	off(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	off(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	off(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			this.removeEventListener(type, listener, useCapture);
+
+			return;
+		}
+
+		this.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {

@@ -23,7 +23,8 @@ export class PixiGraphics extends Graphics {
 	}
 }
 
-export type TCreatejsGraphicsConstructorArgs = [];
+// Derived from the real constructor so there is a single source of truth.
+export type TCreatejsGraphicsConstructorArgs = ConstructorParameters<typeof createjs.Graphics>;
 
 export interface IPixiGraphicsData extends IPixiData<PixiGraphics> {
 	strokeFill: number;

@@ -1,11 +1,9 @@
 import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter } from './ColorFilter';
-import { ICreatejsDisplayObject, ICreatejsDisplayObjectBase, ICreatejsChildNode, ICreatejsBlendModeTarget, ICreatejsLabel, IPixiData, TCreatejsMask } from './core';
-import { CreatejsButtonHelper } from './ButtonHelper';
-import { ICreatejsInteractionEventDelegate } from './EventManager';
+import { ICreatejsDisplayObject, ICreatejsBlendModeTarget, IPixiData, TCreatejsMask } from './core';
 /**
- * inherited {@link http://pixijs.download/v5.3.2/docs/PIXI.Container.html | PIXI.Container}
+ * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 export declare class PixiMovieClip extends Container {
     private _createjs;
@@ -19,16 +17,12 @@ export type TCreatejsColorFilters = CreatejsColorFilter[] | null;
 export declare class AnimateEvent extends createjs.Event {
     constructor(type: string);
 }
-export interface IAnimateReachLabelData {
-    /**
-     * Label name.
-     */
-    label: string;
-    /**
-     * Frame number of label.
-     */
-    position: number;
-}
+/**
+ * A timeline label entry (`label` name and `position` frame number) - the
+ * element type of the real createjs.MovieClip.labels, referenced instead of
+ * redeclared so there is a single source of truth.
+ */
+export type IAnimateReachLabelData = createjs.MovieClip['labels'][number];
 export declare class AnimateReachLabelEvent extends AnimateEvent {
     data: IAnimateReachLabelData;
     constructor(type: string, label: IAnimateReachLabelData);
@@ -45,90 +39,22 @@ export interface IAnimateFrameEventOption {
 }
 export type TCreatejsMovieClipMode = 'independent' | 'single' | 'synched';
 /**
- * The properties object form of the createjs.MovieClip constructor arguments
- * (the shape produced by current Animate publishes).
- */
-export interface ICreatejsMovieClipProps {
-    mode?: TCreatejsMovieClipMode;
-    startPosition?: number;
-    loop?: boolean;
-    reversed?: boolean;
-    paused?: boolean;
-    position?: number;
-    labels?: {
-        [name: string]: number;
-    };
-}
-/**
  * Constructor arguments accepted by createjs.MovieClip across publish
  * generations: either a single properties object, or the legacy positional
- * form (mode, startPosition, loop, labels-or-reversed).
+ * form (mode, startPosition, loop, labels). Derived from the real
+ * constructor so there is a single source of truth - this class is assigned
+ * over createjs.MovieClip, so it must accept everything the original
+ * accepts.
  */
-export type TCreatejsMovieClipConstructorArgs = [ICreatejsMovieClipProps?] | [TCreatejsMovieClipMode?, number?, boolean?, ({
-    [name: string]: number;
-} | boolean)?];
+export type TCreatejsMovieClipConstructorArgs = ConstructorParameters<typeof createjs.MovieClip>;
 /**
- * The target object of a timeline tween: either a display object (has `x`) or
- * a state-holder used by publish output for child membership swapping (has
- * `state`). Both members are optional because either kind can appear.
+ * The properties object form of the createjs.MovieClip constructor arguments
+ * (the shape produced by current Animate publishes) - the non-positional
+ * member of {@link TCreatejsMovieClipConstructorArgs}. `mode`'s documented
+ * values are {@link TCreatejsMovieClipMode}, and `labels` is a
+ * `{ [name: string]: number }` dictionary in publish output.
  */
-export interface ICreatejsTweenTarget {
-    state?: {
-        t: object;
-    }[];
-    x?: number;
-}
-export interface ICreatejsTweenLike {
-    target: ICreatejsTweenTarget;
-}
-export interface ICreatejsTimelineBase {
-    reversed: boolean;
-    tweens: ICreatejsTweenLike[];
-}
-/**
- * Bounds metadata stamped on symbol prototypes by Animate publish output
- * (not part of core createjs).
- */
-export interface ICreatejsNominalBounds {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-/**
- * Members of the (untyped) createjs.MovieClip runtime that the wrapper relies on.
- */
-export interface ICreatejsMovieClipBase extends ICreatejsDisplayObjectBase {
-    children: ICreatejsChildNode[];
-    currentFrame: number;
-    totalFrames: number;
-    labels: ICreatejsLabel[];
-    mode: TCreatejsMovieClipMode;
-    startPosition: number;
-    loop: boolean;
-    timeline: ICreatejsTimelineBase;
-    nominalBounds: ICreatejsNominalBounds;
-    cache(x: number, y: number, width: number, height: number, scale?: number): void;
-    advance(time?: number): void;
-    _updateState(): void;
-    addChild<T extends ICreatejsBlendModeTarget>(child: T): T;
-    addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T;
-    removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean;
-    removeChildAt(index: number): boolean;
-    removeAllChildren(): void;
-    gotoAndPlay(positionOrLabel: string | number): void;
-    gotoAndStop(positionOrLabel: string | number): void;
-    play(): void;
-    stop(): void;
-    initialize(...args: TCreatejsMovieClipConstructorArgs): void;
-}
-export interface ICreatejsMovieClipBaseConstructor {
-    new (...args: TCreatejsMovieClipConstructorArgs): ICreatejsMovieClipBase;
-}
-/**
- * @ignore
- */
-declare const MovieClipBase: ICreatejsMovieClipBaseConstructor;
+export type ICreatejsMovieClipProps = NonNullable<Exclude<TCreatejsMovieClipConstructorArgs[0], string>>;
 export declare enum CompositeOperations {
     Lighter = "lighter",
     Multiply = "multiply",
@@ -142,8 +68,14 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
+ *
+ * `mask` is a plain data property on the real createjs.DisplayObject, but
+ * this wrapper must intercept get/set to route the assigned value into the
+ * Pixi mirror. See the class-level comment on CreatejsShape for why a
+ * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
-export declare class CreatejsMovieClip extends MovieClipBase implements ICreatejsDisplayObject<PixiMovieClip> {
+export declare class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
+    [key: string]: any;
     protected _fps: number;
     protected _listenFrameEventsBase: IAnimateFrameEventOption;
     /**
@@ -196,13 +128,41 @@ export declare class CreatejsMovieClip extends MovieClipBase implements ICreatej
     get mask(): TCreatejsMask;
     set mask(value: TCreatejsMask);
     private _updateChildrenBlendModeForPixi;
-    addChild<T extends ICreatejsBlendModeTarget>(child: T): T;
-    addChildAt<T extends ICreatejsBlendModeTarget>(child: T, index: number): T;
-    removeChild<T extends ICreatejsBlendModeTarget>(child: T): boolean;
-    removeChildAt(index: number): boolean;
-    removeAllChldren(): void;
-    addEventListener(type: string, cb: ICreatejsInteractionEventDelegate | CreatejsButtonHelper, useCapture?: boolean): CreatejsButtonHelper | ICreatejsInteractionEventDelegate;
-    removeEventListener(type: string, cb: ICreatejsInteractionEventDelegate, useCapture?: boolean): void;
+    addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child: T): T;
+    addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+    addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+    addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, child2: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;
+    addChild(...children: (createjs.DisplayObject & ICreatejsBlendModeTarget)[]): createjs.DisplayObject;
+    addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child: T, index: number): T;
+    addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T, index: number): T;
+    addChildAt<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, child1: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T, index: number): T;
+    addChildAt(...childOrIndex: ((createjs.DisplayObject & ICreatejsBlendModeTarget) | number)[]): createjs.DisplayObject;
+    removeChild(...children: createjs.DisplayObject[]): boolean;
+    removeChildAt(...index: number[]): boolean;
+    removeAllChildren(): void;
+    addEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): Function;
+    addEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): Function;
+    addEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): Object;
+    addEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): Object;
+    removeEventListener(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): void;
+    removeEventListener(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): void;
+    off(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+    off(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+    off(type: string, listener: {
+        handleEvent: (eventObj: Object) => boolean;
+    }, useCapture?: boolean): void;
+    off(type: string, listener: {
+        handleEvent: (eventObj: Object) => void;
+    }, useCapture?: boolean): void;
     removeAllEventListeners(type?: string): void;
 }
-export {};

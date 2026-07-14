@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v3.0.0
+ * pixi-animate-container - v3.0.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -84,7 +84,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._createjs;
         }, Object.defineProperties(PixiColorMatrixFilter.prototype, prototypeAccessors), 
         PixiColorMatrixFilter;
-    }(PIXI.filters.ColorMatrixFilter), ColorFilterBase = createjs.ColorFilter, pixiFilterStore = new WeakMap;
+    }(PIXI.filters.ColorMatrixFilter), pixiFilterStore = new WeakMap;
     function getPixiColorMatrixFilter(filter) {
         var pixi = pixiFilterStore.get(filter);
         return pixi || (function(filter, pixi) {
@@ -95,14 +95,14 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }(filter, pixi = new PixiColorMatrixFilter(filter)), pixiFilterStore.set(filter, pixi)), 
         pixi;
     }
-    var createjsInteractionEvents, CreatejsColorFilter = function(ColorFilterBase) {
+    var createjsInteractionEvents, CreatejsColorFilter = function(superclass) {
         function CreatejsColorFilter() {
             for (var args = [], len = arguments.length; len--; ) {
                 args[len] = arguments[len];
             }
-            ColorFilterBase.apply(this, args);
+            superclass.apply(this, args);
         }
-        ColorFilterBase && (CreatejsColorFilter.__proto__ = ColorFilterBase), CreatejsColorFilter.prototype = Object.create(ColorFilterBase && ColorFilterBase.prototype), 
+        superclass && (CreatejsColorFilter.__proto__ = superclass), CreatejsColorFilter.prototype = Object.create(superclass && superclass.prototype), 
         CreatejsColorFilter.prototype.constructor = CreatejsColorFilter;
         var prototypeAccessors$1 = {
             pixi: {
@@ -113,7 +113,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return getPixiColorMatrixFilter(this);
         }, Object.defineProperties(CreatejsColorFilter.prototype, prototypeAccessors$1), 
         CreatejsColorFilter;
-    }(ColorFilterBase);
+    }(createjs.ColorFilter);
     exports.createjsInteractionEvents = void 0, (createjsInteractionEvents = exports.createjsInteractionEvents || (exports.createjsInteractionEvents = {})).mousedown = "mousedown", 
     createjsInteractionEvents.pressmove = "pressmove", createjsInteractionEvents.pressup = "pressup", 
     createjsInteractionEvents.rollover = "rollover", createjsInteractionEvents.rollout = "rollout", 
@@ -432,6 +432,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 void removeInteractionListener(this, type, listener);
             }
             superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
+        }, CreatejsMovieClip.prototype.off = function(type, listener, useCapture) {
+            this.removeEventListener(type, listener, useCapture);
         }, CreatejsMovieClip.prototype.removeAllEventListeners = function(type) {
             superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsMovieClip.prototype, prototypeAccessors$1), CreatejsMovieClip;
@@ -510,6 +512,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 void removeInteractionListener(this, type, listener);
             }
             superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
+        }, CreatejsSprite.prototype.off = function(type, listener, useCapture) {
+            this.removeEventListener(type, listener, useCapture);
         }, CreatejsSprite.prototype.removeAllEventListeners = function(type) {
             superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsSprite.prototype, prototypeAccessors$1), CreatejsSprite;
@@ -602,6 +606,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 void removeInteractionListener(this, type, listener);
             }
             superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
+        }, CreatejsShape.prototype.off = function(type, listener, useCapture) {
+            this.removeEventListener(type, listener, useCapture);
         }, CreatejsShape.prototype.removeAllEventListeners = function(type) {
             superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsShape.prototype, prototypeAccessors$1), CreatejsShape;
@@ -675,6 +681,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 void removeInteractionListener(this, type, listener);
             }
             superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
+        }, CreatejsBitmap.prototype.off = function(type, listener, useCapture) {
+            this.removeEventListener(type, listener, useCapture);
         }, CreatejsBitmap.prototype.removeAllEventListeners = function(type) {
             superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsBitmap.prototype, prototypeAccessors$1), CreatejsBitmap;
@@ -1008,30 +1016,44 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 void removeInteractionListener(this, type, listener);
             }
             superclass.prototype.removeEventListener.call(this, type, listener, useCapture);
+        }, CreatejsText.prototype.off = function(type, listener, useCapture) {
+            this.removeEventListener(type, listener, useCapture);
         }, CreatejsText.prototype.removeAllEventListeners = function(type) {
             superclass.prototype.removeAllEventListeners.call(this, type), removeAllInteractionListeners(this, type);
         }, Object.defineProperties(CreatejsText.prototype, prototypeAccessors$1), CreatejsText;
-    }(createjs.Text), CreatejsButtonHelper = function(superclass) {
-        function CreatejsButtonHelper() {
-            for (var args = [], len = arguments.length; len--; ) {
-                args[len] = arguments[len];
+    }(createjs.Text);
+    function isWrapped(obj) {
+        return "pixi" in obj && "updateBlendModeForPixi" in obj;
+    }
+    function gotoAndStopVerbatim(target, positionOrLabel) {
+        target.gotoAndStop(positionOrLabel);
+    }
+    var CreatejsButtonHelper = function(superclass) {
+        function CreatejsButtonHelper(target, outLabel, overLabel, downLabel, play, hitArea, hitLabel) {
+            if (superclass.call(this, target, outLabel, overLabel, downLabel, play, hitArea, hitLabel), 
+            !isWrapped(target)) {
+                throw new TypeError("CreatejsButtonHelper requires wrapper class instances for target and hitArea.");
             }
-            superclass.apply(this, args);
-            var createjs = args[0], pixi = createjs.pixi, baseFrame = args[1], overFrame = args[2], downFrame = args[3], hit = arguments[5], hitFrame = args[6];
-            hit.gotoAndStop(hitFrame), syncToPixi(hit);
-            var hitPixi = pixi.addChild(hit.pixi);
-            hitPixi.alpha = 1e-5;
+            var hitPixi, obj, pixi = target.pixi;
+            if (hitArea) {
+                if (!isWrapped(obj = hitArea) || !("gotoAndStop" in obj)) {
+                    throw new TypeError("CreatejsButtonHelper requires wrapper class instances for target and hitArea.");
+                }
+                gotoAndStopVerbatim(hitArea, hitLabel), syncToPixi(hitArea), (hitPixi = pixi.addChild(hitArea.pixi)).alpha = 1e-5;
+            } else {
+                hitPixi = pixi;
+            }
             var isOver = !1, isDown = !1;
             hitPixi.on("pointerover", function() {
-                isOver = !0, isDown ? createjs.gotoAndStop(downFrame) : createjs.gotoAndStop(overFrame);
+                isOver = !0, gotoAndStopVerbatim(target, isDown ? downLabel : overLabel);
             }), hitPixi.on("pointerout", function() {
-                isOver = !1, isDown ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+                isOver = !1, gotoAndStopVerbatim(target, isDown ? overLabel : outLabel);
             }), hitPixi.on("pointerdown", function() {
-                isDown = !0, createjs.gotoAndStop(downFrame);
+                isDown = !0, gotoAndStopVerbatim(target, downLabel);
             }), hitPixi.on("pointerup", function() {
-                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+                isDown = !1, gotoAndStopVerbatim(target, isOver ? overLabel : outLabel);
             }), hitPixi.on("pointerupoutside", function() {
-                isDown = !1, isOver ? createjs.gotoAndStop(overFrame) : createjs.gotoAndStop(baseFrame);
+                isDown = !1, gotoAndStopVerbatim(target, isOver ? overLabel : outLabel);
             }), hitPixi.interactive = !0, hitPixi.cursor = "pointer";
         }
         return superclass && (CreatejsButtonHelper.__proto__ = superclass), CreatejsButtonHelper.prototype = Object.create(superclass && superclass.prototype), 
@@ -1144,8 +1166,9 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     createjs.MovieClip = CreatejsMovieClip, createjs.Sprite = CreatejsSprite, createjs.Shape = CreatejsShape, 
     createjs.Bitmap = CreatejsBitmap, createjs.Graphics = CreatejsGraphics, createjs.Text = CreatejsText, 
     createjs.ButtonHelper = CreatejsButtonHelper, createjs.ColorFilter = CreatejsColorFilter, 
-    createjs.MotionGuidePlugin.install(), exports.AnimateEvent = AnimateEvent, exports.AnimateReachLabelEvent = AnimateReachLabelEvent, 
-    exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, exports.CreatejsButtonHelper = CreatejsButtonHelper, 
+    createjs.MotionGuidePlugin.install(), exports.createjs = createjs, exports.AnimateEvent = AnimateEvent, 
+    exports.AnimateReachLabelEvent = AnimateReachLabelEvent, exports.Container = Container, 
+    exports.CreatejsBitmap = CreatejsBitmap, exports.CreatejsButtonHelper = CreatejsButtonHelper, 
     exports.CreatejsColorFilter = CreatejsColorFilter, exports.CreatejsController = CreatejsController, 
     exports.CreatejsEventManager = CreatejsEventManager, exports.CreatejsGraphics = CreatejsGraphics, 
     exports.CreatejsMovieClip = CreatejsMovieClip, exports.CreatejsShape = CreatejsShape, 

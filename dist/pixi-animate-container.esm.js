@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v3.0.0
+ * pixi-animate-container - v3.0.1
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -9,6 +9,7 @@
 import * as PIXI from 'pixi.js';
 import { BLEND_MODES, filters, utils, Container as Container$1, BaseTexture, Rectangle, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
+export { default as createjs } from '@tawaship/createjs-module';
 
 /**
  * @ignore
@@ -132,10 +133,6 @@ class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
     }
 }
 /**
- * @ignore
- */
-const ColorFilterBase = createjs.ColorFilter;
-/**
  * External store for the paired Pixi filter, so that the createjs instance
  * carries no wrapper metadata (its own properties are exactly the original 8
  * scalars; tween's for-in sees the same surface as with the original createjs).
@@ -171,7 +168,7 @@ function getPixiColorMatrixFilter(filter) {
  * into the paired Pixi filter's matrix by the pull-sync pass at the end of each
  * tick (see core.ts syncToPixi), not by accessors.
  */
-class CreatejsColorFilter extends ColorFilterBase {
+class CreatejsColorFilter extends createjs.ColorFilter {
     constructor(...args) {
         super(...args);
     }
@@ -550,7 +547,6 @@ class CreatejsMovieClip extends createjs.MovieClip {
     get compositeOperation() {
         return ensureData$5(this).compositeOperation;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set compositeOperation(value) {
         const data = ensureData$5(this);
         if (data.compositeOperation === value)
@@ -563,7 +559,6 @@ class CreatejsMovieClip extends createjs.MovieClip {
     get filters() {
         return ensureData$5(this).filters;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set filters(value) {
         const data = ensureData$5(this);
         const list = [];
@@ -587,7 +582,6 @@ class CreatejsMovieClip extends createjs.MovieClip {
     get mask() {
         return ensureData$5(this).mask;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     set mask(value) {
         setMaskForPixi(ensureData$5(this), value);
     }
@@ -657,6 +651,13 @@ class CreatejsMovieClip extends createjs.MovieClip {
             return;
         }
         super.removeEventListener(type, listener, useCapture);
+    }
+    off(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            this.removeEventListener(type, listener, useCapture);
+            return;
+        }
+        this.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -751,7 +752,6 @@ class CreatejsSprite extends createjs.Sprite {
     get mask() {
         return ensureData$4(this).mask;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$4(this), value);
     }
@@ -770,6 +770,13 @@ class CreatejsSprite extends createjs.Sprite {
             return;
         }
         super.removeEventListener(type, listener, useCapture);
+    }
+    off(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            this.removeEventListener(type, listener, useCapture);
+            return;
+        }
+        this.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -850,7 +857,6 @@ class CreatejsShape extends createjs.Shape {
     get graphics() {
         return ensureData$3(this).graphics;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set graphics(value) {
         const data = ensureData$3(this);
         if (data.masked.length) {
@@ -878,7 +884,6 @@ class CreatejsShape extends createjs.Shape {
     get mask() {
         return ensureData$3(this).mask;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$3(this), value);
     }
@@ -897,6 +902,13 @@ class CreatejsShape extends createjs.Shape {
             return;
         }
         super.removeEventListener(type, listener, useCapture);
+    }
+    off(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            this.removeEventListener(type, listener, useCapture);
+            return;
+        }
+        this.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -972,7 +984,6 @@ class CreatejsBitmap extends createjs.Bitmap {
     get mask() {
         return ensureData$2(this).mask;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData$2(this), value);
     }
@@ -991,6 +1002,13 @@ class CreatejsBitmap extends createjs.Bitmap {
             return;
         }
         super.removeEventListener(type, listener, useCapture);
+    }
+    off(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            this.removeEventListener(type, listener, useCapture);
+            return;
+        }
+        this.removeEventListener(type, listener, useCapture);
     }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
@@ -1463,7 +1481,6 @@ class CreatejsText extends createjs.Text {
     get mask() {
         return ensureData(this).mask;
     }
-    // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     set mask(value) {
         setMaskForPixi(ensureData(this), value);
     }
@@ -1483,6 +1500,13 @@ class CreatejsText extends createjs.Text {
         }
         super.removeEventListener(type, listener, useCapture);
     }
+    off(type, listener, useCapture) {
+        if (typeof listener === 'function') {
+            this.removeEventListener(type, listener, useCapture);
+            return;
+        }
+        this.removeEventListener(type, listener, useCapture);
+    }
     removeAllEventListeners(type) {
         super.removeAllEventListeners(type);
         removeAllInteractionListeners(this, type);
@@ -1490,65 +1514,118 @@ class CreatejsText extends createjs.Text {
 }
 
 /**
+ * Recovers the wrapper contract (the paired Pixi instance) on a value typed
+ * as a real createjs display object. Inside a wrapper-driven tree every
+ * display object is a wrapper class instance, but the type system needs this
+ * checked explicitly - same pattern as isBlendModeChild in MovieClip.ts.
+ */
+function isWrapped(obj) {
+    return 'pixi' in obj && 'updateBlendModeForPixi' in obj;
+}
+/**
+ * The hit clip must additionally be frame-addressable (a Sprite/MovieClip
+ * wrapper), because the helper parks it on its hit frame.
+ */
+function isAnimatableWrapped(obj) {
+    return isWrapped(obj) && 'gotoAndStop' in obj;
+}
+/**
+ * Forwards a frame argument into gotoAndStop verbatim, including undefined.
+ * The original AC implementation passed the constructor arguments straight
+ * through, and the real createjs gotoAndStop tolerates undefined without
+ * throwing (measured: it pauses without moving, for MovieClip and Sprite
+ * both) - so an omitted frame must stay an as-is forward, not become a skip,
+ * a substitute value, or an error. gotoAndStop's declaration (rightly)
+ * doesn't accept undefined; the optional parameter in the shape below lets
+ * the narrower real signature through via method-parameter bivariance. This
+ * is a deliberate, isolated use of that unsound comparison rule: the runtime
+ * data flow is the priority here, and this function is the one place where
+ * the type description compromises instead.
+ */
+function gotoAndStopVerbatim(target, positionOrLabel) {
+    target.gotoAndStop(positionOrLabel);
+}
+/**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ButtonHelper.html | createjs.ButtonHelper}
+ *
+ * Unlike the original, this wrapper requires `target` (and `hitArea` when
+ * given) to be wrapper class instances (it re-implements the button states
+ * on the Pixi interaction layer, so it needs their paired Pixi objects).
+ * Inputs that don't satisfy that crashed with a TypeError mid-construction
+ * before; now they fail the explicit check below at the same point.
+ * `hitArea` itself is optional: Animate publishes a button whose hit frame
+ * is empty as a 4-argument call (measured: `new cjs.ButtonHelper(target,
+ * 0, 1, 1)`), and the original then uses the target itself as the hit
+ * surface - mirrored here by making the target's own Pixi instance
+ * interactive. The frame arguments are forwarded verbatim, omitted or not,
+ * exactly as before (see gotoAndStopVerbatim above).
  */
 class CreatejsButtonHelper extends createjs.ButtonHelper {
-    constructor(...args) {
-        super(...args);
-        const createjs = args[0];
-        const pixi = createjs.pixi;
-        const baseFrame = args[1];
-        const overFrame = args[2];
-        const downFrame = args[3];
-        const hit = arguments[5];
-        const hitFrame = args[6];
-        hit.gotoAndStop(hitFrame);
-        // The hit clip hangs on the pixi tree only (never on the createjs tree),
-        // so the per-tick pull sync can never reach it. It is static after the
-        // gotoAndStop above, so one explicit sync here is sufficient.
-        syncToPixi(hit);
-        const hitPixi = pixi.addChild(hit.pixi);
-        hitPixi.alpha = 0.00001;
+    constructor(target, outLabel, overLabel, downLabel, play, hitArea, hitLabel) {
+        super(target, outLabel, overLabel, downLabel, play, hitArea, hitLabel);
+        if (!isWrapped(target)) {
+            throw new TypeError('CreatejsButtonHelper requires wrapper class instances for target and hitArea.');
+        }
+        const pixi = target.pixi;
+        let hitPixi;
+        if (hitArea) {
+            if (!isAnimatableWrapped(hitArea)) {
+                throw new TypeError('CreatejsButtonHelper requires wrapper class instances for target and hitArea.');
+            }
+            gotoAndStopVerbatim(hitArea, hitLabel);
+            // The hit clip hangs on the pixi tree only (never on the createjs tree),
+            // so the per-tick pull sync can never reach it. It is static after the
+            // gotoAndStop above, so one explicit sync here is sufficient.
+            syncToPixi(hitArea);
+            hitPixi = pixi.addChild(hitArea.pixi);
+            hitPixi.alpha = 0.00001;
+        }
+        else {
+            // 4-argument publish form (empty hit frame): the target itself is the
+            // hit surface, exactly like the original. Its alpha is left alone -
+            // the button must stay visible.
+            hitPixi = pixi;
+        }
         let isOver = false;
         let isDown = false;
         hitPixi.on('pointerover', function () {
             isOver = true;
             if (isDown) {
-                createjs.gotoAndStop(downFrame);
+                gotoAndStopVerbatim(target, downLabel);
             }
             else {
-                createjs.gotoAndStop(overFrame);
+                gotoAndStopVerbatim(target, overLabel);
             }
         });
         hitPixi.on('pointerout', function () {
             isOver = false;
             if (isDown) {
-                createjs.gotoAndStop(overFrame);
+                gotoAndStopVerbatim(target, overLabel);
             }
             else {
-                createjs.gotoAndStop(baseFrame);
+                gotoAndStopVerbatim(target, outLabel);
             }
         });
         hitPixi.on('pointerdown', function () {
             isDown = true;
-            createjs.gotoAndStop(downFrame);
+            gotoAndStopVerbatim(target, downLabel);
         });
         hitPixi.on('pointerup', function () {
             isDown = false;
             if (isOver) {
-                createjs.gotoAndStop(overFrame);
+                gotoAndStopVerbatim(target, overLabel);
             }
             else {
-                createjs.gotoAndStop(baseFrame);
+                gotoAndStopVerbatim(target, outLabel);
             }
         });
         hitPixi.on('pointerupoutside', function () {
             isDown = false;
             if (isOver) {
-                createjs.gotoAndStop(overFrame);
+                gotoAndStopVerbatim(target, overLabel);
             }
             else {
-                createjs.gotoAndStop(baseFrame);
+                gotoAndStopVerbatim(target, outLabel);
             }
         });
         hitPixi.interactive = true;

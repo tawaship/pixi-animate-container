@@ -42,17 +42,12 @@ export class AnimateEvent extends createjs.Event {
 	}
 }
 
-export interface IAnimateReachLabelData {
-	/**
-	 * Label name.
-	 */
-	label: string;
-
-	/**
-	 * Frame number of label.
-	 */
-	position: number;
-}
+/**
+ * A timeline label entry (`label` name and `position` frame number) - the
+ * element type of the real createjs.MovieClip.labels, referenced instead of
+ * redeclared so there is a single source of truth.
+ */
+export type IAnimateReachLabelData = createjs.MovieClip['labels'][number];
 
 /**
  * The real createjs.MovieClip declares `labels` as the untyped `Object[]`,
@@ -88,27 +83,23 @@ export interface IAnimateFrameEventOption {
 export type TCreatejsMovieClipMode = 'independent' | 'single' | 'synched';
 
 /**
- * The properties object form of the createjs.MovieClip constructor arguments
- * (the shape produced by current Animate publishes).
- */
-export interface ICreatejsMovieClipProps {
-	mode?: TCreatejsMovieClipMode;
-	startPosition?: number;
-	loop?: boolean;
-	reversed?: boolean;
-	paused?: boolean;
-	position?: number;
-	labels?: { [name: string]: number };
-}
-
-/**
  * Constructor arguments accepted by createjs.MovieClip across publish
  * generations: either a single properties object, or the legacy positional
- * form (mode, startPosition, loop, labels-or-reversed).
+ * form (mode, startPosition, loop, labels). Derived from the real
+ * constructor so there is a single source of truth - this class is assigned
+ * over createjs.MovieClip, so it must accept everything the original
+ * accepts.
  */
-export type TCreatejsMovieClipConstructorArgs =
-	| [ICreatejsMovieClipProps?]
-	| [TCreatejsMovieClipMode?, number?, boolean?, ({ [name: string]: number } | boolean)?];
+export type TCreatejsMovieClipConstructorArgs = ConstructorParameters<typeof createjs.MovieClip>;
+
+/**
+ * The properties object form of the createjs.MovieClip constructor arguments
+ * (the shape produced by current Animate publishes) - the non-positional
+ * member of {@link TCreatejsMovieClipConstructorArgs}. `mode`'s documented
+ * values are {@link TCreatejsMovieClipMode}, and `labels` is a
+ * `{ [name: string]: number }` dictionary in publish output.
+ */
+export type ICreatejsMovieClipProps = NonNullable<Exclude<TCreatejsMovieClipConstructorArgs[0], string>>;
 
 export enum CompositeOperations {
 	Lighter = "lighter",
@@ -191,6 +182,20 @@ function isBlendModeChild(child: createjs.DisplayObject): child is createjs.Disp
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
+	// Adobe Animate's publish output stamps named child instances (`this.a`
+	// and friends) onto published symbols at runtime, so no declaration can
+	// know their names. This index signature lets them be referenced without
+	// per-content declarations (adopted by explicit user decision; the `any`
+	// here is the sanctioned exception to the no-any rule). Declared members
+	// are unaffected - explicit declarations always win over an index
+	// signature, so e.g. `currentFrame` stays `number` and wrong-typed writes
+	// to declared members still error (measured). The trade-offs, accepted:
+	// anything reached through an undeclared name is unchecked from there on,
+	// misspelled member names silently type as `any` (inside this class's own
+	// implementation too), and a stricter alternative remains available to
+	// consumers (declare the named instances on a subclass - see README).
+	[key: string]: any;
+
 	declare protected _fps: number;
 	declare protected _listenFrameEventsBase: IAnimateFrameEventOption;
 
@@ -320,7 +325,6 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		return ensureData(this).compositeOperation;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set compositeOperation(value) {
 		const data = ensureData(this);
 
@@ -336,7 +340,6 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		return ensureData(this).filters;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set filters(value: TCreatejsColorFilters) {
 		const data = ensureData(this);
 		const list: PixiColorMatrixFilter[] = [];
@@ -366,7 +369,6 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		return ensureData(this).mask;
 	}
 
-	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
 	set mask(value: TCreatejsMask) {
 		setMaskForPixi(ensureData(this), value);
 	}
@@ -495,6 +497,23 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		}
 
 		super.removeEventListener(type, listener, useCapture);
+	}
+
+	// See the off comment on CreatejsShape: the original's `off` is a
+	// prototype alias of removeEventListener and would bypass the override
+	// above, leaking the pixi-side interaction bridge.
+	off(type: string, listener: (eventObj: Object) => boolean, useCapture?: boolean): void;
+	off(type: string, listener: (eventObj: Object) => void, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => boolean }, useCapture?: boolean): void;
+	off(type: string, listener: { handleEvent: (eventObj: Object) => void }, useCapture?: boolean): void;
+	off(type: string, listener: TCreatejsEventListener, useCapture?: boolean): void {
+		if (typeof listener === 'function') {
+			this.removeEventListener(type, listener, useCapture);
+
+			return;
+		}
+
+		this.removeEventListener(type, listener, useCapture);
 	}
 
 	removeAllEventListeners(type?: string) {
