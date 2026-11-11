@@ -1,5 +1,7 @@
 {
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "compilerOptions": {
     "target": "ES6",
     "moduleResolution": "bundler",
@@ -8,12 +10,8 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "typedocOptions": {
-    "out": "docs",
-    "gitRemote": "docs",
-    "gitRevision": "master",
-    "entryPoints": ["src/index.ts"],
-    "includeVersion": true
-  },
-  "exclude": ["node_modules", "src/**/*.d.ts"]
+  "exclude": [
+    "node_modules",
+    "src/**/*.d.ts"
+  ]
 }

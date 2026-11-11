@@ -134,6 +134,17 @@ const tween = createjs.Tween.get(target);
 nullable, matching the documented createjs runtime (their default is `null`,
 and assigning `null` to `mask` is how a mask is cleared).
 
+## Claude Code skills
+
+The package comes with skills for Claude Code (Anthropic's AI coding tool) in `dist-skills/`: `pixi-animate-container-guide`, which tells it how to load and play Animate content with this package. To let Claude Code use them in your project, copy them into the project's `.claude/skills/`:
+
+```
+mkdir -p .claude/skills
+cp -r node_modules/@tawaship/pixi-animate-container/dist-skills/* .claude/skills/
+```
+
+Copy them again after updating the package: each skill describes the version it comes with, and tells Claude Code to follow the type definitions in `node_modules` when the installed version is another one.
+
 ## Change log
 
 ### 3.1.0
@@ -146,6 +157,8 @@ and assigning `null` to `mask` is how a mask is cleared).
   With `createjsSmooth` the frames follow a steady clock kept in step with
   the real time, so the playing stays even. The frames played and their order
   are unchanged; set it to `false` for the previous pacing.
+- Added: Claude Code skills in `dist-skills/`, published with the package
+  (see "Claude Code skills").
 - Changed: a `createjsSpeed` below `0` (or `NaN`) plays as `0`. The content
   pauses and resumes as soon as the speed is set back (frames cannot be played
   backwards). `createjsSpeed` still reads back the value you set.

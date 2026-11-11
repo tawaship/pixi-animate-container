@@ -4,7 +4,8 @@
   "description": "",
   "files": [
     "dist",
-    "types"
+    "types",
+    "dist-skills"
   ],
   "main": "dist/pixi-animate-container.cjs.js",
   "module": "dist/pixi-animate-container.esm.js",
@@ -16,11 +17,12 @@
   "scripts": {
     "rollup": "rollup -c --bundleConfigAsCjs",
     "d": "tsc --emitDeclarationOnly --outDir ./types --declaration",
-    "docs": "typedoc --tsconfig tsconfig.json",
+    "docs": "typedoc",
     "watch": "npm run rollup -- -w",
     "lint": "eslint src/",
     "test": "jest",
-    "build": "npm run lint && npm run rollup -- --environment PROD && npm run test && npm run docs && npm run d && echo done."
+    "build": "npm run lint && npm run rollup -- --environment PROD && npm run docs && npm run d && echo done.",
+    "prepublishOnly": "node scripts/check-publish.js"
   },
   "keywords": [
     "pixi.js",

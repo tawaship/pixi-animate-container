@@ -1,0 +1,20 @@
+{
+	"entryPoints": [
+		"src/index.ts"
+	],
+	"tsconfig": "tsconfig.json",
+	"out": "docs",
+	"includeVersion": true,
+	"gitRemote": "docs",
+	"gitRevision": "master",
+	"externalSymbolLinkMappings": {
+		"pixi.js": {
+			"PIXI.BaseTexture": "https://pixijs.download/v5.3.9/docs/PIXI.BaseTexture.html",
+			"PIXI.Graphics": "https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html",
+			"PIXI.Sprite": "https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html",
+			"PIXI.Texture": "https://pixijs.download/v5.3.9/docs/PIXI.Texture.html",
+			"PIXI.settings.ROUND_PIXELS": "https://pixijs.download/v5.3.9/docs/PIXI.settings.html#ROUND_PIXELS",
+			"*": "https://pixijs.download/v5.3.9/docs/index.html"
+		}
+	}
+}
