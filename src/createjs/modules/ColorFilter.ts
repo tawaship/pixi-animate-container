@@ -22,11 +22,12 @@ export class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
 export type TCreatejsColorFilterConstructorArgs = ConstructorParameters<typeof createjs.ColorFilter>;
 
 /**
- * External store for the paired Pixi filter, so that the createjs instance
- * carries no wrapper metadata (its own properties are exactly the original 8
- * scalars; tween's for-in sees the same surface as with the original createjs).
+ * Key of the paired Pixi filter on the createjs filter. A symbol key keeps
+ * the createjs instance's surface as it is (for-in, Object.keys and
+ * Object.getOwnPropertyNames show exactly the original 8 scalars; tween's
+ * for-in sees the same surface as with the original createjs).
  */
-const pixiFilterStore = new WeakMap<CreatejsColorFilter, PixiColorMatrixFilter>();
+export const PIXI_FILTER: unique symbol = Symbol('pixiFilter');
 
 /**
  * @ignore
@@ -45,12 +46,13 @@ function syncMatrix(filter: CreatejsColorFilter, pixi: PixiColorMatrixFilter): v
 }
 
 export function getPixiColorMatrixFilter(filter: CreatejsColorFilter): PixiColorMatrixFilter {
-	let pixi = pixiFilterStore.get(filter);
+	let pixi = filter[PIXI_FILTER];
 
-	if (!pixi) {
+	// its own filter only (a symbol-keyed property is inherited through the prototype chain)
+	if (!pixi || pixi.createjs !== filter) {
 		pixi = new PixiColorMatrixFilter(filter);
 		syncMatrix(filter, pixi);
-		pixiFilterStore.set(filter, pixi);
+		filter[PIXI_FILTER] = pixi;
 	}
 
 	return pixi;
@@ -64,6 +66,9 @@ export function getPixiColorMatrixFilter(filter: CreatejsColorFilter): PixiColor
  * tick (see core.ts syncToPixi), not by accessors.
  */
 export class CreatejsColorFilter extends createjs.ColorFilter {
+	/** The paired Pixi filter (see PIXI_FILTER) */
+	declare [PIXI_FILTER]?: PixiColorMatrixFilter;
+
 	constructor(...args: TCreatejsColorFilterConstructorArgs) {
 		super(...args);
 	}

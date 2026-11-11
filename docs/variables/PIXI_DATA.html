@@ -11,13 +11,15 @@
 <li><a href="" aria-current="page">PIXI_DATA</a></li></ul>
 <h1>Variable PIXI_DATA<code class="tsd-tag">Const</code></h1></div>
 <div class="tsd-signature"><span class="tsd-kind-variable">PIXI_DATA</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">unique</span> <span class="tsd-signature-type">symbol</span><span class="tsd-signature-symbol"> = ...</span></div>
-<div class="tsd-comment tsd-typography"><p>Key of the wrapper data on a createjs display object, read by the sync
-walks on every node on every frame (a property read is cheaper than a
-WeakMap lookup). A symbol key keeps the createjs object's surface as it
-is: for-in, Object.keys and Object.getOwnPropertyNames do not show it.</p>
+<div class="tsd-comment tsd-typography"><p>Key of the wrapper data on a createjs object (a display object or a
+Graphics). The wrapper data is held by the object itself, not by a WeakMap:
+it is read on every node on every frame and on every display-list change,
+and a property costs less to read and to set up. A symbol key keeps the
+createjs object's surface as it is: for-in, Object.keys and
+Object.getOwnPropertyNames do not show it.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/core.ts#L38">packages/pixi-animate-container/src/createjs/modules/core.ts:38</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/core.ts#L40">packages/pixi-animate-container/src/createjs/modules/core.ts:40</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

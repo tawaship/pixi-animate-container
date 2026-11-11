@@ -2,9 +2,9 @@ import { Sprite, Texture, BaseTexture, BLEND_MODES, Rectangle } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi
+	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 import { logPixiWrites } from './transform';
 
 /**
@@ -45,14 +45,9 @@ function createPixiSpriteData(cjs: CreatejsSprite): IPixiSpriteData {
 /**
  * @ignore
  */
-const dataStore = new WeakMap<CreatejsSprite, IPixiSpriteData>();
-
-/**
- * @ignore
- */
 function resetData(cjs: CreatejsSprite): IPixiSpriteData {
 	const data = createPixiSpriteData(cjs);
-	dataStore.set(cjs, data);
+	cjs[PIXI_DATA] = data;
 	registerPixiData(cjs, data);
 
 	return data;
@@ -62,9 +57,10 @@ function resetData(cjs: CreatejsSprite): IPixiSpriteData {
  * @ignore
  */
 function ensureData(cjs: CreatejsSprite): IPixiSpriteData {
-	const data = dataStore.get(cjs);
+	const data = cjs[PIXI_DATA];
 
-	return data ? data : resetData(cjs);
+	// its own data only (see IPixiData.owner)
+	return data && data.owner === cjs ? data : resetData(cjs);
 }
 
 /**
@@ -76,6 +72,12 @@ function ensureData(cjs: CreatejsSprite): IPixiSpriteData {
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayObject<PixiSprite> {
+	/** The wrapper data (see PIXI_DATA in core) */
+	declare [PIXI_DATA]?: IPixiSpriteData;
+
+	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+	declare [EVENT_MANAGER]?: CreatejsEventManager;
+
 	constructor(...args: TCreatejsSpriteConstructorArgs) {
 		super(...args);
 

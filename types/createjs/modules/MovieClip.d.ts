@@ -1,7 +1,8 @@
 import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import { CreatejsColorFilter } from './ColorFilter';
-import { ICreatejsDisplayObject, ICreatejsBlendModeTarget, IPixiData, TCreatejsMask } from './core';
+import { ICreatejsDisplayObject, ICreatejsBlendModeTarget, IPixiData, TCreatejsMask, PIXI_DATA } from './core';
+import { EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
@@ -67,6 +68,26 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
     compositeOperation: CompositeOperations | null;
 }
 /**
+ * Key of the mark a root clip carries while its tree has to be settled before
+ * Pixi draws (see markForSettle).
+ */
+export declare const SETTLE_MARK: unique symbol;
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws
+ * (CreatejsController.flushForRender). createjs settles synched / single
+ * frame clips and clips waiting to start over when it draws (MovieClip.draw
+ * -> _updateState); the driver does that after every frame it plays, but a
+ * goto made by the application between frames, or a clip added between
+ * frames, would otherwise be drawn unsettled until the next frame is played.
+ * The mark is put on the top of the tree, which is a clip the container
+ * plays when the tree is on one.
+ */
+export declare function markForSettle(node: createjs.DisplayObject): void;
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+export declare function takeSettleMark(root: CreatejsMovieClip): boolean;
+/**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  *
  * `mask` is a plain data property on the real createjs.DisplayObject, but
@@ -75,6 +96,12 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export declare class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
+    /** The wrapper data (see PIXI_DATA in core) */
+    [PIXI_DATA]?: IPixiMovieClipData;
+    /** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+    [EVENT_MANAGER]?: CreatejsEventManager;
+    /** Set while the tree under this root has to be settled before Pixi draws (see markForSettle) */
+    [SETTLE_MARK]?: boolean;
     [key: string]: any;
     protected _fps: number;
     protected _listenFrameEventsBase: IAnimateFrameEventOption;

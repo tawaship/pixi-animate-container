@@ -1,6 +1,6 @@
 import { BLEND_MODES, Graphics } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { IPixiData, TCreatejsMask } from './core';
+import { IPixiData, TCreatejsMask, PIXI_DATA } from './core';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html | PIXI.Graphics}
  */
@@ -23,6 +23,8 @@ export interface IPixiGraphicsData extends IPixiData<PixiGraphics> {
  * ICreatejsDisplayObject.
  */
 export declare class CreatejsGraphics extends createjs.Graphics {
+    /** The wrapper data (see PIXI_DATA in core) */
+    [PIXI_DATA]?: IPixiGraphicsData;
     constructor(...args: TCreatejsGraphicsConstructorArgs);
     get pixi(): PixiGraphics;
     updateBlendModeForPixi(mode: BLEND_MODES): void;

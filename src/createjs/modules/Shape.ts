@@ -2,10 +2,10 @@ import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi
+	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
 } from './core';
 import { CreatejsGraphics } from './Graphics';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 import { logPixiWrites } from './transform';
 
 /**
@@ -52,14 +52,9 @@ function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
 /**
  * @ignore
  */
-const dataStore = new WeakMap<CreatejsShape, IPixiShapeData>();
-
-/**
- * @ignore
- */
 function resetData(cjs: CreatejsShape): IPixiShapeData {
 	const data = createPixiShapeData(cjs);
-	dataStore.set(cjs, data);
+	cjs[PIXI_DATA] = data;
 	registerPixiData(cjs, data);
 
 	return data;
@@ -69,9 +64,10 @@ function resetData(cjs: CreatejsShape): IPixiShapeData {
  * @ignore
  */
 function ensureData(cjs: CreatejsShape): IPixiShapeData {
-	const data = dataStore.get(cjs);
+	const data = cjs[PIXI_DATA];
 
-	return data ? data : resetData(cjs);
+	// its own data only (see IPixiData.owner)
+	return data && data.owner === cjs ? data : resetData(cjs);
 }
 
 /**
@@ -88,6 +84,12 @@ function ensureData(cjs: CreatejsShape): IPixiShapeData {
  * verification-C suites, which exercise both assignments.
  */
 export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObject<PixiShape> {
+	/** The wrapper data (see PIXI_DATA in core) */
+	declare [PIXI_DATA]?: IPixiShapeData;
+
+	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+	declare [EVENT_MANAGER]?: CreatejsEventManager;
+
 	constructor(graphics?: CreatejsGraphics) {
 		super(graphics);
 

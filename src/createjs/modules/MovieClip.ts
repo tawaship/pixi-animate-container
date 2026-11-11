@@ -4,9 +4,9 @@ import { CreatejsColorFilter, PixiColorMatrixFilter, getPixiColorMatrixFilter } 
 import {
 	ICreatejsDisplayObject, ICreatejsBlendModeTarget,
 	IColorFilterSyncPair, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi, markForSettle, isDriving
+	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi, isDriving
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 import { logPixiWrites } from './transform';
 
 /**
@@ -144,14 +144,9 @@ function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 /**
  * @ignore
  */
-const dataStore = new WeakMap<CreatejsMovieClip, IPixiMovieClipData>();
-
-/**
- * @ignore
- */
 function resetData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 	const data = createPixiMovieClipData(cjs);
-	dataStore.set(cjs, data);
+	cjs[PIXI_DATA] = data;
 	registerPixiData(cjs, data);
 
 	return data;
@@ -161,9 +156,47 @@ function resetData(cjs: CreatejsMovieClip): IPixiMovieClipData {
  * @ignore
  */
 function ensureData(cjs: CreatejsMovieClip): IPixiMovieClipData {
-	const data = dataStore.get(cjs);
+	const data = cjs[PIXI_DATA];
 
-	return data ? data : resetData(cjs);
+	// its own data only (see IPixiData.owner)
+	return data && data.owner === cjs ? data : resetData(cjs);
+}
+
+/**
+ * Key of the mark a root clip carries while its tree has to be settled before
+ * Pixi draws (see markForSettle).
+ */
+export const SETTLE_MARK: unique symbol = Symbol('settleMark');
+
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws
+ * (CreatejsController.flushForRender). createjs settles synched / single
+ * frame clips and clips waiting to start over when it draws (MovieClip.draw
+ * -> _updateState); the driver does that after every frame it plays, but a
+ * goto made by the application between frames, or a clip added between
+ * frames, would otherwise be drawn unsettled until the next frame is played.
+ * The mark is put on the top of the tree, which is a clip the container
+ * plays when the tree is on one.
+ */
+export function markForSettle(node: createjs.DisplayObject): void {
+	let top = node;
+	while (top.parent) {
+		top = top.parent;
+	}
+	if (top instanceof CreatejsMovieClip) {
+		top[SETTLE_MARK] = true;
+	}
+}
+
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+export function takeSettleMark(root: CreatejsMovieClip): boolean {
+	if (!root[SETTLE_MARK]) {
+		return false;
+	}
+	root[SETTLE_MARK] = false;
+	return true;
 }
 
 /**
@@ -186,6 +219,15 @@ function isBlendModeChild(child: createjs.DisplayObject): child is createjs.Disp
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
+	/** The wrapper data (see PIXI_DATA in core) */
+	declare [PIXI_DATA]?: IPixiMovieClipData;
+
+	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+	declare [EVENT_MANAGER]?: CreatejsEventManager;
+
+	/** Set while the tree under this root has to be settled before Pixi draws (see markForSettle) */
+	declare [SETTLE_MARK]?: boolean;
+
 	// Adobe Animate's publish output stamps named child instances (`this.a`
 	// and friends) onto published symbols at runtime, so no declaration can
 	// know their names. This index signature lets them be referenced without

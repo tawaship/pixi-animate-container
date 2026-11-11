@@ -1,6 +1,7 @@
 import { Sprite, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { ICreatejsDisplayObject, IPixiData, TCreatejsMask } from './core';
+import { ICreatejsDisplayObject, IPixiData, TCreatejsMask, PIXI_DATA } from './core';
+import { EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
  */
@@ -21,6 +22,10 @@ export interface IPixiSpriteData extends IPixiData<PixiSprite> {
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export declare class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayObject<PixiSprite> {
+    /** The wrapper data (see PIXI_DATA in core) */
+    [PIXI_DATA]?: IPixiSpriteData;
+    /** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+    [EVENT_MANAGER]?: CreatejsEventManager;
     constructor(...args: TCreatejsSpriteConstructorArgs);
     initialize(...args: TCreatejsSpriteConstructorArgs): void;
     get pixi(): PixiSprite;

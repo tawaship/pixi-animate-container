@@ -15,7 +15,14 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="markforsettle"><span class="tsd-kind-call-signature">markForSettle</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">node</span><span class="tsd-signature-symbol">:</span> <a href="../classes/createjs.DisplayObject.html" class="tsd-signature-type tsd-kind-class">DisplayObject</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#markforsettle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Marks the tree <code>node</code> belongs to as needing to be settled before Pixi draws.</p>
+<div class="tsd-comment tsd-typography"><p>Marks the tree <code>node</code> belongs to as needing to be settled before Pixi draws
+(CreatejsController.flushForRender). createjs settles synched / single
+frame clips and clips waiting to start over when it draws (MovieClip.draw
+-&gt; _updateState); the driver does that after every frame it plays, but a
+goto made by the application between frames, or a clip added between
+frames, would otherwise be drawn unsettled until the next frame is played.
+The mark is put on the top of the tree, which is a clip the container
+plays when the tree is on one.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -23,7 +30,7 @@
 <li><span><span class="tsd-kind-parameter">node</span>: <a href="../classes/createjs.DisplayObject.html" class="tsd-signature-type tsd-kind-class">DisplayObject</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/core.ts#L219">packages/pixi-animate-container/src/createjs/modules/core.ts:219</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/MovieClip.ts#L181">packages/pixi-animate-container/src/createjs/modules/MovieClip.ts:181</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

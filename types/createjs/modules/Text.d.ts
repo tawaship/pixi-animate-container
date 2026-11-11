@@ -1,6 +1,7 @@
 import { BLEND_MODES, Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { ICreatejsDisplayObject, IPixiData, TCreatejsMask } from './core';
+import { ICreatejsDisplayObject, IPixiData, TCreatejsMask, PIXI_DATA } from './core';
+import { EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
  */
@@ -41,6 +42,10 @@ export interface IPixiTextData extends IPixiData<PixiTextContainer> {
  * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
 export declare class CreatejsText extends createjs.Text implements ICreatejsDisplayObject<PixiTextContainer> {
+    /** The wrapper data (see PIXI_DATA in core) */
+    [PIXI_DATA]?: IPixiTextData;
+    /** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+    [EVENT_MANAGER]?: CreatejsEventManager;
     constructor(text: string, font: string, color?: string);
     get pixi(): PixiTextContainer;
     updateBlendModeForPixi(mode: BLEND_MODES): void;

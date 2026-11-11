@@ -2,9 +2,9 @@ import { BLEND_MODES, Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi
+	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 import { logPixiWrites } from './transform';
 
 /**
@@ -86,14 +86,9 @@ function createPixiTextData(cjs: CreatejsText): IPixiTextData {
 /**
  * @ignore
  */
-const dataStore = new WeakMap<CreatejsText, IPixiTextData>();
-
-/**
- * @ignore
- */
 function resetData(cjs: CreatejsText): IPixiTextData {
 	const data = createPixiTextData(cjs);
-	dataStore.set(cjs, data);
+	cjs[PIXI_DATA] = data;
 	registerPixiData(cjs, data);
 
 	return data;
@@ -103,9 +98,10 @@ function resetData(cjs: CreatejsText): IPixiTextData {
  * @ignore
  */
 function ensureData(cjs: CreatejsText): IPixiTextData {
-	const data = dataStore.get(cjs);
+	const data = cjs[PIXI_DATA];
 
-	return data ? data : resetData(cjs);
+	// its own data only (see IPixiData.owner)
+	return data && data.owner === cjs ? data : resetData(cjs);
 }
 
 /**
@@ -118,6 +114,12 @@ function ensureData(cjs: CreatejsText): IPixiTextData {
  * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
 export class CreatejsText extends createjs.Text implements ICreatejsDisplayObject<PixiTextContainer> {
+	/** The wrapper data (see PIXI_DATA in core) */
+	declare [PIXI_DATA]?: IPixiTextData;
+
+	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
+	declare [EVENT_MANAGER]?: CreatejsEventManager;
+
 	constructor(text: string, font: string, color: string = '#000000') {
 		super(text, font, color);
 

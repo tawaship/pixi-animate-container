@@ -51,6 +51,12 @@ export declare class CreatejsEventManager {
     private _downTarget;
     private _emitter;
     private _cjs;
+    /**
+     * Whether this is the manager of `cjs` (a symbol-keyed property is
+     * inherited through the prototype chain, so the one found may be a
+     * prototype's).
+     */
+    isFor(cjs: TCreatejsObject): boolean;
     constructor(cjs: TCreatejsObject);
     private _onPointerDown;
     private _onPointerMove;
@@ -63,6 +69,14 @@ export declare class CreatejsEventManager {
     remove(type: string, cb: ICreatejsInteractionEventDelegate): void;
     removeAll(type?: string): void;
 }
+/**
+ * Key of the event manager on the createjs instance (every display wrapper
+ * class declares it). The manager (and its pointer handlers on the Pixi
+ * instance) is created lazily on the first listener registration, so
+ * instances that never listen pay nothing. A symbol key keeps the createjs
+ * object's surface as it is.
+ */
+export declare const EVENT_MANAGER: unique symbol;
 export declare function addInteractionListener(cjs: TCreatejsObject, type: string, cb: ICreatejsInteractionEventDelegate): void;
-export declare function removeInteractionListener(cjs: object, type: string, cb: ICreatejsInteractionEventDelegate): void;
-export declare function removeAllInteractionListeners(cjs: object, type?: string): void;
+export declare function removeInteractionListener(cjs: TCreatejsObject, type: string, cb: ICreatejsInteractionEventDelegate): void;
+export declare function removeAllInteractionListeners(cjs: TCreatejsObject, type?: string): void;

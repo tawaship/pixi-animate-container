@@ -2,7 +2,7 @@ import { BLEND_MODES, Graphics, LINE_CAP, LINE_JOIN } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi
+	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
 } from './core';
 import { DEG_TO_RAD } from './utils';
 
@@ -46,14 +46,9 @@ function createPixiGraphicsData(cjs: CreatejsGraphics): IPixiGraphicsData {
 /**
  * @ignore
  */
-const dataStore = new WeakMap<CreatejsGraphics, IPixiGraphicsData>();
-
-/**
- * @ignore
- */
 function resetData(cjs: CreatejsGraphics): IPixiGraphicsData {
 	const data = createPixiGraphicsData(cjs);
-	dataStore.set(cjs, data);
+	cjs[PIXI_DATA] = data;
 	registerPixiData(cjs, data);
 
 	return data;
@@ -63,9 +58,10 @@ function resetData(cjs: CreatejsGraphics): IPixiGraphicsData {
  * @ignore
  */
 function ensureData(cjs: CreatejsGraphics): IPixiGraphicsData {
-	const data = dataStore.get(cjs);
+	const data = cjs[PIXI_DATA];
 
-	return data ? data : resetData(cjs);
+	// its own data only (see IPixiData.owner)
+	return data && data.owner === cjs ? data : resetData(cjs);
 }
 
 /**
@@ -105,6 +101,9 @@ const LineJoin = {
  * ICreatejsDisplayObject.
  */
 export class CreatejsGraphics extends createjs.Graphics {
+	/** The wrapper data (see PIXI_DATA in core) */
+	declare [PIXI_DATA]?: IPixiGraphicsData;
+
 	constructor(...args: TCreatejsGraphicsConstructorArgs) {
 		super(...args);
 

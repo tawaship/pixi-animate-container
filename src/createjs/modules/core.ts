@@ -30,10 +30,12 @@ export type TCreatejsObject =
 	| CreatejsText;
 
 /**
- * Key of the wrapper data on a createjs display object, read by the sync
- * walks on every node on every frame (a property read is cheaper than a
- * WeakMap lookup). A symbol key keeps the createjs object's surface as it
- * is: for-in, Object.keys and Object.getOwnPropertyNames do not show it.
+ * Key of the wrapper data on a createjs object (a display object or a
+ * Graphics). The wrapper data is held by the object itself, not by a WeakMap:
+ * it is read on every node on every frame and on every display-list change,
+ * and a property costs less to read and to set up. A symbol key keeps the
+ * createjs object's surface as it is: for-in, Object.keys and
+ * Object.getOwnPropertyNames do not show it.
  */
 export const PIXI_DATA: unique symbol = Symbol('pixiData');
 
@@ -103,6 +105,13 @@ export interface IColorFilterSyncPair {
 }
 
 export interface IPixiData<T extends Container> {
+	/**
+	 * The createjs object the data belongs to. A property under a symbol key is
+	 * inherited through the prototype chain, and published symbols use a
+	 * createjs instance as their prototype (`p = new cjs.MovieClip()`), so the
+	 * data found on an object is its own only when this is the object itself
+	 */
+	owner: object | null;
 	regObj: Point;
 	instance: T;
 	/** The node's transform, which composes rotation and skew the createjs way */
@@ -139,6 +148,7 @@ export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixi
 	pixi.transform = transform;
 
 	return {
+		owner: null,
 		regObj: anchor || pixi.pivot,
 		instance: pixi,
 		transform,
@@ -160,36 +170,34 @@ export function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixi
 }
 
 /**
- * External store keyed by the createjs instance, so that wrapper metadata never
- * appears as own properties of the createjs object (for-in surface stays original-faithful).
- * Each class module additionally keeps its own store with a more concrete data type;
- * this one serves the type-agnostic consumers (sync walks, mask helper).
+ * What holds wrapper data under PIXI_DATA (every wrapper class declares it
+ * with its own data type).
  */
-const pixiDataStore = new WeakMap<object, IPixiData<Container>>();
+export interface IPixiDataHolder {
+	[PIXI_DATA]?: IPixiData<Container>;
+}
 
+/**
+ * Links new wrapper data to the createjs object it was stored on (each class
+ * module stores it under PIXI_DATA itself, with its own data type): the data
+ * learns its owner (see IPixiData.owner), and the node's transform too, so
+ * that values written through Pixi can be taken over into that object (see
+ * pullFromPixi).
+ */
 export function registerPixiData(cjs: object, data: IPixiData<Container>): void {
-	pixiDataStore.set(cjs, data);
+	data.owner = cjs;
 	if (isSyncNode(cjs)) {
-		cjs[PIXI_DATA] = data;
 		data.transform.owner = cjs;
 	}
 }
 
-export function findPixiData(cjs: object): IPixiData<Container> | null {
-	const data = pixiDataStore.get(cjs);
-	return data ? data : null;
-}
-
 /**
- * Roots (tops of createjs trees) whose timelines moved outside the driver,
- * so that the clips under them have to be settled before Pixi draws
- * (CreatejsController.flushForRender). createjs settles synched / single
- * frame clips and clips waiting to start over when it draws (MovieClip.draw
- * -> _updateState); the driver does that after every frame it plays, but a
- * goto made by the application between frames, or a clip added between
- * frames, would otherwise be drawn unsettled until the next frame is played.
+ * The wrapper data of a createjs object, or null when it has none.
  */
-const settleMarks = new WeakSet<object>();
+export function findPixiData(cjs: IPixiDataHolder): IPixiData<Container> | null {
+	const data = cjs[PIXI_DATA];
+	return data && data.owner === cjs ? data : null;
+}
 
 /**
  * @ignore
@@ -211,28 +219,6 @@ export function endDrive(): void {
 
 export function isDriving(): boolean {
 	return driveDepth > 0;
-}
-
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
- */
-export function markForSettle(node: createjs.DisplayObject): void {
-	let top = node;
-	while (top.parent) {
-		top = top.parent;
-	}
-	settleMarks.add(top);
-}
-
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-export function takeSettleMark(root: object): boolean {
-	if (!settleMarks.has(root)) {
-		return false;
-	}
-	settleMarks.delete(root);
-	return true;
 }
 
 /**
@@ -329,7 +315,7 @@ export function pullFromPixi(): void {
 
 		const cjs = transform.owner;
 		const data = cjs ? cjs[PIXI_DATA] : undefined;
-		if (cjs && data && data.transform === transform) {
+		if (cjs && data && data.owner === cjs && data.transform === transform) {
 			pullNode(cjs, data);
 		}
 	}
@@ -346,7 +332,7 @@ function isSyncNode(cjs: object): cjs is ICreatejsSyncNode {
 function pushNode(cjs: ICreatejsSyncNode): void {
 	const data = cjs[PIXI_DATA];
 
-	if (data) {
+	if (data && data.owner === cjs) {
 		const pixi = data.instance;
 		const transform = data.transform;
 

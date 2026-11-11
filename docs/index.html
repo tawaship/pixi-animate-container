@@ -86,6 +86,12 @@ re-exported, so one import serves both:</p>
 <p><code>mask</code>, <code>filters</code>, <code>compositeOperation</code> and <code>Shape.graphics</code> are typed
 nullable, matching the documented createjs runtime (their default is <code>null</code>,
 and assigning <code>null</code> to <code>mask</code> is how a mask is cleared).</p>
+<h2 id="claude-code-skills" class="tsd-anchor-link">Claude Code skills<a href="#claude-code-skills" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The package comes with skills for Claude Code (Anthropic's AI coding tool) in <code>dist-skills/</code>: <code>pixi-animate-container-guide</code>, which tells it how to load and play Animate content with this package. To let Claude Code use them in your project, copy them into the project's <code>.claude/skills/</code>:</p>
+<pre><code><span class="hl-5">mkdir</span><span class="hl-1"> -</span><span class="hl-5">p</span><span class="hl-1"> .</span><span class="hl-5">claude</span><span class="hl-1">/</span><span class="hl-5">skills</span><br/><span class="hl-5">cp</span><span class="hl-1"> -</span><span class="hl-5">r</span><span class="hl-1"> </span><span class="hl-5">node_modules</span><span class="hl-1">/@</span><span class="hl-5">tawaship</span><span class="hl-1">/</span><span class="hl-5">pixi</span><span class="hl-1">-</span><span class="hl-5">animate</span><span class="hl-1">-</span><span class="hl-5">container</span><span class="hl-1">/</span><span class="hl-5">dist</span><span class="hl-1">-</span><span class="hl-5">skills</span><span class="hl-12">/* .claude/skills/</span>
+</code><button>Copy</button></pre>
+
+<p>Copy them again after updating the package: each skill describes the version it comes with, and tells Claude Code to follow the type definitions in <code>node_modules</code> when the installed version is another one.</p>
 <h2 id="change-log" class="tsd-anchor-link">Change log<a href="#change-log" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <h3 id="310" class="tsd-anchor-link">3.1.0<a href="#310" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
@@ -97,6 +103,8 @@ frame on one call and two on the next, which made the animation uneven.
 With <code>createjsSmooth</code> the frames follow a steady clock kept in step with
 the real time, so the playing stays even. The frames played and their order
 are unchanged; set it to <code>false</code> for the previous pacing.</li>
+<li>Added: Claude Code skills in <code>dist-skills/</code>, published with the package
+(see &quot;Claude Code skills&quot;).</li>
 <li>Changed: a <code>createjsSpeed</code> below <code>0</code> (or <code>NaN</code>) plays as <code>0</code>. The content
 pauses and resumes as soon as the speed is set back (frames cannot be played
 backwards). <code>createjsSpeed</code> still reads back the value you set.</li>
@@ -357,6 +365,7 @@ this with full createjs typings; see &quot;Using with TypeScript&quot;.</p>
 <li><a href="#browser"><span>Browser</span></a></li></ul></li>
 <li><a href="#usage"><span>Usage</span></a></li>
 <li><a href="#using-with-typescript"><span>Using with <wbr/>Type<wbr/>Script</span></a></li>
+<li><a href="#claude-code-skills"><span>Claude <wbr/>Code skills</span></a></li>
 <li><a href="#change-log"><span>Change log</span></a></li>
 <li>
 <ul>

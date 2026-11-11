@@ -214,10 +214,12 @@ function logPixiWrites(proto) {
 }
 
 /**
- * Key of the wrapper data on a createjs display object, read by the sync
- * walks on every node on every frame (a property read is cheaper than a
- * WeakMap lookup). A symbol key keeps the createjs object's surface as it
- * is: for-in, Object.keys and Object.getOwnPropertyNames do not show it.
+ * Key of the wrapper data on a createjs object (a display object or a
+ * Graphics). The wrapper data is held by the object itself, not by a WeakMap:
+ * it is read on every node on every frame and on every display-list change,
+ * and a property costs less to read and to set up. A symbol key keeps the
+ * createjs object's surface as it is: for-in, Object.keys and
+ * Object.getOwnPropertyNames do not show it.
  */
 const PIXI_DATA = Symbol('pixiData');
 /**
@@ -230,6 +232,7 @@ function createPixiData(pixi, anchor) {
     const transform = new CjsTransform();
     pixi.transform = transform;
     return {
+        owner: null,
         regObj: anchor || pixi.pivot,
         instance: pixi,
         transform,
@@ -250,33 +253,25 @@ function createPixiData(pixi, anchor) {
     };
 }
 /**
- * External store keyed by the createjs instance, so that wrapper metadata never
- * appears as own properties of the createjs object (for-in surface stays original-faithful).
- * Each class module additionally keeps its own store with a more concrete data type;
- * this one serves the type-agnostic consumers (sync walks, mask helper).
+ * Links new wrapper data to the createjs object it was stored on (each class
+ * module stores it under PIXI_DATA itself, with its own data type): the data
+ * learns its owner (see IPixiData.owner), and the node's transform too, so
+ * that values written through Pixi can be taken over into that object (see
+ * pullFromPixi).
  */
-const pixiDataStore = new WeakMap();
 function registerPixiData(cjs, data) {
-    pixiDataStore.set(cjs, data);
+    data.owner = cjs;
     if (isSyncNode(cjs)) {
-        cjs[PIXI_DATA] = data;
         data.transform.owner = cjs;
     }
 }
-function findPixiData(cjs) {
-    const data = pixiDataStore.get(cjs);
-    return data ? data : null;
-}
 /**
- * Roots (tops of createjs trees) whose timelines moved outside the driver,
- * so that the clips under them have to be settled before Pixi draws
- * (CreatejsController.flushForRender). createjs settles synched / single
- * frame clips and clips waiting to start over when it draws (MovieClip.draw
- * -> _updateState); the driver does that after every frame it plays, but a
- * goto made by the application between frames, or a clip added between
- * frames, would otherwise be drawn unsettled until the next frame is played.
+ * The wrapper data of a createjs object, or null when it has none.
  */
-const settleMarks = new WeakSet();
+function findPixiData(cjs) {
+    const data = cjs[PIXI_DATA];
+    return data && data.owner === cjs ? data : null;
+}
 /**
  * @ignore
  */
@@ -294,26 +289,6 @@ function endDrive() {
 }
 function isDriving() {
     return driveDepth > 0;
-}
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
- */
-function markForSettle(node) {
-    let top = node;
-    while (top.parent) {
-        top = top.parent;
-    }
-    settleMarks.add(top);
-}
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-function takeSettleMark(root) {
-    if (!settleMarks.has(root)) {
-        return false;
-    }
-    settleMarks.delete(root);
-    return true;
 }
 /**
  * Shared implementation of the mask setter (push layer).
@@ -402,7 +377,7 @@ function pullFromPixi() {
         transform.logged = false;
         const cjs = transform.owner;
         const data = cjs ? cjs[PIXI_DATA] : undefined;
-        if (cjs && data && data.transform === transform) {
+        if (cjs && data && data.owner === cjs && data.transform === transform) {
             pullNode(cjs, data);
         }
     }
@@ -416,7 +391,7 @@ function isSyncNode(cjs) {
 }
 function pushNode(cjs) {
     const data = cjs[PIXI_DATA];
-    if (data) {
+    if (data && data.owner === cjs) {
         const pixi = data.instance;
         const transform = data.transform;
         // Each pair is written with one call (one change notification). An
@@ -550,11 +525,12 @@ class PixiColorMatrixFilter extends filters.ColorMatrixFilter {
     }
 }
 /**
- * External store for the paired Pixi filter, so that the createjs instance
- * carries no wrapper metadata (its own properties are exactly the original 8
- * scalars; tween's for-in sees the same surface as with the original createjs).
+ * Key of the paired Pixi filter on the createjs filter. A symbol key keeps
+ * the createjs instance's surface as it is (for-in, Object.keys and
+ * Object.getOwnPropertyNames show exactly the original 8 scalars; tween's
+ * for-in sees the same surface as with the original createjs).
  */
-const pixiFilterStore = new WeakMap();
+const PIXI_FILTER = Symbol('pixiFilter');
 /**
  * @ignore
  */
@@ -570,11 +546,12 @@ function syncMatrix(filter, pixi) {
     matrix[19] = filter.alphaOffset / 255;
 }
 function getPixiColorMatrixFilter(filter) {
-    let pixi = pixiFilterStore.get(filter);
-    if (!pixi) {
+    let pixi = filter[PIXI_FILTER];
+    // its own filter only (a symbol-keyed property is inherited through the prototype chain)
+    if (!pixi || pixi.createjs !== filter) {
         pixi = new PixiColorMatrixFilter(filter);
         syncMatrix(filter, pixi);
-        pixiFilterStore.set(filter, pixi);
+        filter[PIXI_FILTER] = pixi;
     }
     return pixi;
 }
@@ -604,6 +581,14 @@ var createjsInteractionEvents;
     createjsInteractionEvents["click"] = "click";
 })(createjsInteractionEvents || (createjsInteractionEvents = {}));
 class CreatejsEventManager {
+    /**
+     * Whether this is the manager of `cjs` (a symbol-keyed property is
+     * inherited through the prototype chain, so the one found may be a
+     * prototype's).
+     */
+    isFor(cjs) {
+        return this._cjs === cjs;
+    }
     constructor(cjs) {
         this._downTarget = null;
         this._cjs = cjs;
@@ -723,19 +708,21 @@ class CreatejsEventManager {
     }
 }
 /**
- * External store keyed by the createjs instance. The manager (and its pointer
- * handlers on the Pixi instance) is created lazily on the first listener
- * registration, so instances that never listen pay nothing.
+ * Key of the event manager on the createjs instance (every display wrapper
+ * class declares it). The manager (and its pointer handlers on the Pixi
+ * instance) is created lazily on the first listener registration, so
+ * instances that never listen pay nothing. A symbol key keeps the createjs
+ * object's surface as it is.
  */
-const eventManagerStore = new WeakMap();
+const EVENT_MANAGER = Symbol('eventManager');
 /**
  * @ignore
  */
 function getEventManager(cjs) {
-    let manager = eventManagerStore.get(cjs);
-    if (!manager) {
+    let manager = cjs[EVENT_MANAGER];
+    if (!manager || !manager.isFor(cjs)) {
         manager = new CreatejsEventManager(cjs);
-        eventManagerStore.set(cjs, manager);
+        cjs[EVENT_MANAGER] = manager;
     }
     return manager;
 }
@@ -746,14 +733,14 @@ function addInteractionListener(cjs, type, cb) {
     getEventManager(cjs).add(type, cb);
 }
 function removeInteractionListener(cjs, type, cb) {
-    const manager = eventManagerStore.get(cjs);
-    if (manager) {
+    const manager = cjs[EVENT_MANAGER];
+    if (manager && manager.isFor(cjs)) {
         manager.remove(type, cb);
     }
 }
 function removeAllInteractionListeners(cjs, type) {
-    const manager = eventManagerStore.get(cjs);
-    if (manager) {
+    const manager = cjs[EVENT_MANAGER];
+    if (manager && manager.isFor(cjs)) {
         manager.removeAll(type);
     }
 }
@@ -827,13 +814,9 @@ function createPixiMovieClipData(cjs) {
 /**
  * @ignore
  */
-const dataStore$5 = new WeakMap();
-/**
- * @ignore
- */
 function resetData$5(cjs) {
     const data = createPixiMovieClipData(cjs);
-    dataStore$5.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -841,8 +824,43 @@ function resetData$5(cjs) {
  * @ignore
  */
 function ensureData$5(cjs) {
-    const data = dataStore$5.get(cjs);
-    return data ? data : resetData$5(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData$5(cjs);
+}
+/**
+ * Key of the mark a root clip carries while its tree has to be settled before
+ * Pixi draws (see markForSettle).
+ */
+const SETTLE_MARK = Symbol('settleMark');
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws
+ * (CreatejsController.flushForRender). createjs settles synched / single
+ * frame clips and clips waiting to start over when it draws (MovieClip.draw
+ * -> _updateState); the driver does that after every frame it plays, but a
+ * goto made by the application between frames, or a clip added between
+ * frames, would otherwise be drawn unsettled until the next frame is played.
+ * The mark is put on the top of the tree, which is a clip the container
+ * plays when the tree is on one.
+ */
+function markForSettle(node) {
+    let top = node;
+    while (top.parent) {
+        top = top.parent;
+    }
+    if (top instanceof CreatejsMovieClip) {
+        top[SETTLE_MARK] = true;
+    }
+}
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+function takeSettleMark(root) {
+    if (!root[SETTLE_MARK]) {
+        return false;
+    }
+    root[SETTLE_MARK] = false;
+    return true;
 }
 /**
  * The real `children: DisplayObject[]` (createjs's own DisplayObject) does
@@ -1166,13 +1184,9 @@ function createPixiSpriteData(cjs) {
 /**
  * @ignore
  */
-const dataStore$4 = new WeakMap();
-/**
- * @ignore
- */
 function resetData$4(cjs) {
     const data = createPixiSpriteData(cjs);
-    dataStore$4.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -1180,8 +1194,9 @@ function resetData$4(cjs) {
  * @ignore
  */
 function ensureData$4(cjs) {
-    const data = dataStore$4.get(cjs);
-    return data ? data : resetData$4(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData$4(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
@@ -1288,13 +1303,9 @@ function createPixiShapeData(cjs) {
 /**
  * @ignore
  */
-const dataStore$3 = new WeakMap();
-/**
- * @ignore
- */
 function resetData$3(cjs) {
     const data = createPixiShapeData(cjs);
-    dataStore$3.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -1302,8 +1313,9 @@ function resetData$3(cjs) {
  * @ignore
  */
 function ensureData$3(cjs) {
-    const data = dataStore$3.get(cjs);
-    return data ? data : resetData$3(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData$3(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
@@ -1419,13 +1431,9 @@ function createPixiBitmapData(cjs) {
 /**
  * @ignore
  */
-const dataStore$2 = new WeakMap();
-/**
- * @ignore
- */
 function resetData$2(cjs) {
     const data = createPixiBitmapData(cjs);
-    dataStore$2.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -1433,8 +1441,9 @@ function resetData$2(cjs) {
  * @ignore
  */
 function ensureData$2(cjs) {
-    const data = dataStore$2.get(cjs);
-    return data ? data : resetData$2(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData$2(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
@@ -1522,13 +1531,9 @@ function createPixiGraphicsData(cjs) {
 /**
  * @ignore
  */
-const dataStore$1 = new WeakMap();
-/**
- * @ignore
- */
 function resetData$1(cjs) {
     const data = createPixiGraphicsData(cjs);
-    dataStore$1.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -1536,8 +1541,9 @@ function resetData$1(cjs) {
  * @ignore
  */
 function ensureData$1(cjs) {
-    const data = dataStore$1.get(cjs);
-    return data ? data : resetData$1(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData$1(cjs);
 }
 /**
  * @ignore
@@ -1831,13 +1837,9 @@ function createPixiTextData(cjs) {
 /**
  * @ignore
  */
-const dataStore = new WeakMap();
-/**
- * @ignore
- */
 function resetData(cjs) {
     const data = createPixiTextData(cjs);
-    dataStore.set(cjs, data);
+    cjs[PIXI_DATA] = data;
     registerPixiData(cjs, data);
     return data;
 }
@@ -1845,8 +1847,9 @@ function resetData(cjs) {
  * @ignore
  */
 function ensureData(cjs) {
-    const data = dataStore.get(cjs);
-    return data ? data : resetData(cjs);
+    const data = cjs[PIXI_DATA];
+    // its own data only (see IPixiData.owner)
+    return data && data.owner === cjs ? data : resetData(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
@@ -2540,5 +2543,5 @@ createjs.ColorFilter = CreatejsColorFilter;
 // install plugins
 createjs.MotionGuidePlugin.install();
 
-export { AnimateEvent, AnimateReachLabelEvent, CjsTransform, CompositeOperations, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsEventManager, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsText, PIXI_DATA, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, addInteractionListener, beginDrive, createPixiData, createjsInteractionEvents, endDrive, findPixiData, getPixiColorMatrixFilter, isDriving, loadAssetAsync, markForSettle, pullFromPixi, registerPixiData, removeAllInteractionListeners, removeInteractionListener, setMaskForPixi, syncToPixi, takeSettleMark };
+export { AnimateEvent, AnimateReachLabelEvent, CjsTransform, CompositeOperations, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsEventManager, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsText, EVENT_MANAGER, PIXI_DATA, PIXI_FILTER, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, SETTLE_MARK, addInteractionListener, beginDrive, createPixiData, createjsInteractionEvents, endDrive, findPixiData, getPixiColorMatrixFilter, isDriving, loadAssetAsync, markForSettle, pullFromPixi, registerPixiData, removeAllInteractionListeners, removeInteractionListener, setMaskForPixi, syncToPixi, takeSettleMark };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

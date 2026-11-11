@@ -21,10 +21,12 @@ export type TCreatejsMask = CreatejsShape | null;
  */
 export type TCreatejsObject = CreatejsMovieClip | CreatejsSprite | CreatejsShape | CreatejsBitmap | CreatejsText;
 /**
- * Key of the wrapper data on a createjs display object, read by the sync
- * walks on every node on every frame (a property read is cheaper than a
- * WeakMap lookup). A symbol key keeps the createjs object's surface as it
- * is: for-in, Object.keys and Object.getOwnPropertyNames do not show it.
+ * Key of the wrapper data on a createjs object (a display object or a
+ * Graphics). The wrapper data is held by the object itself, not by a WeakMap:
+ * it is read on every node on every frame and on every display-list change,
+ * and a property costs less to read and to set up. A symbol key keeps the
+ * createjs object's surface as it is: for-in, Object.keys and
+ * Object.getOwnPropertyNames do not show it.
  */
 export declare const PIXI_DATA: unique symbol;
 /**
@@ -85,6 +87,13 @@ export interface IColorFilterSyncPair {
     matrix: number[];
 }
 export interface IPixiData<T extends Container> {
+    /**
+     * The createjs object the data belongs to. A property under a symbol key is
+     * inherited through the prototype chain, and published symbols use a
+     * createjs instance as their prototype (`p = new cjs.MovieClip()`), so the
+     * data found on an object is its own only when this is the object itself
+     */
+    owner: object | null;
     regObj: Point;
     instance: T;
     /** The node's transform, which composes rotation and skew the createjs way */
@@ -111,8 +120,25 @@ export interface IPixiData<T extends Container> {
  * transform is replaced, as it belongs to the transform.
  */
 export declare function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, anchor: Point | null): IPixiData<TPixiDisplayObject>;
+/**
+ * What holds wrapper data under PIXI_DATA (every wrapper class declares it
+ * with its own data type).
+ */
+export interface IPixiDataHolder {
+    [PIXI_DATA]?: IPixiData<Container>;
+}
+/**
+ * Links new wrapper data to the createjs object it was stored on (each class
+ * module stores it under PIXI_DATA itself, with its own data type): the data
+ * learns its owner (see IPixiData.owner), and the node's transform too, so
+ * that values written through Pixi can be taken over into that object (see
+ * pullFromPixi).
+ */
 export declare function registerPixiData(cjs: object, data: IPixiData<Container>): void;
-export declare function findPixiData(cjs: object): IPixiData<Container> | null;
+/**
+ * The wrapper data of a createjs object, or null when it has none.
+ */
+export declare function findPixiData(cjs: IPixiDataHolder): IPixiData<Container> | null;
 /**
  * Brackets the driver's own work (playing frames, settling, syncing): the
  * display-list churn createjs makes while resolving a frame is not an
@@ -121,14 +147,6 @@ export declare function findPixiData(cjs: object): IPixiData<Container> | null;
 export declare function beginDrive(): void;
 export declare function endDrive(): void;
 export declare function isDriving(): boolean;
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
- */
-export declare function markForSettle(node: createjs.DisplayObject): void;
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-export declare function takeSettleMark(root: object): boolean;
 /**
  * Shared implementation of the mask setter (push layer).
  *
