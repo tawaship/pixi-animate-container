@@ -136,6 +136,48 @@ and assigning `null` to `mask` is how a mask is cleared).
 
 ## Change log
 
+### 3.1.0
+
+- Added: `createjsSmooth` (default `true`) on the container. Each
+  `handleTick` used to play the whole frames owed by the `delta` values
+  added up; when the content's frame rate divides the display's (60 fps
+  content on a 60 Hz display), the small jitter of `delta` then played no
+  frame on one call and two on the next, which made the animation uneven.
+  With `createjsSmooth` the frames follow a steady clock kept in step with
+  the real time, so the playing stays even. The frames played and their order
+  are unchanged; set it to `false` for the previous pacing.
+- Changed: a `createjsSpeed` below `0` (or `NaN`) plays as `0`. The content
+  pauses and resumes as soon as the speed is set back (frames cannot be played
+  backwards). `createjsSpeed` still reads back the value you set.
+- Fixed: what pixi.js draws now matches what createjs would draw at that
+  moment, whenever pixi.js renders — not only right after `handleTick`.
+  The container brings its content up to date right before each render, so:
+  - after `gotoAndPlay()` / `gotoAndStop()` called between frames (for
+    example from another ticker callback or a click handler), the next render
+    shows the new frame correctly. Previously, objects appearing for the first
+    time on that frame were drawn once at their default position, rotation
+    and alpha, and graphic (synched) symbols inside showed their previous frame
+  - values you write to createjs instances after `handleTick`
+    (`instance.x = 100`) are drawn in the same display frame instead of one
+    frame later
+  - content added with `addCreatejs` is drawn correctly even if a render
+    comes before its first `handleTick`
+- Fixed: a value written to an instance's pixi node (`instance.pixi.x = 100`)
+  stays until the timeline writes that property again, as in 2.x (3.0.x lost
+  it on the next tick). The written value is also taken over by the createjs
+  instance (`instance.x` reads 100 from the next `handleTick` on).
+- Fixed: objects that are both rotated and skewed are drawn the way the
+  browser output of Animate (createjs) draws them. The values of
+  `pixi.rotation` / `pixi.skew` are unchanged.
+- Fixed: an object marked `_off` that is on a display list is drawn, as in
+  createjs. A shape used as a mask is no longer drawn itself, and a mask shape
+  taken off with `mask = null` is no longer left drawn in the pixi tree.
+- This release was implemented with Claude (Anthropic's AI assistant). Its
+  correctness rests on verification rather than authorship: differential
+  suites compare pure createjs, the previous release and the pixi tree after
+  every tick and at every render point, and each change was confirmed to be
+  caught by them when reverted.
+
 ### 3.0.1
 
 - The full createjs 1.0 API is now typed: the wrapper classes extend the real

@@ -6,6 +6,7 @@ import {
 } from './core';
 import { CreatejsGraphics } from './Graphics';
 import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { logPixiWrites } from './transform';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
@@ -24,6 +25,9 @@ export class PixiShape extends Container {
 	}
 }
 
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiShape.prototype);
+
 export interface IPixiShapeData extends IPixiData<PixiShape> {
 	/**
 	 * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.DisplayObject.html | PIXI.DisplayObject}
@@ -39,7 +43,7 @@ export interface IPixiShapeData extends IPixiData<PixiShape> {
 function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
 	const pixi = new PixiShape(cjs);
 
-	return Object.assign(createPixiData<PixiShape>(pixi, pixi.pivot), {
+	return Object.assign(createPixiData<PixiShape>(pixi, null), {
 		masked: [],
 		graphics: null
 	});

@@ -4,9 +4,10 @@ import { CreatejsColorFilter, PixiColorMatrixFilter, getPixiColorMatrixFilter } 
 import {
 	ICreatejsDisplayObject, ICreatejsBlendModeTarget,
 	IColorFilterSyncPair, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, setMaskForPixi
+	createPixiData, registerPixiData, setMaskForPixi, markForSettle, isDriving
 } from './core';
 import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { logPixiWrites } from './transform';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
@@ -33,6 +34,9 @@ export class PixiMovieClip extends Container {
 		return this._createjs;
 	}
 }
+
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiMovieClip.prototype);
 
 export type TCreatejsColorFilters = CreatejsColorFilter[] | null;
 
@@ -129,7 +133,7 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
 function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 	const pixi = new PixiMovieClip(cjs);
 
-	return Object.assign(createPixiData<PixiMovieClip>(pixi, pixi.pivot), {
+	return Object.assign(createPixiData<PixiMovieClip>(pixi, null), {
 		subInstance: pixi,
 		listenFrameEvents: {},
 		filters: null,
@@ -305,6 +309,54 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		}
 	}
 
+	/**
+	 * Settles the tree for drawing without playing on — what createjs does to
+	 * each clip when the stage draws (MovieClip.draw -> _updateState): synched
+	 * and single-frame clips are placed at the frame their parent gives. A
+	 * clip waiting to start over (an independent clip reset when its parent
+	 * placed it again, _rawPosition -1) is shown at its first frame the way
+	 * createjs shows a new clip (_renderFirstFrame: no frame script, the
+	 * playhead left as it was), so that it starts on the next frame played,
+	 * as in the Animate template, where createjs draws only after a tick (a
+	 * draw's _updateState would start it at once, a frame ahead). Children
+	 * are settled after their parent, in the resolve phase's order. Used
+	 * right before Pixi draws a tree whose timelines moved between frames
+	 * (CreatejsController.flushForRender).
+	 */
+	settleForPixi(): void {
+		if (this.mode !== createjs.MovieClip.INDEPENDENT) {
+			this._updateState();
+		} else if (this._rawPosition === -1) {
+			this._renderFirstFrame();
+		}
+
+		const children = this.children.slice();
+		for (let i = children.length - 1; i >= 0; i--) {
+			const child = children[i];
+			if (child instanceof CreatejsMovieClip) {
+				child.settleForPixi();
+			}
+		}
+	}
+
+	/**
+	 * Delegated to the original; the tree is marked so that it is settled and
+	 * synced before Pixi draws (a goto made between frames is drawn the way
+	 * createjs would draw it, without waiting for the next frame).
+	 */
+	gotoAndPlay(positionOrLabel: string | number): void {
+		super.gotoAndPlay(positionOrLabel);
+		markForSettle(this);
+	}
+
+	/**
+	 * See {@link CreatejsMovieClip.gotoAndPlay}.
+	 */
+	gotoAndStop(positionOrLabel: string | number): void {
+		super.gotoAndStop(positionOrLabel);
+		markForSettle(this);
+	}
+
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		const data = ensureData(this);
 
@@ -401,7 +453,14 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 			this._updateChildrenBlendModeForPixi(child);
 		}
 
-		return super.addChild(...children);
+		const res = super.addChild(...children);
+		// An application adding children between frames (a clip added this way
+		// has to be shown at its first frame before the next frame is played)
+		if (!isDriving()) {
+			markForSettle(this);
+		}
+
+		return res;
 	}
 
 	// See the addChild comment above for why every real overload (including
@@ -425,7 +484,13 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 			}
 		}
 
-		return super.addChildAt(...childOrIndex);
+		const res = super.addChildAt(...childOrIndex);
+		// See addChild
+		if (!isDriving()) {
+			markForSettle(this);
+		}
+
+		return res;
 	}
 
 	removeChild(...children: createjs.DisplayObject[]): boolean {

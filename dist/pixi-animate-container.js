@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v3.0.1
+ * pixi-animate-container - v3.1.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -21,36 +21,160 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             }
         }), n.default = e, Object.freeze(n);
     }
-    var PIXI__namespace = _interopNamespaceDefault(PIXI), DEG_TO_RAD = Math.PI / 180;
-    function createPixiData(pixi, regObj) {
-        return {
-            regObj: regObj,
+    var PIXI__namespace = _interopNamespaceDefault(PIXI), DEG_TO_RAD = Math.PI / 180, RAD_TO_DEG = 180 / Math.PI, pixiWrites = [], logSuspended = 0;
+    var CjsTransform = function(Transform) {
+        function CjsTransform() {
+            Transform.apply(this, arguments), this.degRotation = 0, this.degSkewX = 0, this.degSkewY = 0, 
+            this.owner = null, this.logged = !1, this._radRotation = 0, this._radSkewX = 0, 
+            this._radSkewY = 0;
+        }
+        return Transform && (CjsTransform.__proto__ = Transform), CjsTransform.prototype = Object.create(Transform && Transform.prototype), 
+        CjsTransform.prototype.constructor = CjsTransform, CjsTransform.prototype.logPixiWrite = function() {
+            logSuspended || this.logged || !this.owner || (this.logged = !0, pixiWrites.push(this));
+        }, CjsTransform.prototype.setRotationSkew = function(rotation, skewX, skewY) {
+            this.degRotation = rotation, this._radRotation = rotation * DEG_TO_RAD, this._rotation = this._radRotation, 
+            this.degSkewX = skewX, this._radSkewX = -skewX * DEG_TO_RAD, this.degSkewY = skewY, 
+            this._radSkewY = skewY * DEG_TO_RAD, this.skew.x !== this._radSkewX || this.skew.y !== this._radSkewY ? this.skew.set(this._radSkewX, this._radSkewY) : this.updateSkew();
+        }, CjsTransform.prototype.onChange = function() {
+            this._localID++, this.logPixiWrite();
+        }, CjsTransform.prototype.updateSkew = function() {
+            this._rotation !== this._radRotation && (this._radRotation = this._rotation, this.degRotation = this._rotation * RAD_TO_DEG, 
+            this.logPixiWrite()), this.skew.x !== this._radSkewX && (this._radSkewX = this.skew.x, 
+            this.degSkewX = -this.skew.x * RAD_TO_DEG, this.logPixiWrite()), this.skew.y !== this._radSkewY && (this._radSkewY = this.skew.y, 
+            this.degSkewY = this.skew.y * RAD_TO_DEG, this.logPixiWrite());
+            var cos = 1, sin = 0;
+            if (this.degRotation % 360) {
+                var r = this.degRotation * DEG_TO_RAD;
+                cos = Math.cos(r), sin = Math.sin(r);
+            }
+            if (this.degSkewX || this.degSkewY) {
+                var skewX = this.degSkewX * DEG_TO_RAD, skewY = this.degSkewY * DEG_TO_RAD, a1 = Math.cos(skewY), b1 = Math.sin(skewY), c1 = -Math.sin(skewX), d1 = Math.cos(skewX);
+                this._cx = a1 * cos + c1 * sin, this._sx = b1 * cos + d1 * sin, this._cy = a1 * -sin + c1 * cos, 
+                this._sy = b1 * -sin + d1 * cos;
+            } else {
+                this._cx = cos, this._sx = sin, this._cy = -sin, this._sy = cos;
+            }
+            this._localID++;
+        }, CjsTransform;
+    }(PIXI.Transform);
+    function logPixiWrites(proto) {
+        Object.defineProperty(proto, "alpha", {
+            configurable: !0,
+            enumerable: !0,
+            get: function() {
+                return this._cjsAlpha;
+            },
+            set: function(value) {
+                this._cjsAlpha !== value && (this._cjsAlpha = value, this.transform instanceof CjsTransform && this.transform.logPixiWrite());
+            }
+        }), Object.defineProperty(proto, "visible", {
+            configurable: !0,
+            enumerable: !0,
+            get: function() {
+                return this._cjsVisible;
+            },
+            set: function(value) {
+                this._cjsVisible !== value && (this._cjsVisible = value, this.transform instanceof CjsTransform && this.transform.logPixiWrite());
+            }
+        });
+    }
+    var PIXI_DATA = Symbol("pixiData");
+    function createPixiData(pixi, anchor) {
+        var transform = new CjsTransform;
+        return pixi.transform = transform, {
+            regObj: anchor || pixi.pivot,
             instance: pixi,
+            transform: transform,
             reservedBlendMode: PIXI.BLEND_MODES.NORMAL,
             mask: null,
-            colorFilters: null
+            colorFilters: null,
+            syncedX: 0,
+            syncedY: 0,
+            syncedScaleX: 1,
+            syncedScaleY: 1,
+            syncedRotation: 0,
+            syncedSkewX: 0,
+            syncedSkewY: 0,
+            syncedRegX: 0,
+            syncedRegY: 0,
+            syncedVisible: !0,
+            syncedAlpha: 1
         };
     }
     var pixiDataStore = new WeakMap;
     function registerPixiData(cjs, data) {
-        pixiDataStore.set(cjs, data);
+        pixiDataStore.set(cjs, data), function(cjs) {
+            return "x" in cjs && "regX" in cjs && "alpha" in cjs;
+        }(cjs) && (cjs[PIXI_DATA] = data, data.transform.owner = cjs);
+    }
+    var settleMarks = new WeakSet, driveDepth = 0;
+    function beginDrive() {
+        driveDepth++;
+    }
+    function endDrive() {
+        driveDepth--;
+    }
+    function isDriving() {
+        return driveDepth > 0;
+    }
+    function markForSettle(node) {
+        for (var top = node; top.parent; ) {
+            top = top.parent;
+        }
+        settleMarks.add(top);
+    }
+    function takeSettleMark(root) {
+        return !!settleMarks.has(root) && (settleMarks.delete(root), !0);
     }
     function setMaskForPixi(data, value) {
-        value ? (value.masked.push(data.instance), data.instance.mask = value.pixi, data.instance.once("added", function() {
-            data.instance.parent && data.instance.parent.addChild(value.pixi);
-        })) : data.instance.mask = null, data.mask = value;
+        var old = data.mask, instance = data.instance;
+        if (old && old !== value) {
+            var index = old.masked.indexOf(instance);
+            index >= 0 && old.masked.splice(index, 1), instance.mask = null, old.masked.length ? old.pixi.renderable = !1 : !old.parent && old.pixi.parent && old.pixi.parent.removeChild(old.pixi);
+        }
+        value ? (value.masked.indexOf(instance) < 0 && value.masked.push(instance), instance.mask = value.graphics ? value.pixi : null, 
+        instance.parent && value.pixi.parent !== instance.parent && instance.parent.addChild(value.pixi), 
+        instance.once("added", function() {
+            data.mask === value && instance.parent && value.pixi.parent !== instance.parent && instance.parent.addChild(value.pixi);
+        })) : instance.mask = null, data.mask = value;
     }
     function syncToPixi(root) {
-        syncNode(root);
+        logSuspended++, pushNode(root), logSuspended--;
     }
-    function syncNode(cjs) {
-        var data = pixiDataStore.get(cjs);
+    function pullFromPixi() {
+        for (var writes = function() {
+            var writes = pixiWrites;
+            return writes.length && (pixiWrites = []), writes;
+        }(), i = 0; i < writes.length; i++) {
+            var transform = writes[i];
+            transform.logged = !1;
+            var cjs = transform.owner, data = cjs ? cjs[PIXI_DATA] : void 0;
+            cjs && data && data.transform === transform && pullNode(cjs, data);
+        }
+    }
+    function pushNode(cjs) {
+        var data = cjs[PIXI_DATA];
         if (data) {
-            var pixi = data.instance;
-            pixi.x = cjs.x, pixi.y = cjs.y, pixi.scale.x = cjs.scaleX, pixi.scale.y = cjs.scaleY, 
-            pixi.skew.x = -cjs.skewX * DEG_TO_RAD, pixi.skew.y = cjs.skewY * DEG_TO_RAD, pixi.rotation = cjs.rotation * DEG_TO_RAD, 
-            data.regObj.x = cjs.regX, data.regObj.y = cjs.regY, pixi.visible = !!cjs.visible, 
-            pixi.alpha = cjs.alpha, pixi.renderable = !cjs._off;
+            var pixi = data.instance, transform = data.transform, x = cjs.x, y = cjs.y, xChanged = x !== data.syncedX, yChanged = y !== data.syncedY;
+            if (xChanged || yChanged) {
+                var position = transform.position;
+                position.set(xChanged ? data.syncedX = x : position.x, yChanged ? data.syncedY = y : position.y);
+            }
+            var scaleX = cjs.scaleX, scaleY = cjs.scaleY, scaleXChanged = scaleX !== data.syncedScaleX, scaleYChanged = scaleY !== data.syncedScaleY;
+            if (scaleXChanged || scaleYChanged) {
+                var scale = transform.scale;
+                scale.set(scaleXChanged ? data.syncedScaleX = scaleX : scale.x, scaleYChanged ? data.syncedScaleY = scaleY : scale.y);
+            }
+            var rotation = cjs.rotation, skewX = cjs.skewX, skewY = cjs.skewY, rotationChanged = rotation !== data.syncedRotation, skewXChanged = skewX !== data.syncedSkewX, skewYChanged = skewY !== data.syncedSkewY;
+            (rotationChanged || skewXChanged || skewYChanged) && transform.setRotationSkew(rotationChanged ? data.syncedRotation = rotation : transform.degRotation, skewXChanged ? data.syncedSkewX = skewX : transform.degSkewX, skewYChanged ? data.syncedSkewY = skewY : transform.degSkewY);
+            var regX = cjs.regX, regY = cjs.regY, regXChanged = regX !== data.syncedRegX, regYChanged = regY !== data.syncedRegY;
+            if (regXChanged || regYChanged) {
+                var regObj = data.regObj;
+                regObj.set(regXChanged ? data.syncedRegX = regX : regObj.x, regYChanged ? data.syncedRegY = regY : regObj.y);
+            }
+            var visible = !!cjs.visible;
+            visible !== data.syncedVisible && (pixi.visible = data.syncedVisible = visible), 
+            cjs.alpha !== data.syncedAlpha && (pixi.alpha = data.syncedAlpha = cjs.alpha);
             var colorFilters = data.colorFilters;
             if (colorFilters) {
                 for (var i = 0; i < colorFilters.length; i++) {
@@ -60,14 +184,31 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                     matrix[14] = source.blueOffset / 255, matrix[19] = source.alphaOffset / 255;
                 }
             }
-            data.mask && syncNode(data.mask);
+            data.mask && pushNode(data.mask);
         }
         var children = cjs.children;
         if (children) {
             for (var i$1 = 0; i$1 < children.length; i$1++) {
-                syncNode(children[i$1]);
+                pushNode(children[i$1]);
             }
         }
+    }
+    function pullNode(cjs, data) {
+        var pixi = data.instance, transform = data.transform, x = transform.position.x;
+        x !== data.syncedX && (cjs.x = data.syncedX = x);
+        var y = transform.position.y;
+        y !== data.syncedY && (cjs.y = data.syncedY = y);
+        var scaleX = transform.scale.x;
+        scaleX !== data.syncedScaleX && (cjs.scaleX = data.syncedScaleX = scaleX);
+        var scaleY = transform.scale.y;
+        scaleY !== data.syncedScaleY && (cjs.scaleY = data.syncedScaleY = scaleY), transform.degRotation !== data.syncedRotation && (cjs.rotation = data.syncedRotation = transform.degRotation), 
+        transform.degSkewX !== data.syncedSkewX && (cjs.skewX = data.syncedSkewX = transform.degSkewX), 
+        transform.degSkewY !== data.syncedSkewY && (cjs.skewY = data.syncedSkewY = transform.degSkewY);
+        var regX = data.regObj.x;
+        regX !== data.syncedRegX && (cjs.regX = data.syncedRegX = regX);
+        var regY = data.regObj.y;
+        regY !== data.syncedRegY && (cjs.regY = data.syncedRegY = regY), pixi.visible !== data.syncedVisible && (cjs.visible = data.syncedVisible = pixi.visible), 
+        pixi.alpha !== data.syncedAlpha && (cjs.alpha = data.syncedAlpha = pixi.alpha);
     }
     var PixiColorMatrixFilter = function(superclass) {
         function PixiColorMatrixFilter(cjs) {
@@ -232,7 +373,9 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         }, prototypeAccessors.createjs.get = function() {
             return this._createjs;
         }, Object.defineProperties(PixiMovieClip.prototype, prototypeAccessors), PixiMovieClip;
-    }(PIXI.Container), AnimateEvent = function(superclass) {
+    }(PIXI.Container);
+    logPixiWrites(PixiMovieClip.prototype);
+    var AnimateEvent = function(superclass) {
         function AnimateEvent(type) {
             superclass.call(this, type);
         }
@@ -258,7 +401,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     function resetData$5(cjs) {
         var data = function(cjs) {
             var pixi = new PixiMovieClip(cjs);
-            return Object.assign(createPixiData(pixi, pixi.pivot), {
+            return Object.assign(createPixiData(pixi, null), {
                 subInstance: pixi,
                 listenFrameEvents: {},
                 filters: null,
@@ -339,6 +482,16 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 var child = children[i];
                 child instanceof CreatejsMovieClip && child.updateStateForPixi();
             }
+        }, CreatejsMovieClip.prototype.settleForPixi = function() {
+            this.mode !== createjs.MovieClip.INDEPENDENT ? this._updateState() : -1 === this._rawPosition && this._renderFirstFrame();
+            for (var children = this.children.slice(), i = children.length - 1; i >= 0; i--) {
+                var child = children[i];
+                child instanceof CreatejsMovieClip && child.settleForPixi();
+            }
+        }, CreatejsMovieClip.prototype.gotoAndPlay = function(positionOrLabel) {
+            superclass.prototype.gotoAndPlay.call(this, positionOrLabel), markForSettle(this);
+        }, CreatejsMovieClip.prototype.gotoAndStop = function(positionOrLabel) {
+            superclass.prototype.gotoAndStop.call(this, positionOrLabel), markForSettle(this);
         }, CreatejsMovieClip.prototype.updateBlendModeForPixi = function(mode) {
             var data = ensureData$5(this);
             if (!data.compositeOperation || blendModes[data.compositeOperation] !== mode) {
@@ -388,7 +541,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 var child = children[i];
                 data.subInstance.addChild(child.pixi), this._updateChildrenBlendModeForPixi(child);
             }
-            return superclass.prototype.addChild.apply(this, children);
+            var res = superclass.prototype.addChild.apply(this, children);
+            return isDriving() || markForSettle(this), res;
         }, CreatejsMovieClip.prototype.addChildAt = function() {
             for (var childOrIndex = [], len = arguments.length; len--; ) {
                 childOrIndex[len] = arguments[len];
@@ -400,7 +554,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                     "number" != typeof child && (data.subInstance.addChildAt(child.pixi, index), this._updateChildrenBlendModeForPixi(child));
                 }
             }
-            return superclass.prototype.addChildAt.apply(this, childOrIndex);
+            var res = superclass.prototype.addChildAt.apply(this, childOrIndex);
+            return isDriving() || markForSettle(this), res;
         }, CreatejsMovieClip.prototype.removeChild = function() {
             for (var children = [], len = arguments.length; len--; ) {
                 children[len] = arguments[len];
@@ -454,6 +609,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._createjs;
         }, Object.defineProperties(PixiSprite.prototype, prototypeAccessors), PixiSprite;
     }(PIXI.Sprite);
+    logPixiWrites(PixiSprite.prototype);
     var dataStore$4 = new WeakMap;
     function resetData$4(cjs) {
         var data = function(cjs) {
@@ -532,11 +688,12 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._createjs;
         }, Object.defineProperties(PixiShape.prototype, prototypeAccessors), PixiShape;
     }(PIXI.Container);
+    logPixiWrites(PixiShape.prototype);
     var dataStore$3 = new WeakMap;
     function resetData$3(cjs) {
         var data = function(cjs) {
             var pixi = new PixiShape(cjs);
-            return Object.assign(createPixiData(pixi, pixi.pivot), {
+            return Object.assign(createPixiData(pixi, null), {
                 masked: [],
                 graphics: null
             });
@@ -626,6 +783,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._createjs;
         }, Object.defineProperties(PixiBitmap.prototype, prototypeAccessors), PixiBitmap;
     }(PIXI.Sprite);
+    logPixiWrites(PixiBitmap.prototype);
     var dataStore$2 = new WeakMap;
     function resetData$2(cjs) {
         var data = function(cjs) {
@@ -705,7 +863,7 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     function resetData$1(cjs) {
         var data = function(cjs) {
             var pixi = new PixiGraphics(cjs);
-            return Object.assign(createPixiData(pixi, pixi.pivot), {
+            return Object.assign(createPixiData(pixi, null), {
                 strokeFill: 0,
                 strokeAlpha: 1
             });
@@ -899,13 +1057,14 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._text;
         }, Object.defineProperties(PixiTextContainer.prototype, prototypeAccessors), PixiTextContainer;
     }(PIXI.Container);
+    logPixiWrites(PixiTextContainer.prototype);
     var dataStore = new WeakMap;
     function resetData(cjs) {
         var data = function(cjs) {
             var text = new PixiText("", {
                 wordWrap: !0
             }), pixi = new PixiTextContainer(cjs, text);
-            return pixi.addChild(text), Object.assign(createPixiData(pixi, pixi.pivot), {
+            return pixi.addChild(text), Object.assign(createPixiData(pixi, null), {
                 text: "",
                 font: "",
                 color: "",
@@ -1067,7 +1226,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         });
     }
     var CreatejsEvent = createjs.Event, CreatejsController = function(container) {
-        this._speed = 1, this._overSpeed = !0, this._createjsData = {
+        this._speed = 1, this._overSpeed = !0, this._smooth = !0, this._deltas = [], this._nextDelta = 0, 
+        this._createjsData = {
             id: 0,
             targets: {},
             container: container
@@ -1077,6 +1237,9 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             configurable: !0
         },
         overSpeed: {
+            configurable: !0
+        },
+        smooth: {
             configurable: !0
         }
     };
@@ -1088,15 +1251,32 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return this._overSpeed;
     }, prototypeAccessors.overSpeed.set = function(value) {
         this._overSpeed = value;
+    }, prototypeAccessors.smooth.get = function() {
+        return this._smooth;
+    }, prototypeAccessors.smooth.set = function(value) {
+        this._smooth = value;
     }, CreatejsController.prototype.handleTick = function(delta) {
-        var d = delta * this._speed, targets = this._createjsData.targets;
+        var speed = this._speed > 0 ? this._speed : 0, d = delta * speed, usual = this._usualDelta(delta) * speed;
+        beginDrive(), pullFromPixi();
+        var targets = this._createjsData.targets;
         for (var i in targets) {
-            var target = targets[i];
-            target.t += d * target.cjs.fps / 60;
-            var p = 0 | target.t, frame = this._overSpeed ? p : Math.min(p, 1);
+            var target = targets[i], fps = target.cjs.fps;
+            target.t += d * fps / 60;
+            var step = usual * fps / 60, lead = Math.min(step, 1) / 2;
             if (target.isFirst) {
-                target.isFirst = !1, target.cjs.updateStateForPixi(), syncToPixi(target.cjs);
+                target.isFirst = !1, target.clock = target.t + lead, target.cjs.updateStateForPixi(), 
+                syncToPixi(target.cjs);
             } else {
+                var p = void 0;
+                if (this._smooth) {
+                    target.clock += step;
+                    var behind = target.t + lead - target.clock;
+                    behind >= 1 || behind <= -1 ? target.clock = target.t + lead : target.clock += .05 * behind, 
+                    p = Math.max(Math.floor(target.clock), 0), target.clock -= p;
+                } else {
+                    p = Math.floor(target.t), target.clock = target.t - p;
+                }
+                var frame = this._overSpeed ? p : Math.min(p, 1);
                 target.t -= p;
                 for (var f = 0; f < frame; f++) {
                     target.cjs._tick(new CreatejsEvent("tick")), target.cjs.updateStateForPixi();
@@ -1104,6 +1284,22 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 syncToPixi(target.cjs);
             }
         }
+        endDrive();
+    }, CreatejsController.prototype.flushForRender = function() {
+        beginDrive();
+        var targets = this._createjsData.targets;
+        for (var i in targets) {
+            var root = targets[i].cjs;
+            takeSettleMark(root) && root.settleForPixi(), syncToPixi(root);
+        }
+        endDrive();
+    }, CreatejsController.prototype._usualDelta = function(delta) {
+        var deltas = this._deltas;
+        deltas[this._nextDelta] = delta, this._nextDelta = (this._nextDelta + 1) % 30;
+        var sorted = deltas.slice().sort(function(a, b) {
+            return a - b;
+        }), middle = sorted.length >> 1;
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
     }, CreatejsController.prototype._addCreatejs = function(cjs) {
         var this$1$1 = this;
         if (cjs instanceof CreatejsMovieClip) {
@@ -1114,8 +1310,9 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
                 this$1$1._createjsData.targets[id] = {
                     cjs: cjs,
                     t: 0,
+                    clock: 0,
                     isFirst: !0
-                }, cjs.pixi.once("removed", function() {
+                }, markForSettle(cjs), cjs.pixi.once("removed", function() {
                     delete this$1$1._createjsData.targets[id];
                 });
             });
@@ -1143,6 +1340,9 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             },
             createjsOverSpeed: {
                 configurable: !0
+            },
+            createjsSmooth: {
+                configurable: !0
             }
         };
         return prototypeAccessors$1.createjsSpeed.get = function() {
@@ -1153,8 +1353,14 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
             return this._createjsData.controller.overSpeed;
         }, prototypeAccessors$1.createjsOverSpeed.set = function(value) {
             this._createjsData.controller.overSpeed = value;
+        }, prototypeAccessors$1.createjsSmooth.get = function() {
+            return this._createjsData.controller.smooth;
+        }, prototypeAccessors$1.createjsSmooth.set = function(value) {
+            this._createjsData.controller.smooth = value;
         }, Container.prototype.handleTick = function(delta) {
             return this._createjsData.controller.handleTick(delta);
+        }, Container.prototype.updateTransform = function() {
+            this._createjsData.controller.flushForRender(), PixiContainer.prototype.updateTransform.call(this);
         }, Container.prototype.addCreatejs = function(cjs) {
             return this._createjsData.controller.addCreatejs(cjs);
         }, Container.prototype.addCreatejsAt = function(cjs, index) {
@@ -1167,19 +1373,21 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
     createjs.Bitmap = CreatejsBitmap, createjs.Graphics = CreatejsGraphics, createjs.Text = CreatejsText, 
     createjs.ButtonHelper = CreatejsButtonHelper, createjs.ColorFilter = CreatejsColorFilter, 
     createjs.MotionGuidePlugin.install(), exports.createjs = createjs, exports.AnimateEvent = AnimateEvent, 
-    exports.AnimateReachLabelEvent = AnimateReachLabelEvent, exports.Container = Container, 
-    exports.CreatejsBitmap = CreatejsBitmap, exports.CreatejsButtonHelper = CreatejsButtonHelper, 
+    exports.AnimateReachLabelEvent = AnimateReachLabelEvent, exports.CjsTransform = CjsTransform, 
+    exports.Container = Container, exports.CreatejsBitmap = CreatejsBitmap, exports.CreatejsButtonHelper = CreatejsButtonHelper, 
     exports.CreatejsColorFilter = CreatejsColorFilter, exports.CreatejsController = CreatejsController, 
     exports.CreatejsEventManager = CreatejsEventManager, exports.CreatejsGraphics = CreatejsGraphics, 
     exports.CreatejsMovieClip = CreatejsMovieClip, exports.CreatejsShape = CreatejsShape, 
-    exports.CreatejsSprite = CreatejsSprite, exports.CreatejsText = CreatejsText, exports.PixiBitmap = PixiBitmap, 
-    exports.PixiColorMatrixFilter = PixiColorMatrixFilter, exports.PixiGraphics = PixiGraphics, 
-    exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, exports.PixiSprite = PixiSprite, 
-    exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, exports.addInteractionListener = addInteractionListener, 
-    exports.createPixiData = createPixiData, exports.findPixiData = function(cjs) {
+    exports.CreatejsSprite = CreatejsSprite, exports.CreatejsText = CreatejsText, exports.PIXI_DATA = PIXI_DATA, 
+    exports.PixiBitmap = PixiBitmap, exports.PixiColorMatrixFilter = PixiColorMatrixFilter, 
+    exports.PixiGraphics = PixiGraphics, exports.PixiMovieClip = PixiMovieClip, exports.PixiShape = PixiShape, 
+    exports.PixiSprite = PixiSprite, exports.PixiText = PixiText, exports.PixiTextContainer = PixiTextContainer, 
+    exports.addInteractionListener = addInteractionListener, exports.beginDrive = beginDrive, 
+    exports.createPixiData = createPixiData, exports.endDrive = endDrive, exports.findPixiData = function(cjs) {
         var data = pixiDataStore.get(cjs);
         return data || null;
-    }, exports.getPixiColorMatrixFilter = getPixiColorMatrixFilter, exports.loadAssetAsync = function(targets) {
+    }, exports.getPixiColorMatrixFilter = getPixiColorMatrixFilter, exports.isDriving = isDriving, 
+    exports.loadAssetAsync = function(targets) {
         var _a, _b;
         Array.isArray(targets) || (targets = [ targets ]);
         for (var promises = [], loop = function(i) {
@@ -1246,8 +1454,8 @@ this.PIXI = this.PIXI || {}, function(exports, PIXI, createjs) {
         return Promise.all(promises).then(function(resolvers) {
             return 1 === resolvers.length ? resolvers[0] : resolvers;
         });
-    }, exports.registerPixiData = registerPixiData, exports.removeAllInteractionListeners = removeAllInteractionListeners, 
-    exports.removeInteractionListener = removeInteractionListener, exports.setMaskForPixi = setMaskForPixi, 
-    exports.syncToPixi = syncToPixi;
+    }, exports.markForSettle = markForSettle, exports.pullFromPixi = pullFromPixi, exports.registerPixiData = registerPixiData, 
+    exports.removeAllInteractionListeners = removeAllInteractionListeners, exports.removeInteractionListener = removeInteractionListener, 
+    exports.setMaskForPixi = setMaskForPixi, exports.syncToPixi = syncToPixi, exports.takeSettleMark = takeSettleMark;
 }(this.PIXI.animate = this.PIXI.animate || {}, PIXI, createjs);
 //# sourceMappingURL=pixi-animate-container.js.map

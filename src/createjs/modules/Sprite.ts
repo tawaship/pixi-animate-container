@@ -5,6 +5,7 @@ import {
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
 import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { logPixiWrites } from './transform';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
@@ -22,6 +23,9 @@ export class PixiSprite extends Sprite {
 		return this._createjs;
 	}
 }
+
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiSprite.prototype);
 
 // Derived from the real constructor so there is a single source of truth.
 export type TCreatejsSpriteConstructorArgs = ConstructorParameters<typeof createjs.Sprite>;

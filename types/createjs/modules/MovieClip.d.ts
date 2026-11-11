@@ -120,6 +120,31 @@ export declare class CreatejsMovieClip extends createjs.MovieClip implements ICr
      * Container._tick.
      */
     updateStateForPixi(): void;
+    /**
+     * Settles the tree for drawing without playing on — what createjs does to
+     * each clip when the stage draws (MovieClip.draw -> _updateState): synched
+     * and single-frame clips are placed at the frame their parent gives. A
+     * clip waiting to start over (an independent clip reset when its parent
+     * placed it again, _rawPosition -1) is shown at its first frame the way
+     * createjs shows a new clip (_renderFirstFrame: no frame script, the
+     * playhead left as it was), so that it starts on the next frame played,
+     * as in the Animate template, where createjs draws only after a tick (a
+     * draw's _updateState would start it at once, a frame ahead). Children
+     * are settled after their parent, in the resolve phase's order. Used
+     * right before Pixi draws a tree whose timelines moved between frames
+     * (CreatejsController.flushForRender).
+     */
+    settleForPixi(): void;
+    /**
+     * Delegated to the original; the tree is marked so that it is settled and
+     * synced before Pixi draws (a goto made between frames is drawn the way
+     * createjs would draw it, without waiting for the next frame).
+     */
+    gotoAndPlay(positionOrLabel: string | number): void;
+    /**
+     * See {@link CreatejsMovieClip.gotoAndPlay}.
+     */
+    gotoAndStop(positionOrLabel: string | number): void;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
     get compositeOperation(): CompositeOperations | null;
     set compositeOperation(value: CompositeOperations | null);

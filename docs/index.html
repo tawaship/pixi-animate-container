@@ -1,5 +1,5 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@tawaship/pixi-animate-container - v3.0.0</title><meta name="description" content="Documentation for @tawaship/pixi-animate-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
-<div class="tsd-toolbar-contents container"><a href="index.html" class="title">@tawaship/pixi-animate-container - v3.0.0</a>
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@tawaship/pixi-animate-container - v3.1.0</title><meta name="description" content="Documentation for @tawaship/pixi-animate-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="index.html" class="title">@tawaship/pixi-animate-container - v3.1.0</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
 <div id="tsd-search-status" aria-live="polite" aria-atomic="true">
@@ -7,7 +7,7 @@
 <div class="container container-main">
 <div class="col-content">
 <div class="tsd-page-title">
-<h1>@tawaship/pixi-animate-container - v3.0.0</h1></div>
+<h1>@tawaship/pixi-animate-container - v3.1.0</h1></div>
 <div class="tsd-panel tsd-typography"><h1 id="pixi-animate-container" class="tsd-anchor-link">pixi-animate-container<a href="#pixi-animate-container" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
 <p>&quot;pixi-animate-container&quot; is a plugin for using content created by Adobe Animate with &quot;<a href="https://github.com/pixijs/pixi.js">pixi.js</a>&quot;.</p>
 <p><a href="LICENSE"><img src="http://img.shields.io/badge/license-MIT-blue.svg?style=flat" alt="MIT License"></a></p>
@@ -55,7 +55,140 @@
 </code><button type="button">Copy</button></pre>
 
 <p>See <a href="https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAnimatePrepareTarget.html">here</a> for complete options for <code>PIXI.animate.loadAssetAsync</code>.</p>
+<h2 id="using-with-typescript" class="tsd-anchor-link">Using with TypeScript<a href="#using-with-typescript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The full createjs 1.0 API is typed (via <code>@tawaship/createjs-module</code>), so
+TypeScript checks every call against the real createjs surface. New type
+errors on code that used to compile against an untyped <code>createjs</code> are the
+checker catching a real mismatch, not a bug in this package.</p>
+<p>Named child instances (<code>this.a</code> and friends) are stamped onto published
+symbols at runtime by Adobe Animate's output, so no type definition can know
+their names. <code>CreatejsMovieClip</code> therefore carries a string index signature:
+any undeclared member resolves as <code>any</code>, so named instances can be referenced
+directly with no per-content setup. Declared members are unaffected —
+<code>currentFrame</code> is still <code>number</code>, and wrong-typed writes to declared members
+still error. Note that this works on values typed as <code>CreatejsMovieClip</code> (or
+a subclass); a union type only allows members that exist on every branch.</p>
+<p>If you want named instances checked instead of <code>any</code>, declare them on your
+own class — <code>declare</code> emits no code, so the runtime object is untouched, and
+everything reached through the declared name stays fully typed:</p>
+<pre><code class="typescript"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">CreatejsMovieClip</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tawaship/pixi-animate-container&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">class</span><span class="hl-1"> </span><span class="hl-13">Game</span><span class="hl-1"> </span><span class="hl-3">extends</span><span class="hl-1"> </span><span class="hl-13">CreatejsMovieClip</span><span class="hl-1"> {</span><br/><span class="hl-1">	</span><span class="hl-3">declare</span><span class="hl-1"> </span><span class="hl-5">a</span><span class="hl-1">: </span><span class="hl-13">CreatejsMovieClip</span><span class="hl-1">; </span><span class="hl-12">// named instance from the Animate timeline</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Prefer the wrapper classes exported by this package (<code>CreatejsMovieClip</code>,
+<code>CreatejsSprite</code>, ...) in your own type annotations. They are subtypes of the
+corresponding <code>createjs.*</code> classes, so they fit anywhere the createjs API
+expects one.</p>
+<p>The typed createjs runtime (with the wrapper classes installed) is also
+re-exported, so one import serves both:</p>
+<pre><code class="typescript"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">createjs</span><span class="hl-1">, </span><span class="hl-5">CreatejsMovieClip</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@tawaship/pixi-animate-container&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">const</span><span class="hl-1"> </span><span class="hl-11">tween</span><span class="hl-1"> = </span><span class="hl-5">createjs</span><span class="hl-1">.</span><span class="hl-5">Tween</span><span class="hl-1">.</span><span class="hl-0">get</span><span class="hl-1">(</span><span class="hl-5">target</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>mask</code>, <code>filters</code>, <code>compositeOperation</code> and <code>Shape.graphics</code> are typed
+nullable, matching the documented createjs runtime (their default is <code>null</code>,
+and assigning <code>null</code> to <code>mask</code> is how a mask is cleared).</p>
 <h2 id="change-log" class="tsd-anchor-link">Change log<a href="#change-log" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="310" class="tsd-anchor-link">3.1.0<a href="#310" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Added: <code>createjsSmooth</code> (default <code>true</code>) on the container. Each
+<code>handleTick</code> used to play the whole frames owed by the <code>delta</code> values
+added up; when the content's frame rate divides the display's (60 fps
+content on a 60 Hz display), the small jitter of <code>delta</code> then played no
+frame on one call and two on the next, which made the animation uneven.
+With <code>createjsSmooth</code> the frames follow a steady clock kept in step with
+the real time, so the playing stays even. The frames played and their order
+are unchanged; set it to <code>false</code> for the previous pacing.</li>
+<li>Changed: a <code>createjsSpeed</code> below <code>0</code> (or <code>NaN</code>) plays as <code>0</code>. The content
+pauses and resumes as soon as the speed is set back (frames cannot be played
+backwards). <code>createjsSpeed</code> still reads back the value you set.</li>
+<li>Fixed: what pixi.js draws now matches what createjs would draw at that
+moment, whenever pixi.js renders — not only right after <code>handleTick</code>.
+The container brings its content up to date right before each render, so:
+<ul>
+<li>after <code>gotoAndPlay()</code> / <code>gotoAndStop()</code> called between frames (for
+example from another ticker callback or a click handler), the next render
+shows the new frame correctly. Previously, objects appearing for the first
+time on that frame were drawn once at their default position, rotation
+and alpha, and graphic (synched) symbols inside showed their previous frame</li>
+<li>values you write to createjs instances after <code>handleTick</code>
+(<code>instance.x = 100</code>) are drawn in the same display frame instead of one
+frame later</li>
+<li>content added with <code>addCreatejs</code> is drawn correctly even if a render
+comes before its first <code>handleTick</code></li>
+</ul>
+</li>
+<li>Fixed: a value written to an instance's pixi node (<code>instance.pixi.x = 100</code>)
+stays until the timeline writes that property again, as in 2.x (3.0.x lost
+it on the next tick). The written value is also taken over by the createjs
+instance (<code>instance.x</code> reads 100 from the next <code>handleTick</code> on).</li>
+<li>Fixed: objects that are both rotated and skewed are drawn the way the
+browser output of Animate (createjs) draws them. The values of
+<code>pixi.rotation</code> / <code>pixi.skew</code> are unchanged.</li>
+<li>Fixed: an object marked <code>_off</code> that is on a display list is drawn, as in
+createjs. A shape used as a mask is no longer drawn itself, and a mask shape
+taken off with <code>mask = null</code> is no longer left drawn in the pixi tree.</li>
+<li>This release was implemented with Claude (Anthropic's AI assistant). Its
+correctness rests on verification rather than authorship: differential
+suites compare pure createjs, the previous release and the pixi tree after
+every tick and at every render point, and each change was confirmed to be
+caught by them when reverted.</li>
+</ul>
+<h3 id="301" class="tsd-anchor-link">3.0.1<a href="#301" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>The full createjs 1.0 API is now typed: the wrapper classes extend the real
+(typed) createjs classes and are true subtypes of them, so wrapper
+instances fit every <code>createjs.*</code>-typed parameter (<code>addChild</code>,
+<code>localToLocal</code>, <code>hitArea</code>, ...). See &quot;Using with TypeScript&quot; above. This
+completes the type strictness introduced in 3.0.0.</li>
+<li>Fixed: <code>removeAllChildren()</code> now reaches the Pixi mirror (the override was
+misspelled <code>removeAllChldren</code>, so the correctly-spelled call bypassed it
+and left the Pixi children behind).</li>
+<li>Fixed: <code>addChild</code> / <code>addChildAt</code> with multiple children now forward every
+child (previously only the first argument reached either tree).</li>
+<li>Fixed: <code>CreatejsSprite.gotoAndStop()</code> passes a real <code>PIXI.Rectangle</code> as the
+texture frame (previously a createjs rectangle was passed by reference and
+happened to work).</li>
+<li>Changed: <code>CreatejsButtonHelper</code> throws an explicit <code>TypeError</code> when
+<code>target</code> / <code>hitArea</code> are not wrapper instances (previously it crashed at
+the same point with a property-access <code>TypeError</code>). Valid Animate publish
+output is unaffected.</li>
+<li>Added: <code>CreatejsButtonHelper</code> supports the 4-argument publish form.
+Animate publishes a button whose hit frame is empty as
+<code>new cjs.ButtonHelper(target, 0, 1, 1)</code>; the original then uses the
+target itself as the hit surface, and the wrapper now mirrors that
+(previously this form crashed during construction).</li>
+<li>Changed: interaction bridging in <code>addEventListener</code> /
+<code>removeEventListener</code> now branches on the listener being a function;
+non-<code>ButtonHelper</code> object listeners are no longer passed to the
+function-only bridge.</li>
+<li>Removed unused internal types left over from the 2.x era:
+<code>ICreatejsColorFilterBase</code>, <code>ICreatejsColorFilterBaseConstructor</code>,
+<code>ICreatejsDisplayObjectBase</code>, <code>ICreatejsLabel</code>, <code>ICreatejsChildNode</code>.</li>
+<li>The typed createjs runtime is re-exported (<code>import { createjs } from '@tawaship/pixi-animate-container'</code>), and the constructor-argument helper
+types (<code>TCreatejsMovieClipConstructorArgs</code> etc.) are now derived from the
+real createjs constructors instead of being maintained by hand.</li>
+<li><code>CreatejsMovieClip</code> carries a string index signature, so the named child
+instances stamped in by Animate publish output (<code>this.a</code> and friends) can
+be referenced without per-content declarations (they type as <code>any</code>;
+declared members keep their strict types). See &quot;Using with TypeScript&quot;.</li>
+<li><code>TCreatejsObject</code> no longer includes <code>CreatejsGraphics</code>. The union's
+contract is &quot;wraps a real createjs display object&quot; (what <code>addCreatejs</code>
+accepts), and the real <code>createjs.Graphics</code> is a drawing-command container,
+not a display object — it is reached through <code>shape.graphics</code>, never
+placed on a display list. As a result, the EventDispatcher API
+(<code>on</code>/<code>off</code>/<code>addEventListener</code>, ...) is now usable through the union.</li>
+<li>Fixed: <code>off()</code> now also detaches the Pixi-side interaction bridge. The
+original <code>off</code> is a prototype alias of <code>removeEventListener</code>, which
+bypassed the wrapper's override — so removing an interaction listener
+(<code>mousedown</code>, <code>click</code>, ...) registered with <code>on()</code> left the Pixi-side
+listener behind: the handler kept firing on pointer input and the object
+stayed <code>interactive</code>. Published content never removes listeners, so only
+hand-written code using <code>on()</code>/<code>off()</code> was affected.</li>
+<li>This release was implemented with Claude (Anthropic's AI assistant). Its
+correctness rests on verification rather than authorship: the same
+per-tick full-state differential suites as 3.0.0, plus a direct diff of the
+built output against v3.0.0 confirming the only runtime changes are the
+ones listed above.</li>
+</ul>
 <h3 id="300" class="tsd-anchor-link">3.0.0<a href="#300" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
 <li>
@@ -103,6 +236,12 @@
 </tr>
 </tbody>
 </table>
+</li>
+<li>
+<p>TypeScript: the wrapper classes are typed against declared interfaces
+instead of <code>any</code>, so member access outside the declared surface no longer
+compiles (e.g. <code>mc.on(...)</code>, named timeline instances). 3.0.1 completes
+this with full createjs typings; see &quot;Using with TypeScript&quot;.</p>
 </li>
 <li>
 <p>This release was implemented with Claude (Anthropic's AI assistant). Its correctness rests on verification rather than authorship: a per-tick full-state differential suite confirms equality with the previous release everywhere except the intended changes above, and equality with pure createjs including sibling-interaction content.</p>
@@ -217,9 +356,12 @@
 <li><a href="#npm"><span>NPM</span></a></li>
 <li><a href="#browser"><span>Browser</span></a></li></ul></li>
 <li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#using-with-typescript"><span>Using with <wbr/>Type<wbr/>Script</span></a></li>
 <li><a href="#change-log"><span>Change log</span></a></li>
 <li>
 <ul>
+<li><a href="#310"><span>3.1.0</span></a></li>
+<li><a href="#301"><span>3.0.1</span></a></li>
 <li><a href="#300"><span>3.0.0</span></a></li>
 <li><a href="#240"><span>2.4.0</span></a></li>
 <li><a href="#230"><span>2.3.0</span></a></li>
@@ -227,7 +369,7 @@
 <li><a href="#200"><span>2.0.0</span></a></li>
 <li><a href="#100"><span>1.0.0</span></a></li></ul></li></ul></div></details></div>
 <div class="site-menu">
-<nav class="tsd-navigation"><a href="modules.html">@tawaship/pixi-animate-container - v3.0.0</a>
+<nav class="tsd-navigation"><a href="modules.html">@tawaship/pixi-animate-container - v3.1.0</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
 <li>Loading...</li></ul></nav></div></div></div><footer>
 <p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>

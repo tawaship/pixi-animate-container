@@ -1,5 +1,5 @@
 /*!
- * pixi-animate-container - v3.0.1
+ * pixi-animate-container - v3.1.0
  * 
  * @require pixi.js v^5.3.2
  * @author tawaship (makazu.mori@gmail.com)
@@ -7,7 +7,7 @@
  */
 
 import * as PIXI from 'pixi.js';
-import { BLEND_MODES, filters, utils, Container as Container$1, BaseTexture, Rectangle, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text } from 'pixi.js';
+import { Transform, BLEND_MODES, filters, utils, Container as Container$1, BaseTexture, Rectangle, Texture, Sprite, LINE_CAP, LINE_JOIN, Graphics, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 export { default as createjs } from '@tawaship/createjs-module';
 
@@ -16,79 +16,452 @@ export { default as createjs } from '@tawaship/createjs-module';
  */
 const DEG_TO_RAD = Math.PI / 180;
 
-function createPixiData(pixi, regObj) {
+/**
+ * @ignore
+ */
+const RAD_TO_DEG = 180 / Math.PI;
+/**
+ * Transforms of nodes written through Pixi since the last take
+ * (see {@link CjsTransform.logPixiWrite}).
+ *
+ * @ignore
+ */
+let pixiWrites = [];
+/**
+ * @ignore
+ */
+let logSuspended = 0;
+/**
+ * Brackets the wrapper's own writes to Pixi nodes (the sync), which are not
+ * Pixi-side writes to take over.
+ */
+function suspendPixiWriteLog() {
+    logSuspended++;
+}
+function resumePixiWriteLog() {
+    logSuspended--;
+}
+/**
+ * The transforms of the nodes written through Pixi since the last call
+ * (each once), clearing the log.
+ */
+function takePixiWrites() {
+    const writes = pixiWrites;
+    if (writes.length) {
+        pixiWrites = [];
+    }
+    return writes;
+}
+/**
+ * A Pixi Transform whose rotation and skew follow createjs, and which logs
+ * writes made through Pixi.
+ *
+ * - The createjs values (degrees) are kept as written, so that reading them
+ *   back gives exactly what was written (a degrees -> radians -> degrees
+ *   round trip does not)
+ * - Pixi's own fields carry the same values in Pixi's terms (rotation in
+ *   radians, skew.x = -skewX, skew.y = skewY, all in radians), so code that
+ *   uses the Pixi node sees the values it always saw. A write made through
+ *   Pixi (node.rotation, node.skew) becomes the new createjs value
+ * - The local matrix is built the createjs way (Matrix2D.appendTransform):
+ *   skew x (rotation x scale), i.e. the object is rotated first and then
+ *   skewed. Pixi composes them the other way round (skewed, then rotated as
+ *   a whole); the two agree only while the rotation is 0 or skewX equals
+ *   skewY. A rotation that is a multiple of 360 is taken as exactly none, as
+ *   createjs does
+ * - A change made through Pixi to the node's position, scale, pivot,
+ *   rotation or skew (and, through the node classes, its anchor, alpha and
+ *   visible) is logged once per node, so that the wrapper takes it over into
+ *   createjs without walking the whole tree
+ */
+class CjsTransform extends Transform {
+    constructor() {
+        super(...arguments);
+        /** createjs rotation, in degrees */
+        this.degRotation = 0;
+        /** createjs skewX, in degrees */
+        this.degSkewX = 0;
+        /** createjs skewY, in degrees */
+        this.degSkewY = 0;
+        /** The createjs object this node mirrors (null until the wrapper links it) */
+        this.owner = null;
+        /** Whether the node is in the write log */
+        this.logged = false;
+        /** The radians last written to the Pixi fields for the values above */
+        this._radRotation = 0;
+        this._radSkewX = 0;
+        this._radSkewY = 0;
+    }
+    /**
+     * Logs a Pixi-side write to the node (once until the log is taken).
+     */
+    logPixiWrite() {
+        if (!logSuspended && !this.logged && this.owner) {
+            this.logged = true;
+            pixiWrites.push(this);
+        }
+    }
+    /**
+     * Writes the createjs rotation, skewX and skewY (degrees), computing the
+     * matrix once.
+     */
+    setRotationSkew(rotation, skewX, skewY) {
+        this.degRotation = rotation;
+        this._radRotation = rotation * DEG_TO_RAD;
+        this._rotation = this._radRotation;
+        this.degSkewX = skewX;
+        this._radSkewX = -skewX * DEG_TO_RAD;
+        this.degSkewY = skewY;
+        this._radSkewY = skewY * DEG_TO_RAD;
+        if (this.skew.x !== this._radSkewX || this.skew.y !== this._radSkewY) {
+            // Setting the point calls updateSkew when the value changes
+            this.skew.set(this._radSkewX, this._radSkewY);
+        }
+        else {
+            this.updateSkew();
+        }
+    }
+    /**
+     * Called by the position, scale and pivot points when they change.
+     */
+    onChange() {
+        this._localID++;
+        this.logPixiWrite();
+    }
+    updateSkew() {
+        // Values written through Pixi become the createjs values
+        if (this._rotation !== this._radRotation) {
+            this._radRotation = this._rotation;
+            this.degRotation = this._rotation * RAD_TO_DEG;
+            this.logPixiWrite();
+        }
+        if (this.skew.x !== this._radSkewX) {
+            this._radSkewX = this.skew.x;
+            this.degSkewX = -this.skew.x * RAD_TO_DEG;
+            this.logPixiWrite();
+        }
+        if (this.skew.y !== this._radSkewY) {
+            this._radSkewY = this.skew.y;
+            this.degSkewY = this.skew.y * RAD_TO_DEG;
+            this.logPixiWrite();
+        }
+        // createjs Matrix2D.appendTransform: (skew) x (rotation, scale)
+        let cos = 1;
+        let sin = 0;
+        if (this.degRotation % 360) {
+            const r = this.degRotation * DEG_TO_RAD;
+            cos = Math.cos(r);
+            sin = Math.sin(r);
+        }
+        if (this.degSkewX || this.degSkewY) {
+            const skewX = this.degSkewX * DEG_TO_RAD;
+            const skewY = this.degSkewY * DEG_TO_RAD;
+            const a1 = Math.cos(skewY);
+            const b1 = Math.sin(skewY);
+            const c1 = -Math.sin(skewX);
+            const d1 = Math.cos(skewX);
+            this._cx = a1 * cos + c1 * sin;
+            this._sx = b1 * cos + d1 * sin;
+            this._cy = a1 * -sin + c1 * cos;
+            this._sy = b1 * -sin + d1 * cos;
+        }
+        else {
+            this._cx = cos;
+            this._sx = sin;
+            this._cy = -sin;
+            this._sy = cos;
+        }
+        this._localID++;
+    }
+}
+/**
+ * Makes `alpha` and `visible` of a Pixi node class log changes made through
+ * Pixi (see {@link CjsTransform.logPixiWrite}). Pixi declares them as plain
+ * fields, which an accessor in a subclass body cannot override (TS2611), so
+ * they are defined on the prototype; the getters are plain field reads.
+ */
+function logPixiWrites(proto) {
+    Object.defineProperty(proto, 'alpha', {
+        configurable: true,
+        enumerable: true,
+        get() {
+            return this._cjsAlpha;
+        },
+        set(value) {
+            if (this._cjsAlpha !== value) {
+                this._cjsAlpha = value;
+                if (this.transform instanceof CjsTransform) {
+                    this.transform.logPixiWrite();
+                }
+            }
+        }
+    });
+    Object.defineProperty(proto, 'visible', {
+        configurable: true,
+        enumerable: true,
+        get() {
+            return this._cjsVisible;
+        },
+        set(value) {
+            if (this._cjsVisible !== value) {
+                this._cjsVisible = value;
+                if (this.transform instanceof CjsTransform) {
+                    this.transform.logPixiWrite();
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Key of the wrapper data on a createjs display object, read by the sync
+ * walks on every node on every frame (a property read is cheaper than a
+ * WeakMap lookup). A symbol key keeps the createjs object's surface as it
+ * is: for-in, Object.keys and Object.getOwnPropertyNames do not show it.
+ */
+const PIXI_DATA = Symbol('pixiData');
+/**
+ * Creates the wrapper data of a Pixi node and gives the node a
+ * {@link CjsTransform}. `anchor` is where createjs's regX / regY go when it
+ * is not the node's pivot (a Sprite's anchor); the pivot is read after the
+ * transform is replaced, as it belongs to the transform.
+ */
+function createPixiData(pixi, anchor) {
+    const transform = new CjsTransform();
+    pixi.transform = transform;
     return {
-        regObj,
+        regObj: anchor || pixi.pivot,
         instance: pixi,
+        transform,
         reservedBlendMode: BLEND_MODES.NORMAL,
         mask: null,
-        colorFilters: null
+        colorFilters: null,
+        syncedX: 0,
+        syncedY: 0,
+        syncedScaleX: 1,
+        syncedScaleY: 1,
+        syncedRotation: 0,
+        syncedSkewX: 0,
+        syncedSkewY: 0,
+        syncedRegX: 0,
+        syncedRegY: 0,
+        syncedVisible: true,
+        syncedAlpha: 1
     };
 }
 /**
  * External store keyed by the createjs instance, so that wrapper metadata never
  * appears as own properties of the createjs object (for-in surface stays original-faithful).
  * Each class module additionally keeps its own store with a more concrete data type;
- * this one serves the type-agnostic consumers (pull-sync walk, mask helper).
+ * this one serves the type-agnostic consumers (sync walks, mask helper).
  */
 const pixiDataStore = new WeakMap();
 function registerPixiData(cjs, data) {
     pixiDataStore.set(cjs, data);
+    if (isSyncNode(cjs)) {
+        cjs[PIXI_DATA] = data;
+        data.transform.owner = cjs;
+    }
 }
 function findPixiData(cjs) {
     const data = pixiDataStore.get(cjs);
     return data ? data : null;
 }
 /**
+ * Roots (tops of createjs trees) whose timelines moved outside the driver,
+ * so that the clips under them have to be settled before Pixi draws
+ * (CreatejsController.flushForRender). createjs settles synched / single
+ * frame clips and clips waiting to start over when it draws (MovieClip.draw
+ * -> _updateState); the driver does that after every frame it plays, but a
+ * goto made by the application between frames, or a clip added between
+ * frames, would otherwise be drawn unsettled until the next frame is played.
+ */
+const settleMarks = new WeakSet();
+/**
+ * @ignore
+ */
+let driveDepth = 0;
+/**
+ * Brackets the driver's own work (playing frames, settling, syncing): the
+ * display-list churn createjs makes while resolving a frame is not an
+ * application change and marks nothing.
+ */
+function beginDrive() {
+    driveDepth++;
+}
+function endDrive() {
+    driveDepth--;
+}
+function isDriving() {
+    return driveDepth > 0;
+}
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
+ */
+function markForSettle(node) {
+    let top = node;
+    while (top.parent) {
+        top = top.parent;
+    }
+    settleMarks.add(top);
+}
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+function takeSettleMark(root) {
+    if (!settleMarks.has(root)) {
+        return false;
+    }
+    settleMarks.delete(root);
+    return true;
+}
+/**
  * Shared implementation of the mask setter (push layer).
- * Writing a mask re-attaches display objects, so it must fire on change only;
- * the accessor of each class is the change detector.
+ *
+ * createjs clips with a mask only while its `graphics` is set (the Shape's
+ * graphics setter keeps the Pixi mask in step with that), and never draws a
+ * mask shape that is on no display list. The mask's node is kept in the
+ * masked node's parent node, so that it is transformed in the same space as
+ * createjs transforms the mask. When no masked node uses a mask any more and
+ * the mask shape is on no createjs display list, its node is taken out of
+ * the Pixi tree: Pixi makes a node drawable again when it stops being a mask.
  */
 function setMaskForPixi(data, value) {
+    const old = data.mask;
+    const instance = data.instance;
+    if (old && old !== value) {
+        const index = old.masked.indexOf(instance);
+        if (index >= 0) {
+            old.masked.splice(index, 1);
+        }
+        instance.mask = null;
+        if (old.masked.length) {
+            // still masking other nodes: Pixi's unmasking just made it drawable
+            old.pixi.renderable = false;
+        }
+        else if (!old.parent && old.pixi.parent) {
+            old.pixi.parent.removeChild(old.pixi);
+        }
+    }
     if (value) {
-        value.masked.push(data.instance);
-        data.instance.mask = value.pixi;
-        data.instance.once('added', () => {
-            if (data.instance.parent) {
-                data.instance.parent.addChild(value.pixi);
+        if (value.masked.indexOf(instance) < 0) {
+            value.masked.push(instance);
+        }
+        instance.mask = value.graphics ? value.pixi : null;
+        if (instance.parent && value.pixi.parent !== instance.parent) {
+            instance.parent.addChild(value.pixi);
+        }
+        instance.once('added', () => {
+            if (data.mask === value && instance.parent && value.pixi.parent !== instance.parent) {
+                instance.parent.addChild(value.pixi);
             }
         });
     }
     else {
-        data.instance.mask = null;
+        instance.mask = null;
     }
     data.mask = value;
 }
 /**
- * Pull-sync: copies the plain display properties of the whole createjs tree to
- * the Pixi mirror. Runs once at the end of each tick, after `_tick()` has
- * resolved the createjs state.
+ * Push half of the sync: copies the plain display properties of the whole
+ * createjs tree to the Pixi mirror. Runs at the end of each handleTick and
+ * right before Pixi draws (the container's updateTransform), so that Pixi
+ * always draws the current createjs state, whenever it draws.
  *
+ * - A property is written only when its createjs value differs from the one
+ *   last written (or taken over, see pullFromPixi). Besides saving the Pixi
+ *   setters, this keeps a value written to the Pixi node
+ *   (`instance.pixi.x = 100`) in place until createjs writes that property
+ *   again, as AC2 did
  * - Invisible nodes are NOT skipped: switching to invisible is itself a state
  *   that must reach Pixi.
- * - No dirty tracking: the Pixi setters either are plain fields (renderable,
- *   visible, alpha) or contain their own equality checks (position, scale,
- *   skew, rotation, pivot), so unconditional copies never invalidate anything.
+ * - `_off` is not mapped: createjs draws whatever is on its display list
+ *   (`_off` only keeps the timeline from placing an object, and the display
+ *   list is mirrored to Pixi). `renderable` is left to Pixi, which turns it
+ *   off for nodes used as masks.
  */
 function syncToPixi(root) {
-    syncNode(root);
+    suspendPixiWriteLog();
+    pushNode(root);
+    resumePixiWriteLog();
 }
-function syncNode(cjs) {
-    const data = pixiDataStore.get(cjs);
+/**
+ * Pull half of the sync: takes values written to the Pixi nodes
+ * (`instance.pixi.x = 100`) over into the createjs properties. Runs before
+ * createjs plays a frame, so that a tween writing the property in that frame
+ * (even with the value it already had) replaces the Pixi-side write, as it
+ * did in AC2, and a property nothing writes keeps it. Only the nodes written
+ * through Pixi since the last call are visited (their transforms log the
+ * writes, see CjsTransform). `renderable` is not taken over (Pixi changes
+ * it itself for masks).
+ */
+function pullFromPixi() {
+    const writes = takePixiWrites();
+    for (let i = 0; i < writes.length; i++) {
+        const transform = writes[i];
+        transform.logged = false;
+        const cjs = transform.owner;
+        const data = cjs ? cjs[PIXI_DATA] : undefined;
+        if (cjs && data && data.transform === transform) {
+            pullNode(cjs, data);
+        }
+    }
+}
+/**
+ * Whether an object registered with pixi data is a display object (synced),
+ * not a Graphics (which only carries drawing commands).
+ */
+function isSyncNode(cjs) {
+    return 'x' in cjs && 'regX' in cjs && 'alpha' in cjs;
+}
+function pushNode(cjs) {
+    const data = cjs[PIXI_DATA];
     if (data) {
         const pixi = data.instance;
-        pixi.x = cjs.x;
-        pixi.y = cjs.y;
-        pixi.scale.x = cjs.scaleX;
-        pixi.scale.y = cjs.scaleY;
-        pixi.skew.x = -cjs.skewX * DEG_TO_RAD;
-        pixi.skew.y = cjs.skewY * DEG_TO_RAD;
-        pixi.rotation = cjs.rotation * DEG_TO_RAD;
-        data.regObj.x = cjs.regX;
-        data.regObj.y = cjs.regY;
-        pixi.visible = !!cjs.visible;
-        pixi.alpha = cjs.alpha;
-        pixi.renderable = !cjs._off;
+        const transform = data.transform;
+        // Each pair is written with one call (one change notification). An
+        // axis whose createjs value did not change keeps the Pixi node's
+        // current value, which may have been written through Pixi.
+        const x = cjs.x;
+        const y = cjs.y;
+        const xChanged = x !== data.syncedX;
+        const yChanged = y !== data.syncedY;
+        if (xChanged || yChanged) {
+            const position = transform.position;
+            position.set(xChanged ? (data.syncedX = x) : position.x, yChanged ? (data.syncedY = y) : position.y);
+        }
+        const scaleX = cjs.scaleX;
+        const scaleY = cjs.scaleY;
+        const scaleXChanged = scaleX !== data.syncedScaleX;
+        const scaleYChanged = scaleY !== data.syncedScaleY;
+        if (scaleXChanged || scaleYChanged) {
+            const scale = transform.scale;
+            scale.set(scaleXChanged ? (data.syncedScaleX = scaleX) : scale.x, scaleYChanged ? (data.syncedScaleY = scaleY) : scale.y);
+        }
+        const rotation = cjs.rotation;
+        const skewX = cjs.skewX;
+        const skewY = cjs.skewY;
+        const rotationChanged = rotation !== data.syncedRotation;
+        const skewXChanged = skewX !== data.syncedSkewX;
+        const skewYChanged = skewY !== data.syncedSkewY;
+        if (rotationChanged || skewXChanged || skewYChanged) {
+            transform.setRotationSkew(rotationChanged ? (data.syncedRotation = rotation) : transform.degRotation, skewXChanged ? (data.syncedSkewX = skewX) : transform.degSkewX, skewYChanged ? (data.syncedSkewY = skewY) : transform.degSkewY);
+        }
+        const regX = cjs.regX;
+        const regY = cjs.regY;
+        const regXChanged = regX !== data.syncedRegX;
+        const regYChanged = regY !== data.syncedRegY;
+        if (regXChanged || regYChanged) {
+            const regObj = data.regObj;
+            regObj.set(regXChanged ? (data.syncedRegX = regX) : regObj.x, regYChanged ? (data.syncedRegY = regY) : regObj.y);
+        }
+        const visible = !!cjs.visible;
+        if (visible !== data.syncedVisible) {
+            pixi.visible = data.syncedVisible = visible;
+        }
+        if (cjs.alpha !== data.syncedAlpha) {
+            pixi.alpha = data.syncedAlpha = cjs.alpha;
+        }
         const colorFilters = data.colorFilters;
         if (colorFilters) {
             for (let i = 0; i < colorFilters.length; i++) {
@@ -109,14 +482,58 @@ function syncNode(cjs) {
         // follow the mask reference explicitly or a tweened/nested mask never
         // receives its transform.
         if (data.mask) {
-            syncNode(data.mask);
+            pushNode(data.mask);
         }
     }
     const children = cjs.children;
     if (children) {
         for (let i = 0; i < children.length; i++) {
-            syncNode(children[i]);
+            pushNode(children[i]);
         }
+    }
+}
+function pullNode(cjs, data) {
+    const pixi = data.instance;
+    const transform = data.transform;
+    const x = transform.position.x;
+    if (x !== data.syncedX) {
+        cjs.x = data.syncedX = x;
+    }
+    const y = transform.position.y;
+    if (y !== data.syncedY) {
+        cjs.y = data.syncedY = y;
+    }
+    const scaleX = transform.scale.x;
+    if (scaleX !== data.syncedScaleX) {
+        cjs.scaleX = data.syncedScaleX = scaleX;
+    }
+    const scaleY = transform.scale.y;
+    if (scaleY !== data.syncedScaleY) {
+        cjs.scaleY = data.syncedScaleY = scaleY;
+    }
+    // CjsTransform turns a Pixi-side rotation / skew write into degrees
+    if (transform.degRotation !== data.syncedRotation) {
+        cjs.rotation = data.syncedRotation = transform.degRotation;
+    }
+    if (transform.degSkewX !== data.syncedSkewX) {
+        cjs.skewX = data.syncedSkewX = transform.degSkewX;
+    }
+    if (transform.degSkewY !== data.syncedSkewY) {
+        cjs.skewY = data.syncedSkewY = transform.degSkewY;
+    }
+    const regX = data.regObj.x;
+    if (regX !== data.syncedRegX) {
+        cjs.regX = data.syncedRegX = regX;
+    }
+    const regY = data.regObj.y;
+    if (regY !== data.syncedRegY) {
+        cjs.regY = data.syncedRegY = regY;
+    }
+    if (pixi.visible !== data.syncedVisible) {
+        cjs.visible = data.syncedVisible = pixi.visible;
+    }
+    if (pixi.alpha !== data.syncedAlpha) {
+        cjs.alpha = data.syncedAlpha = pixi.alpha;
     }
 }
 
@@ -360,6 +777,8 @@ class PixiMovieClip extends Container$1 {
         return this._createjs;
     }
 }
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiMovieClip.prototype);
 class AnimateEvent extends createjs.Event {
     constructor(type) {
         super(type);
@@ -398,7 +817,7 @@ const blendModes = {
  */
 function createPixiMovieClipData(cjs) {
     const pixi = new PixiMovieClip(cjs);
-    return Object.assign(createPixiData(pixi, pixi.pivot), {
+    return Object.assign(createPixiData(pixi, null), {
         subInstance: pixi,
         listenFrameEvents: {},
         filters: null,
@@ -531,6 +950,51 @@ class CreatejsMovieClip extends createjs.MovieClip {
             }
         }
     }
+    /**
+     * Settles the tree for drawing without playing on — what createjs does to
+     * each clip when the stage draws (MovieClip.draw -> _updateState): synched
+     * and single-frame clips are placed at the frame their parent gives. A
+     * clip waiting to start over (an independent clip reset when its parent
+     * placed it again, _rawPosition -1) is shown at its first frame the way
+     * createjs shows a new clip (_renderFirstFrame: no frame script, the
+     * playhead left as it was), so that it starts on the next frame played,
+     * as in the Animate template, where createjs draws only after a tick (a
+     * draw's _updateState would start it at once, a frame ahead). Children
+     * are settled after their parent, in the resolve phase's order. Used
+     * right before Pixi draws a tree whose timelines moved between frames
+     * (CreatejsController.flushForRender).
+     */
+    settleForPixi() {
+        if (this.mode !== createjs.MovieClip.INDEPENDENT) {
+            this._updateState();
+        }
+        else if (this._rawPosition === -1) {
+            this._renderFirstFrame();
+        }
+        const children = this.children.slice();
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
+            if (child instanceof CreatejsMovieClip) {
+                child.settleForPixi();
+            }
+        }
+    }
+    /**
+     * Delegated to the original; the tree is marked so that it is settled and
+     * synced before Pixi draws (a goto made between frames is drawn the way
+     * createjs would draw it, without waiting for the next frame).
+     */
+    gotoAndPlay(positionOrLabel) {
+        super.gotoAndPlay(positionOrLabel);
+        markForSettle(this);
+    }
+    /**
+     * See {@link CreatejsMovieClip.gotoAndPlay}.
+     */
+    gotoAndStop(positionOrLabel) {
+        super.gotoAndStop(positionOrLabel);
+        markForSettle(this);
+    }
     updateBlendModeForPixi(mode) {
         const data = ensureData$5(this);
         if (data.compositeOperation && blendModes[data.compositeOperation] === mode)
@@ -599,7 +1063,13 @@ class CreatejsMovieClip extends createjs.MovieClip {
             data.subInstance.addChild(child.pixi);
             this._updateChildrenBlendModeForPixi(child);
         }
-        return super.addChild(...children);
+        const res = super.addChild(...children);
+        // An application adding children between frames (a clip added this way
+        // has to be shown at its first frame before the next frame is played)
+        if (!isDriving()) {
+            markForSettle(this);
+        }
+        return res;
     }
     addChildAt(...childOrIndex) {
         const data = ensureData$5(this);
@@ -613,7 +1083,12 @@ class CreatejsMovieClip extends createjs.MovieClip {
                 }
             }
         }
-        return super.addChildAt(...childOrIndex);
+        const res = super.addChildAt(...childOrIndex);
+        // See addChild
+        if (!isDriving()) {
+            markForSettle(this);
+        }
+        return res;
     }
     removeChild(...children) {
         const data = ensureData$5(this);
@@ -679,6 +1154,8 @@ class PixiSprite extends Sprite {
         return this._createjs;
     }
 }
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiSprite.prototype);
 /**
  * @ignore
  */
@@ -796,12 +1273,14 @@ class PixiShape extends Container$1 {
         return this._createjs;
     }
 }
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiShape.prototype);
 /**
  * @ignore
  */
 function createPixiShapeData(cjs) {
     const pixi = new PixiShape(cjs);
-    return Object.assign(createPixiData(pixi, pixi.pivot), {
+    return Object.assign(createPixiData(pixi, null), {
         masked: [],
         graphics: null
     });
@@ -928,6 +1407,8 @@ class PixiBitmap extends Sprite {
         return this._createjs;
     }
 }
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiBitmap.prototype);
 /**
  * @ignore
  */
@@ -1033,7 +1514,7 @@ class PixiGraphics extends Graphics {
  */
 function createPixiGraphicsData(cjs) {
     const pixi = new PixiGraphics(cjs);
-    return Object.assign(createPixiData(pixi, pixi.pivot), {
+    return Object.assign(createPixiData(pixi, null), {
         strokeFill: 0,
         strokeAlpha: 1
     });
@@ -1323,6 +1804,8 @@ class PixiTextContainer extends Container$1 {
         return this._text;
     }
 }
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiTextContainer.prototype);
 /**
  * @ignore
  */
@@ -1336,7 +1819,7 @@ function createPixiTextData(cjs) {
     });
     const pixi = new PixiTextContainer(cjs, text);
     pixi.addChild(text);
-    return Object.assign(createPixiData(pixi, pixi.pivot), {
+    return Object.assign(createPixiData(pixi, null), {
         text: '',
         font: '',
         color: '',
@@ -1783,9 +2266,21 @@ function handleFileLoad(evt, comp) {
  * @ignore
  */
 const CreatejsEvent = createjs.Event;
+/**
+ * How many of the latest deltas the usual delta is the median of.
+ *
+ * @ignore
+ */
+const DELTA_SAMPLES = 30;
+/**
+ * The share of the distance to the real time the steady clock is pulled by on every call.
+ *
+ * @ignore
+ */
+const PULL = 0.05;
 class CreatejsController {
     /**
-     * Playback speed multiplier
+     * Playback speed multiplier (a value below 0, or NaN, is played as 0)
      */
     get speed() {
         return this._speed;
@@ -1802,9 +2297,22 @@ class CreatejsController {
     set overSpeed(value) {
         this._overSpeed = value;
     }
+    /**
+     * Whether frames are played by a steady clock, so that small changes of the delta do not make the playing uneven.
+     */
+    get smooth() {
+        return this._smooth;
+    }
+    set smooth(value) {
+        this._smooth = value;
+    }
     constructor(container) {
         this._speed = 1;
         this._overSpeed = true;
+        this._smooth = true;
+        /** The latest deltas (a ring of DELTA_SAMPLES) */
+        this._deltas = [];
+        this._nextDelta = 0;
         this._createjsData = {
             id: 0,
             targets: {},
@@ -1828,21 +2336,68 @@ class CreatejsController {
      * phase here, so updateStateForPixi() (the recursive _updateState walk)
      * must run per frame as its substitute — without it, SYNCHED clips never
      * move at all.
+     *
+     * Before a frame is played, values written to the Pixi nodes are taken
+     * over into createjs (pullFromPixi), so that a tween writing the property
+     * in that frame replaces them, as it did when the wrapper pushed every
+     * createjs write to Pixi. After the frames, the tree is synced to Pixi, so
+     * that code reading the Pixi nodes before the next render sees the frame.
+     *
+     * How many frames a call plays: every root is owed `delta x speed x fps /
+     * 60` frames a call (t). Without smooth, the whole frames of t are played.
+     * With smooth, the whole frames of a steady clock are played instead: the
+     * clock advances by the usual delta (the median of the latest deltas) on
+     * every call, half a step ahead of t (so that it sits midway between whole
+     * frames, where small changes of the delta do not move it across one), is
+     * pulled toward that point by PULL of the distance on every call, and is
+     * set to it when they are a frame apart (a display frame was missed).
+     * Without that, t sits on a frame boundary whenever the content's frame
+     * rate divides the display's (60 fps content on a 60 Hz display starts at
+     * 0, a boundary), and the jitter of the delta plays 0 frames on one call
+     * and 2 on the next. The frames and their order are the same either way.
+     * t never goes below 0 (the speed is at least 0), so the whole frames of t
+     * are its floor.
      */
     handleTick(delta) {
-        const d = delta * this._speed;
+        // Frames cannot be played backwards: a speed below 0 (or NaN) plays as 0,
+        // so that nothing is owed while it lasts and the content resumes at once
+        const speed = this._speed > 0 ? this._speed : 0;
+        const d = delta * speed;
+        const usual = this._usualDelta(delta) * speed;
+        beginDrive();
+        pullFromPixi();
         const targets = this._createjsData.targets;
         for (let i in targets) {
             const target = targets[i];
-            target.t += d * target.cjs.fps / 60;
-            let p = target.t | 0;
-            let frame = this._overSpeed ? p : Math.min(p, 1);
+            const fps = target.cjs.fps;
+            target.t += d * fps / 60;
+            const step = usual * fps / 60;
+            const lead = Math.min(step, 1) / 2;
             if (target.isFirst) {
                 target.isFirst = false;
+                target.clock = target.t + lead;
                 target.cjs.updateStateForPixi();
                 syncToPixi(target.cjs);
                 continue;
             }
+            let p;
+            if (this._smooth) {
+                target.clock += step;
+                const behind = target.t + lead - target.clock;
+                if (behind >= 1 || behind <= -1) {
+                    target.clock = target.t + lead;
+                }
+                else {
+                    target.clock += behind * PULL;
+                }
+                p = Math.max(Math.floor(target.clock), 0);
+                target.clock -= p;
+            }
+            else {
+                p = Math.floor(target.t);
+                target.clock = target.t - p;
+            }
+            const frame = this._overSpeed ? p : Math.min(p, 1);
             target.t -= p;
             for (let f = 0; f < frame; f++) {
                 target.cjs._tick(new CreatejsEvent('tick'));
@@ -1850,6 +2405,46 @@ class CreatejsController {
             }
             syncToPixi(target.cjs);
         }
+        endDrive();
+    }
+    /**
+     * Brings the Pixi mirror up to the current createjs state right before
+     * Pixi draws (called from the container's updateTransform, which a Pixi
+     * render calls on the tree before drawing). Pixi draws on every display
+     * frame, a content frame played or not, and what it draws has to be what
+     * createjs would draw at that moment:
+     *
+     * - a tree whose timelines moved outside handleTick (a goto made by the
+     *   application, a clip added between frames) is settled first, as a
+     *   createjs draw settles each clip (CreatejsMovieClip.settleForPixi)
+     * - every tree is synced, so that createjs properties written after
+     *   handleTick (by application code running later in the same display
+     *   frame) are drawn at once
+     */
+    flushForRender() {
+        beginDrive();
+        const targets = this._createjsData.targets;
+        for (let i in targets) {
+            const root = targets[i].cjs;
+            if (takeSettleMark(root)) {
+                root.settleForPixi();
+            }
+            syncToPixi(root);
+        }
+        endDrive();
+    }
+    /**
+     * Records a delta and gives the median of the latest ones (the median, so
+     * that an occasional long delta of a missed display frame does not drag
+     * the usual delta along).
+     */
+    _usualDelta(delta) {
+        const deltas = this._deltas;
+        deltas[this._nextDelta] = delta;
+        this._nextDelta = (this._nextDelta + 1) % DELTA_SAMPLES;
+        const sorted = deltas.slice().sort((a, b) => a - b);
+        const middle = sorted.length >> 1;
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
     }
     _addCreatejs(cjs) {
         if (cjs instanceof CreatejsMovieClip) {
@@ -1859,7 +2454,9 @@ class CreatejsController {
                     cjs.gotoAndPlay(0);
                 }
                 const id = this._createjsData.id++;
-                this._createjsData.targets[id] = { cjs, t: 0, isFirst: true };
+                this._createjsData.targets[id] = { cjs, t: 0, clock: 0, isFirst: true };
+                // drawn before its first handleTick: settled and synced first
+                markForSettle(cjs);
                 cjs.pixi.once('removed', () => {
                     delete (this._createjsData.targets[id]);
                 });
@@ -1903,8 +2500,22 @@ class Container extends Container$1 {
     set createjsOverSpeed(value) {
         this._createjsData.controller.overSpeed = value;
     }
+    get createjsSmooth() {
+        return this._createjsData.controller.smooth;
+    }
+    set createjsSmooth(value) {
+        this._createjsData.controller.smooth = value;
+    }
     handleTick(delta) {
         return this._createjsData.controller.handleTick(delta);
+    }
+    /**
+     * Pixi calls this on the tree before drawing: the createjs content is
+     * brought up to date first ({@link CreatejsController.flushForRender}).
+     */
+    updateTransform() {
+        this._createjsData.controller.flushForRender();
+        super.updateTransform();
     }
     addCreatejs(cjs) {
         return this._createjsData.controller.addCreatejs(cjs);
@@ -1929,5 +2540,5 @@ createjs.ColorFilter = CreatejsColorFilter;
 // install plugins
 createjs.MotionGuidePlugin.install();
 
-export { AnimateEvent, AnimateReachLabelEvent, CompositeOperations, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsEventManager, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsText, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, addInteractionListener, createPixiData, createjsInteractionEvents, findPixiData, getPixiColorMatrixFilter, loadAssetAsync, registerPixiData, removeAllInteractionListeners, removeInteractionListener, setMaskForPixi, syncToPixi };
+export { AnimateEvent, AnimateReachLabelEvent, CjsTransform, CompositeOperations, Container, CreatejsBitmap, CreatejsButtonHelper, CreatejsColorFilter, CreatejsController, CreatejsEventManager, CreatejsGraphics, CreatejsMovieClip, CreatejsShape, CreatejsSprite, CreatejsText, PIXI_DATA, PixiBitmap, PixiColorMatrixFilter, PixiGraphics, PixiMovieClip, PixiShape, PixiSprite, PixiText, PixiTextContainer, addInteractionListener, beginDrive, createPixiData, createjsInteractionEvents, endDrive, findPixiData, getPixiColorMatrixFilter, isDriving, loadAssetAsync, markForSettle, pullFromPixi, registerPixiData, removeAllInteractionListeners, removeInteractionListener, setMaskForPixi, syncToPixi, takeSettleMark };
 //# sourceMappingURL=pixi-animate-container.esm.js.map

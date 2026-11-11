@@ -5,6 +5,7 @@ import {
 	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
 import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
+import { logPixiWrites } from './transform';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
@@ -33,6 +34,9 @@ export class PixiTextContainer extends Container {
 		return this._text;
 	}
 }
+
+// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
+logPixiWrites(PixiTextContainer.prototype);
 
 export type TCreatejsTextAlign = 'left' | 'center' | 'right';
 
@@ -69,7 +73,7 @@ function createPixiTextData(cjs: CreatejsText): IPixiTextData {
 	const pixi = new PixiTextContainer(cjs, text);
 	pixi.addChild(text);
 
-	return Object.assign(createPixiData<PixiTextContainer>(pixi, pixi.pivot), {
+	return Object.assign(createPixiData<PixiTextContainer>(pixi, null), {
 		text: '',
 		font: '',
 		color: '',

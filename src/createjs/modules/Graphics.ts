@@ -37,7 +37,7 @@ export interface IPixiGraphicsData extends IPixiData<PixiGraphics> {
 function createPixiGraphicsData(cjs: CreatejsGraphics): IPixiGraphicsData {
 	const pixi = new PixiGraphics(cjs);
 
-	return Object.assign(createPixiData<PixiGraphics>(pixi, pixi.pivot), {
+	return Object.assign(createPixiData<PixiGraphics>(pixi, null), {
 		strokeFill: 0,
 		strokeAlpha: 1
 	});

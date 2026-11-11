@@ -8,3 +8,4 @@ export * from './Text';
 export * from './ButtonHelper';
 export * from './EventManager';
 export * from './ColorFilter';
+export { CjsTransform } from './transform';
