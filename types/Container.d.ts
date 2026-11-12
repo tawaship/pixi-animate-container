@@ -82,11 +82,11 @@ export declare class CreatejsController {
      * must run per frame as its substitute — without it, SYNCHED clips never
      * move at all.
      *
-     * Before a frame is played, values written to the Pixi nodes are taken
-     * over into createjs (pullFromPixi), so that a tween writing the property
-     * in that frame replaces them, as it did when the wrapper pushed every
-     * createjs write to Pixi. After the frames, the tree is synced to Pixi, so
-     * that code reading the Pixi nodes before the next render sees the frame.
+     * The display properties write through to the Pixi nodes as createjs writes
+     * them (see defineDisplayAccessors), so the Pixi mirror follows every
+     * frame with no copying walk. The color filter scalars (plain data
+     * properties of createjs ColorFilters) are copied by the Pixi nodes that
+     * carry the filters, right before they are drawn.
      *
      * How many frames a call plays: every root is owed `delta x speed x fps /
      * 60` frames a call (t). Without smooth, the whole frames of t are played.
@@ -112,11 +112,12 @@ export declare class CreatejsController {
      * createjs would draw at that moment:
      *
      * - a tree whose timelines moved outside handleTick (a goto made by the
-     *   application, a clip added between frames) is settled first, as a
-     *   createjs draw settles each clip (CreatejsMovieClip.settleForPixi)
-     * - every tree is synced, so that createjs properties written after
-     *   handleTick (by application code running later in the same display
-     *   frame) are drawn at once
+     *   application, a clip added between frames) is settled, as a createjs
+     *   draw settles each clip (CreatejsMovieClip.settleForPixi)
+     *
+     * Display properties written after handleTick need nothing here: they
+     * reached the Pixi nodes when they were written. Color filters are brought
+     * up to date by the nodes that carry them (PixiMovieClip.updateTransform).
      */
     flushForRender(): void;
     /**

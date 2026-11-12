@@ -40,58 +40,21 @@ const DEG_TO_RAD = Math.PI / 180;
  */
 const RAD_TO_DEG = 180 / Math.PI;
 /**
- * Transforms of nodes written through Pixi since the last take
- * (see {@link CjsTransform.logPixiWrite}).
+ * A Pixi Transform whose rotation and skew follow createjs.
  *
- * @ignore
- */
-let pixiWrites = [];
-/**
- * @ignore
- */
-let logSuspended = 0;
-/**
- * Brackets the wrapper's own writes to Pixi nodes (the sync), which are not
- * Pixi-side writes to take over.
- */
-function suspendPixiWriteLog() {
-    logSuspended++;
-}
-function resumePixiWriteLog() {
-    logSuspended--;
-}
-/**
- * The transforms of the nodes written through Pixi since the last call
- * (each once), clearing the log.
- */
-function takePixiWrites() {
-    const writes = pixiWrites;
-    if (writes.length) {
-        pixiWrites = [];
-    }
-    return writes;
-}
-/**
- * A Pixi Transform whose rotation and skew follow createjs, and which logs
- * writes made through Pixi.
- *
- * - The createjs values (degrees) are kept as written, so that reading them
- *   back gives exactly what was written (a degrees -> radians -> degrees
- *   round trip does not)
+ * - The createjs values (degrees) are kept as written, so that the matrix is
+ *   built from exactly them (a degrees -> radians -> degrees round trip would
+ *   not give them back)
  * - Pixi's own fields carry the same values in Pixi's terms (rotation in
  *   radians, skew.x = -skewX, skew.y = skewY, all in radians), so code that
  *   uses the Pixi node sees the values it always saw. A write made through
- *   Pixi (node.rotation, node.skew) becomes the new createjs value
+ *   Pixi (node.rotation, node.skew) is converted to degrees and used
  * - The local matrix is built the createjs way (Matrix2D.appendTransform):
  *   skew x (rotation x scale), i.e. the object is rotated first and then
  *   skewed. Pixi composes them the other way round (skewed, then rotated as
  *   a whole); the two agree only while the rotation is 0 or skewX equals
  *   skewY. A rotation that is a multiple of 360 is taken as exactly none, as
  *   createjs does
- * - A change made through Pixi to the node's position, scale, pivot,
- *   rotation or skew (and, through the node classes, its anchor, alpha and
- *   visible) is logged once per node, so that the wrapper takes it over into
- *   createjs without walking the whole tree
  */
 class CjsTransform extends PIXI.Transform {
     constructor() {
@@ -102,67 +65,71 @@ class CjsTransform extends PIXI.Transform {
         this.degSkewX = 0;
         /** createjs skewY, in degrees */
         this.degSkewY = 0;
-        /** The createjs object this node mirrors (null until the wrapper links it) */
-        this.owner = null;
-        /** Whether the node is in the write log */
-        this.logged = false;
         /** The radians last written to the Pixi fields for the values above */
         this._radRotation = 0;
         this._radSkewX = 0;
         this._radSkewY = 0;
     }
     /**
-     * Logs a Pixi-side write to the node (once until the log is taken).
+     * Writes the createjs rotation (degrees). Nothing is computed when the
+     * node already has it (tweens write every property they have on every
+     * frame, value changed or not).
      */
-    logPixiWrite() {
-        if (!logSuspended && !this.logged && this.owner) {
-            this.logged = true;
-            pixiWrites.push(this);
+    setRotation(degrees) {
+        if (degrees === this.degRotation && this._rotation === this._radRotation) {
+            return;
         }
+        this.degRotation = degrees;
+        this._radRotation = degrees * DEG_TO_RAD;
+        this._rotation = this._radRotation;
+        this.updateSkew();
     }
     /**
-     * Writes the createjs rotation, skewX and skewY (degrees), computing the
-     * matrix once.
+     * Writes the createjs skewX (degrees). See setRotation.
      */
-    setRotationSkew(rotation, skewX, skewY) {
-        this.degRotation = rotation;
-        this._radRotation = rotation * DEG_TO_RAD;
-        this._rotation = this._radRotation;
-        this.degSkewX = skewX;
-        this._radSkewX = -skewX * DEG_TO_RAD;
-        this.degSkewY = skewY;
-        this._radSkewY = skewY * DEG_TO_RAD;
-        if (this.skew.x !== this._radSkewX || this.skew.y !== this._radSkewY) {
+    setSkewX(degrees) {
+        if (degrees === this.degSkewX && this.skew.x === this._radSkewX) {
+            return;
+        }
+        this.degSkewX = degrees;
+        this._radSkewX = -degrees * DEG_TO_RAD;
+        if (this.skew.x !== this._radSkewX) {
             // Setting the point calls updateSkew when the value changes
-            this.skew.set(this._radSkewX, this._radSkewY);
+            this.skew.x = this._radSkewX;
         }
         else {
             this.updateSkew();
         }
     }
     /**
-     * Called by the position, scale and pivot points when they change.
+     * Writes the createjs skewY (degrees). See setRotation.
      */
-    onChange() {
-        this._localID++;
-        this.logPixiWrite();
+    setSkewY(degrees) {
+        if (degrees === this.degSkewY && this.skew.y === this._radSkewY) {
+            return;
+        }
+        this.degSkewY = degrees;
+        this._radSkewY = degrees * DEG_TO_RAD;
+        if (this.skew.y !== this._radSkewY) {
+            this.skew.y = this._radSkewY;
+        }
+        else {
+            this.updateSkew();
+        }
     }
     updateSkew() {
-        // Values written through Pixi become the createjs values
+        // Values written through Pixi are converted to degrees
         if (this._rotation !== this._radRotation) {
             this._radRotation = this._rotation;
             this.degRotation = this._rotation * RAD_TO_DEG;
-            this.logPixiWrite();
         }
         if (this.skew.x !== this._radSkewX) {
             this._radSkewX = this.skew.x;
             this.degSkewX = -this.skew.x * RAD_TO_DEG;
-            this.logPixiWrite();
         }
         if (this.skew.y !== this._radSkewY) {
             this._radSkewY = this.skew.y;
             this.degSkewY = this.skew.y * RAD_TO_DEG;
-            this.logPixiWrite();
         }
         // createjs Matrix2D.appendTransform: (skew) x (rotation, scale)
         let cos = 1;
@@ -193,54 +160,7 @@ class CjsTransform extends PIXI.Transform {
         this._localID++;
     }
 }
-/**
- * Makes `alpha` and `visible` of a Pixi node class log changes made through
- * Pixi (see {@link CjsTransform.logPixiWrite}). Pixi declares them as plain
- * fields, which an accessor in a subclass body cannot override (TS2611), so
- * they are defined on the prototype; the getters are plain field reads.
- */
-function logPixiWrites(proto) {
-    Object.defineProperty(proto, 'alpha', {
-        configurable: true,
-        enumerable: true,
-        get() {
-            return this._cjsAlpha;
-        },
-        set(value) {
-            if (this._cjsAlpha !== value) {
-                this._cjsAlpha = value;
-                if (this.transform instanceof CjsTransform) {
-                    this.transform.logPixiWrite();
-                }
-            }
-        }
-    });
-    Object.defineProperty(proto, 'visible', {
-        configurable: true,
-        enumerable: true,
-        get() {
-            return this._cjsVisible;
-        },
-        set(value) {
-            if (this._cjsVisible !== value) {
-                this._cjsVisible = value;
-                if (this.transform instanceof CjsTransform) {
-                    this.transform.logPixiWrite();
-                }
-            }
-        }
-    });
-}
 
-/**
- * Key of the wrapper data on a createjs object (a display object or a
- * Graphics). The wrapper data is held by the object itself, not by a WeakMap:
- * it is read on every node on every frame and on every display-list change,
- * and a property costs less to read and to set up. A symbol key keeps the
- * createjs object's surface as it is: for-in, Object.keys and
- * Object.getOwnPropertyNames do not show it.
- */
-const PIXI_DATA = Symbol('pixiData');
 /**
  * Creates the wrapper data of a Pixi node and gives the node a
  * {@link CjsTransform}. `anchor` is where createjs's regX / regY go when it
@@ -251,52 +171,178 @@ function createPixiData(pixi, anchor) {
     const transform = new CjsTransform();
     pixi.transform = transform;
     return {
-        owner: null,
         regObj: anchor || pixi.pivot,
         instance: pixi,
         transform,
         reservedBlendMode: PIXI.BLEND_MODES.NORMAL,
+        compositeOperation: null,
         mask: null,
         colorFilters: null,
-        syncedX: 0,
-        syncedY: 0,
-        syncedScaleX: 1,
-        syncedScaleY: 1,
-        syncedRotation: 0,
-        syncedSkewX: 0,
-        syncedSkewY: 0,
-        syncedRegX: 0,
-        syncedRegY: 0,
-        syncedVisible: true,
-        syncedAlpha: 1
+        cjsX: 0,
+        cjsY: 0,
+        cjsScaleX: 1,
+        cjsScaleY: 1,
+        cjsRotation: 0,
+        cjsSkewX: 0,
+        cjsSkewY: 0,
+        cjsRegX: 0,
+        cjsRegY: 0,
+        cjsVisible: true,
+        cjsAlpha: 1
     };
 }
 /**
- * Links new wrapper data to the createjs object it was stored on (each class
- * module stores it under PIXI_DATA itself, with its own data type): the data
- * learns its owner (see IPixiData.owner), and the node's transform too, so
- * that values written through Pixi can be taken over into that object (see
- * pullFromPixi).
+ * The Pixi blend modes of the createjs compositeOperation values Pixi can draw.
+ *
+ * @ignore
  */
-function registerPixiData(cjs, data) {
-    data.owner = cjs;
-    if (isSyncNode(cjs)) {
-        data.transform.owner = cjs;
+const BLEND_MODE_OF_OPERATION = {
+    'source-over': PIXI.BLEND_MODES.NORMAL,
+    'lighter': PIXI.BLEND_MODES.ADD,
+    'multiply': PIXI.BLEND_MODES.MULTIPLY,
+    'screen': PIXI.BLEND_MODES.SCREEN
+};
+/**
+ * The blend mode a node draws its content with, as createjs draws it: its own
+ * compositeOperation, or else the one in effect where its parent is drawn
+ * (`reservedBlendMode`, passed down by the parent). createjs sets a node's
+ * compositeOperation on the context for the draw of the node and its whole
+ * subtree (DisplayObject.updateContext, inside save / restore), so a
+ * descendant's own value replaces it for that descendant's subtree only.
+ * A value Pixi cannot draw is drawn as the inherited one.
+ */
+function blendModeForPixi(data) {
+    const operation = data.compositeOperation;
+    if (operation && Object.prototype.hasOwnProperty.call(BLEND_MODE_OF_OPERATION, operation)) {
+        return BLEND_MODE_OF_OPERATION[operation];
     }
+    return data.reservedBlendMode;
 }
 /**
- * The wrapper data of a createjs object, or null when it has none.
+ * External store keyed by the createjs instance. Keyed by the object itself,
+ * a lookup never finds the data of a prototype: published symbols use a
+ * createjs instance as their prototype (`p = new cjs.MovieClip()`), which
+ * has wrapper data of its own.
+ * Each class module additionally keeps its own store with a more concrete data type;
+ * this one serves the type-agnostic consumers (sync walk, mask helper).
  */
-function findPixiData(cjs) {
-    const data = cjs[PIXI_DATA];
-    return data && data.owner === cjs ? data : null;
+const pixiDataStore = new WeakMap();
+function registerPixiData(cjs, data) {
+    pixiDataStore.set(cjs, data);
 }
+function findPixiData(cjs) {
+    const data = pixiDataStore.get(cjs);
+    return data ? data : null;
+}
+/**
+ * The display properties every wrapper display object class gets as
+ * accessors (see defineDisplayAccessors). One list for all classes, so that
+ * no class can miss one; test/harness checks that every class has them.
+ */
+const DISPLAY_ACCESSOR_NAMES = ['x', 'y', 'scaleX', 'scaleY', 'rotation', 'skewX', 'skewY', 'regX', 'regY', 'visible', 'alpha'];
+/**
+ * Makes the display properties of a wrapper display object class write
+ * through to its Pixi node at once: every write on the createjs side
+ * (timeline, frame scripts, application code) reaches the Pixi node when it
+ * is made, so Pixi draws the createjs state whenever it draws, with no walk
+ * to copy it over.
+ *
+ * - The createjs-side value is kept in the wrapper data and read back from
+ *   there. A value written to the Pixi node (`instance.pixi.x = 100`) stays
+ *   until the createjs side writes that property again, and the createjs
+ *   side still reads its own value (AC2's behavior)
+ * - Every write is passed to the Pixi node, even with the value it had, so
+ *   that a tween writing the property puts a Pixi-side write back (Pixi's
+ *   setters compare the value themselves)
+ * - The data is looked up (and made the first time) by `getData`: the
+ *   createjs constructor writes these properties inside `super()`, before
+ *   the wrapper's constructor body runs, and the first write creates the data
+ * - `_off` is not mapped: createjs draws whatever is on its display list
+ *   (`_off` only keeps the timeline from placing an object, and the display
+ *   list is mirrored to Pixi). `renderable` is left to Pixi, which turns it
+ *   off for nodes used as masks.
+ *
+ * Pixi declares these as plain fields of the createjs-side classes' types,
+ * which an accessor in a subclass body cannot override (TS2611), so they are
+ * defined on the prototype; they are enumerable, so that for-in on an
+ * instance still lists them.
+ */
+function defineDisplayAccessors(proto, getData) {
+    function define(name, get, set) {
+        Object.defineProperty(proto, name, { configurable: true, enumerable: true, get, set });
+    }
+    define('x', function () { return getData(this).cjsX; }, function (value) {
+        const data = getData(this);
+        data.cjsX = value;
+        data.transform.position.x = value;
+    });
+    define('y', function () { return getData(this).cjsY; }, function (value) {
+        const data = getData(this);
+        data.cjsY = value;
+        data.transform.position.y = value;
+    });
+    define('scaleX', function () { return getData(this).cjsScaleX; }, function (value) {
+        const data = getData(this);
+        data.cjsScaleX = value;
+        data.transform.scale.x = value;
+    });
+    define('scaleY', function () { return getData(this).cjsScaleY; }, function (value) {
+        const data = getData(this);
+        data.cjsScaleY = value;
+        data.transform.scale.y = value;
+    });
+    define('rotation', function () { return getData(this).cjsRotation; }, function (value) {
+        const data = getData(this);
+        data.cjsRotation = value;
+        data.transform.setRotation(value);
+    });
+    define('skewX', function () { return getData(this).cjsSkewX; }, function (value) {
+        const data = getData(this);
+        data.cjsSkewX = value;
+        data.transform.setSkewX(value);
+    });
+    define('skewY', function () { return getData(this).cjsSkewY; }, function (value) {
+        const data = getData(this);
+        data.cjsSkewY = value;
+        data.transform.setSkewY(value);
+    });
+    define('regX', function () { return getData(this).cjsRegX; }, function (value) {
+        const data = getData(this);
+        data.cjsRegX = value;
+        data.regObj.x = value;
+    });
+    define('regY', function () { return getData(this).cjsRegY; }, function (value) {
+        const data = getData(this);
+        data.cjsRegY = value;
+        data.regObj.y = value;
+    });
+    define('visible', function () { return getData(this).cjsVisible; }, function (value) {
+        const data = getData(this);
+        data.cjsVisible = value;
+        data.instance.visible = !!value;
+    });
+    define('alpha', function () { return getData(this).cjsAlpha; }, function (value) {
+        const data = getData(this);
+        data.cjsAlpha = value;
+        data.instance.alpha = value;
+    });
+}
+/**
+ * Roots (tops of createjs trees) whose timelines moved outside the driver,
+ * so that the clips under them have to be settled before Pixi draws
+ * (CreatejsController.flushForRender). createjs settles synched / single
+ * frame clips and clips waiting to start over when it draws (MovieClip.draw
+ * -> _updateState); the driver does that after every frame it plays, but a
+ * goto made by the application between frames, or a clip added between
+ * frames, would otherwise be drawn unsettled until the next frame is played.
+ */
+const settleMarks = new WeakSet();
 /**
  * @ignore
  */
 let driveDepth = 0;
 /**
- * Brackets the driver's own work (playing frames, settling, syncing): the
+ * Brackets the driver's own work (playing frames, settling): the
  * display-list churn createjs makes while resolving a frame is not an
  * application change and marks nothing.
  */
@@ -308,6 +354,26 @@ function endDrive() {
 }
 function isDriving() {
     return driveDepth > 0;
+}
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
+ */
+function markForSettle(node) {
+    let top = node;
+    while (top.parent) {
+        top = top.parent;
+    }
+    settleMarks.add(top);
+}
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+function takeSettleMark(root) {
+    if (!settleMarks.has(root)) {
+        return false;
+    }
+    settleMarks.delete(root);
+    return true;
 }
 /**
  * Shared implementation of the mask setter (push layer).
@@ -356,230 +422,111 @@ function setMaskForPixi(data, value) {
     }
     data.mask = value;
 }
+function syncColorFilterPairs(colorFilters) {
+    for (let i = 0; i < colorFilters.length; i++) {
+        const source = colorFilters[i].source;
+        const matrix = colorFilters[i].matrix;
+        matrix[0] = source.redMultiplier;
+        matrix[6] = source.greenMultiplier;
+        matrix[12] = source.blueMultiplier;
+        matrix[18] = source.alphaMultiplier;
+        matrix[4] = source.redOffset / 255;
+        matrix[9] = source.greenOffset / 255;
+        matrix[14] = source.blueOffset / 255;
+        matrix[19] = source.alphaOffset / 255;
+    }
+}
 /**
- * Push half of the sync: copies the plain display properties of the whole
- * createjs tree to the Pixi mirror. Runs at the end of each handleTick and
- * right before Pixi draws (the container's updateTransform), so that Pixi
- * always draws the current createjs state, whenever it draws.
- *
- * - A property is written only when its createjs value differs from the one
- *   last written (or taken over, see pullFromPixi). Besides saving the Pixi
- *   setters, this keeps a value written to the Pixi node
- *   (`instance.pixi.x = 100`) in place until createjs writes that property
- *   again, as AC2 did
- * - Invisible nodes are NOT skipped: switching to invisible is itself a state
- *   that must reach Pixi.
- * - `_off` is not mapped: createjs draws whatever is on its display list
- *   (`_off` only keeps the timeline from placing an object, and the display
- *   list is mirrored to Pixi). `renderable` is left to Pixi, which turns it
- *   off for nodes used as masks.
+ * Copies the color filter scalars of a whole createjs tree (children and
+ * mask references) into their Pixi filters' matrices. The display properties
+ * need no copying (they write through at once, see defineDisplayAccessors).
  */
 function syncToPixi(root) {
-    suspendPixiWriteLog();
-    pushNode(root);
-    resumePixiWriteLog();
-}
-/**
- * Pull half of the sync: takes values written to the Pixi nodes
- * (`instance.pixi.x = 100`) over into the createjs properties. Runs before
- * createjs plays a frame, so that a tween writing the property in that frame
- * (even with the value it already had) replaces the Pixi-side write, as it
- * did in AC2, and a property nothing writes keeps it. Only the nodes written
- * through Pixi since the last call are visited (their transforms log the
- * writes, see CjsTransform). `renderable` is not taken over (Pixi changes
- * it itself for masks).
- */
-function pullFromPixi() {
-    const writes = takePixiWrites();
-    for (let i = 0; i < writes.length; i++) {
-        const transform = writes[i];
-        transform.logged = false;
-        const cjs = transform.owner;
-        const data = cjs ? cjs[PIXI_DATA] : undefined;
-        if (cjs && data && data.owner === cjs && data.transform === transform) {
-            pullNode(cjs, data);
+    const data = pixiDataStore.get(root);
+    if (data) {
+        if (data.colorFilters) {
+            syncColorFilterPairs(data.colorFilters);
         }
-    }
-}
-/**
- * Whether an object registered with pixi data is a display object (synced),
- * not a Graphics (which only carries drawing commands).
- */
-function isSyncNode(cjs) {
-    return 'x' in cjs && 'regX' in cjs && 'alpha' in cjs;
-}
-function pushNode(cjs) {
-    const data = cjs[PIXI_DATA];
-    if (data && data.owner === cjs) {
-        const pixi = data.instance;
-        const transform = data.transform;
-        // Each pair is written with one call (one change notification). An
-        // axis whose createjs value did not change keeps the Pixi node's
-        // current value, which may have been written through Pixi.
-        const x = cjs.x;
-        const y = cjs.y;
-        const xChanged = x !== data.syncedX;
-        const yChanged = y !== data.syncedY;
-        if (xChanged || yChanged) {
-            const position = transform.position;
-            position.set(xChanged ? (data.syncedX = x) : position.x, yChanged ? (data.syncedY = y) : position.y);
-        }
-        const scaleX = cjs.scaleX;
-        const scaleY = cjs.scaleY;
-        const scaleXChanged = scaleX !== data.syncedScaleX;
-        const scaleYChanged = scaleY !== data.syncedScaleY;
-        if (scaleXChanged || scaleYChanged) {
-            const scale = transform.scale;
-            scale.set(scaleXChanged ? (data.syncedScaleX = scaleX) : scale.x, scaleYChanged ? (data.syncedScaleY = scaleY) : scale.y);
-        }
-        const rotation = cjs.rotation;
-        const skewX = cjs.skewX;
-        const skewY = cjs.skewY;
-        const rotationChanged = rotation !== data.syncedRotation;
-        const skewXChanged = skewX !== data.syncedSkewX;
-        const skewYChanged = skewY !== data.syncedSkewY;
-        if (rotationChanged || skewXChanged || skewYChanged) {
-            transform.setRotationSkew(rotationChanged ? (data.syncedRotation = rotation) : transform.degRotation, skewXChanged ? (data.syncedSkewX = skewX) : transform.degSkewX, skewYChanged ? (data.syncedSkewY = skewY) : transform.degSkewY);
-        }
-        const regX = cjs.regX;
-        const regY = cjs.regY;
-        const regXChanged = regX !== data.syncedRegX;
-        const regYChanged = regY !== data.syncedRegY;
-        if (regXChanged || regYChanged) {
-            const regObj = data.regObj;
-            regObj.set(regXChanged ? (data.syncedRegX = regX) : regObj.x, regYChanged ? (data.syncedRegY = regY) : regObj.y);
-        }
-        const visible = !!cjs.visible;
-        if (visible !== data.syncedVisible) {
-            pixi.visible = data.syncedVisible = visible;
-        }
-        if (cjs.alpha !== data.syncedAlpha) {
-            pixi.alpha = data.syncedAlpha = cjs.alpha;
-        }
-        const colorFilters = data.colorFilters;
-        if (colorFilters) {
-            for (let i = 0; i < colorFilters.length; i++) {
-                const source = colorFilters[i].source;
-                const matrix = colorFilters[i].matrix;
-                matrix[0] = source.redMultiplier;
-                matrix[6] = source.greenMultiplier;
-                matrix[12] = source.blueMultiplier;
-                matrix[18] = source.alphaMultiplier;
-                matrix[4] = source.redOffset / 255;
-                matrix[9] = source.greenOffset / 255;
-                matrix[14] = source.blueOffset / 255;
-                matrix[19] = source.alphaOffset / 255;
-            }
-        }
-        // Mask shapes live OUTSIDE the children tree (publish output keeps them
-        // as standalone _off shapes referenced by `mask` only), so the walk must
-        // follow the mask reference explicitly or a tweened/nested mask never
-        // receives its transform.
         if (data.mask) {
-            pushNode(data.mask);
+            syncToPixi(data.mask);
         }
     }
-    const children = cjs.children;
+    const children = root.children;
     if (children) {
         for (let i = 0; i < children.length; i++) {
-            pushNode(children[i]);
+            syncToPixi(children[i]);
         }
-    }
-}
-function pullNode(cjs, data) {
-    const pixi = data.instance;
-    const transform = data.transform;
-    const x = transform.position.x;
-    if (x !== data.syncedX) {
-        cjs.x = data.syncedX = x;
-    }
-    const y = transform.position.y;
-    if (y !== data.syncedY) {
-        cjs.y = data.syncedY = y;
-    }
-    const scaleX = transform.scale.x;
-    if (scaleX !== data.syncedScaleX) {
-        cjs.scaleX = data.syncedScaleX = scaleX;
-    }
-    const scaleY = transform.scale.y;
-    if (scaleY !== data.syncedScaleY) {
-        cjs.scaleY = data.syncedScaleY = scaleY;
-    }
-    // CjsTransform turns a Pixi-side rotation / skew write into degrees
-    if (transform.degRotation !== data.syncedRotation) {
-        cjs.rotation = data.syncedRotation = transform.degRotation;
-    }
-    if (transform.degSkewX !== data.syncedSkewX) {
-        cjs.skewX = data.syncedSkewX = transform.degSkewX;
-    }
-    if (transform.degSkewY !== data.syncedSkewY) {
-        cjs.skewY = data.syncedSkewY = transform.degSkewY;
-    }
-    const regX = data.regObj.x;
-    if (regX !== data.syncedRegX) {
-        cjs.regX = data.syncedRegX = regX;
-    }
-    const regY = data.regObj.y;
-    if (regY !== data.syncedRegY) {
-        cjs.regY = data.syncedRegY = regY;
-    }
-    if (pixi.visible !== data.syncedVisible) {
-        cjs.visible = data.syncedVisible = pixi.visible;
-    }
-    if (pixi.alpha !== data.syncedAlpha) {
-        cjs.alpha = data.syncedAlpha = pixi.alpha;
     }
 }
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.filters.ColorMatrixFilter.html | PIXI.filters.ColorMatrixFilter}
+ *
+ * Its matrix follows the 8 scalars of its createjs ColorFilter. They are
+ * plain data properties (tweens write them), so they are copied over when
+ * the filter is about to be drawn (see PixiMovieClip.updateTransform) and
+ * when `matrix` is read.
  */
 class PixiColorMatrixFilter extends PIXI.filters.ColorMatrixFilter {
     constructor(cjs) {
         super();
         this._createjs = cjs;
+        this.syncFromCreatejs();
     }
     get createjs() {
         return this._createjs;
     }
+    // pixi.js declares `matrix` as a plain field of ColorMatrixFilter, while it
+    // is an accessor on its prototype (get/set of uniforms.m); TypeScript's
+    // accessor-over-property check (TS2611) only sees the declaration.
+    // @ts-expect-error TS2611 - see above
+    get matrix() {
+        this.syncFromCreatejs();
+        return this.uniforms.m;
+    }
+    set matrix(value) {
+        this.uniforms.m = value;
+    }
+    /**
+     * Copies the scalars of the createjs ColorFilter into the matrix.
+     */
+    syncFromCreatejs() {
+        const filter = this._createjs;
+        if (!filter) {
+            // inside the Pixi constructor
+            return;
+        }
+        const matrix = this.uniforms.m;
+        matrix[0] = filter.redMultiplier;
+        matrix[6] = filter.greenMultiplier;
+        matrix[12] = filter.blueMultiplier;
+        matrix[18] = filter.alphaMultiplier;
+        matrix[4] = filter.redOffset / 255;
+        matrix[9] = filter.greenOffset / 255;
+        matrix[14] = filter.blueOffset / 255;
+        matrix[19] = filter.alphaOffset / 255;
+    }
 }
 /**
- * Key of the paired Pixi filter on the createjs filter. A symbol key keeps
- * the createjs instance's surface as it is (for-in, Object.keys and
- * Object.getOwnPropertyNames show exactly the original 8 scalars; tween's
- * for-in sees the same surface as with the original createjs).
+ * External store for the paired Pixi filter, so that the createjs instance
+ * carries no wrapper metadata (its own properties are exactly the original 8
+ * scalars; tween's for-in sees the same surface as with the original createjs).
  */
-const PIXI_FILTER = Symbol('pixiFilter');
-/**
- * @ignore
- */
-function syncMatrix(filter, pixi) {
-    const matrix = pixi.matrix;
-    matrix[0] = filter.redMultiplier;
-    matrix[6] = filter.greenMultiplier;
-    matrix[12] = filter.blueMultiplier;
-    matrix[18] = filter.alphaMultiplier;
-    matrix[4] = filter.redOffset / 255;
-    matrix[9] = filter.greenOffset / 255;
-    matrix[14] = filter.blueOffset / 255;
-    matrix[19] = filter.alphaOffset / 255;
-}
+const pixiFilterStore = new WeakMap();
 function getPixiColorMatrixFilter(filter) {
-    let pixi = filter[PIXI_FILTER];
-    // its own filter only (a symbol-keyed property is inherited through the prototype chain)
-    if (!pixi || pixi.createjs !== filter) {
+    let pixi = pixiFilterStore.get(filter);
+    if (!pixi) {
         pixi = new PixiColorMatrixFilter(filter);
-        syncMatrix(filter, pixi);
-        filter[PIXI_FILTER] = pixi;
+        pixiFilterStore.set(filter, pixi);
     }
     return pixi;
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/ColorFilter.html | createjs.ColorFilter}
  *
- * The 8 scalars (redMultiplier etc.) are plain data properties; they are copied
- * into the paired Pixi filter's matrix by the pull-sync pass at the end of each
- * tick (see core.ts syncToPixi), not by accessors.
+ * The 8 scalars (redMultiplier etc.) are plain data properties; the paired Pixi
+ * filter copies them into its matrix before it is drawn and when its matrix is
+ * read (see PixiColorMatrixFilter), not by accessors.
  */
 class CreatejsColorFilter extends createjs.ColorFilter {
     constructor(...args) {
@@ -600,14 +547,6 @@ exports.createjsInteractionEvents = void 0;
     createjsInteractionEvents["click"] = "click";
 })(exports.createjsInteractionEvents || (exports.createjsInteractionEvents = {}));
 class CreatejsEventManager {
-    /**
-     * Whether this is the manager of `cjs` (a symbol-keyed property is
-     * inherited through the prototype chain, so the one found may be a
-     * prototype's).
-     */
-    isFor(cjs) {
-        return this._cjs === cjs;
-    }
     constructor(cjs) {
         this._downTarget = null;
         this._cjs = cjs;
@@ -727,21 +666,19 @@ class CreatejsEventManager {
     }
 }
 /**
- * Key of the event manager on the createjs instance (every display wrapper
- * class declares it). The manager (and its pointer handlers on the Pixi
- * instance) is created lazily on the first listener registration, so
- * instances that never listen pay nothing. A symbol key keeps the createjs
- * object's surface as it is.
+ * External store keyed by the createjs instance. The manager (and its pointer
+ * handlers on the Pixi instance) is created lazily on the first listener
+ * registration, so instances that never listen pay nothing.
  */
-const EVENT_MANAGER = Symbol('eventManager');
+const eventManagerStore = new WeakMap();
 /**
  * @ignore
  */
 function getEventManager(cjs) {
-    let manager = cjs[EVENT_MANAGER];
-    if (!manager || !manager.isFor(cjs)) {
+    let manager = eventManagerStore.get(cjs);
+    if (!manager) {
         manager = new CreatejsEventManager(cjs);
-        cjs[EVENT_MANAGER] = manager;
+        eventManagerStore.set(cjs, manager);
     }
     return manager;
 }
@@ -752,14 +689,14 @@ function addInteractionListener(cjs, type, cb) {
     getEventManager(cjs).add(type, cb);
 }
 function removeInteractionListener(cjs, type, cb) {
-    const manager = cjs[EVENT_MANAGER];
-    if (manager && manager.isFor(cjs)) {
+    const manager = eventManagerStore.get(cjs);
+    if (manager) {
         manager.remove(type, cb);
     }
 }
 function removeAllInteractionListeners(cjs, type) {
-    const manager = cjs[EVENT_MANAGER];
-    if (manager && manager.isFor(cjs)) {
+    const manager = eventManagerStore.get(cjs);
+    if (manager) {
         manager.removeAll(type);
     }
 }
@@ -771,7 +708,33 @@ class PixiMovieClip extends PIXI.Container {
     constructor(cjs) {
         super();
         this._filterContainer = null;
+        this._colorFilters = null;
         this._createjs = cjs;
+    }
+    /**
+     * Sets the color filters whose matrices follow their createjs ColorFilters
+     * (see updateTransform).
+     *
+     * @ignore
+     */
+    setColorFiltersForPixi(value) {
+        this._colorFilters = value;
+    }
+    /**
+     * Copies the color filter scalars (plain data properties that tweens write)
+     * into the filters' matrices, then updates the transforms as usual. Pixi
+     * calls this on every node it is about to draw, so the filters drawn always
+     * carry the current createjs values, and a node no longer drawn (or
+     * discarded) costs nothing.
+     */
+    updateTransform() {
+        const colorFilters = this._colorFilters;
+        if (colorFilters) {
+            for (let i = 0; i < colorFilters.length; i++) {
+                colorFilters[i].syncFromCreatejs();
+            }
+        }
+        super.updateTransform();
     }
     get filterContainer() {
         return this._filterContainer;
@@ -783,8 +746,6 @@ class PixiMovieClip extends PIXI.Container {
         return this._createjs;
     }
 }
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiMovieClip.prototype);
 class AnimateEvent extends createjs.Event {
     constructor(type) {
         super(type);
@@ -813,29 +774,24 @@ exports.CompositeOperations = void 0;
 /**
  * @ignore
  */
-const blendModes = {
-    [exports.CompositeOperations.Lighter]: PIXI.BLEND_MODES.ADD,
-    [exports.CompositeOperations.Multiply]: PIXI.BLEND_MODES.MULTIPLY,
-    [exports.CompositeOperations.Screen]: PIXI.BLEND_MODES.SCREEN,
-};
-/**
- * @ignore
- */
 function createPixiMovieClipData(cjs) {
     const pixi = new PixiMovieClip(cjs);
     return Object.assign(createPixiData(pixi, null), {
         subInstance: pixi,
         listenFrameEvents: {},
-        filters: null,
-        compositeOperation: null
+        filters: null
     });
 }
 /**
  * @ignore
  */
+const dataStore$5 = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData$5(cjs) {
     const data = createPixiMovieClipData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore$5.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -843,43 +799,8 @@ function resetData$5(cjs) {
  * @ignore
  */
 function ensureData$5(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData$5(cjs);
-}
-/**
- * Key of the mark a root clip carries while its tree has to be settled before
- * Pixi draws (see markForSettle).
- */
-const SETTLE_MARK = Symbol('settleMark');
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws
- * (CreatejsController.flushForRender). createjs settles synched / single
- * frame clips and clips waiting to start over when it draws (MovieClip.draw
- * -> _updateState); the driver does that after every frame it plays, but a
- * goto made by the application between frames, or a clip added between
- * frames, would otherwise be drawn unsettled until the next frame is played.
- * The mark is put on the top of the tree, which is a clip the container
- * plays when the tree is on one.
- */
-function markForSettle(node) {
-    let top = node;
-    while (top.parent) {
-        top = top.parent;
-    }
-    if (top instanceof CreatejsMovieClip) {
-        top[SETTLE_MARK] = true;
-    }
-}
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-function takeSettleMark(root) {
-    if (!root[SETTLE_MARK]) {
-        return false;
-    }
-    root[SETTLE_MARK] = false;
-    return true;
+    const data = dataStore$5.get(cjs);
+    return data ? data : resetData$5(cjs);
 }
 /**
  * The real `children: DisplayObject[]` (createjs's own DisplayObject) does
@@ -1034,11 +955,27 @@ class CreatejsMovieClip extends createjs.MovieClip {
     }
     updateBlendModeForPixi(mode) {
         const data = ensureData$5(this);
-        if (data.compositeOperation && blendModes[data.compositeOperation] === mode)
+        // The subtree already draws with what this mode gives: a clip passes its
+        // mode on whenever it changes, and to each child it is given
+        if (data.reservedBlendMode === mode) {
             return;
+        }
         data.reservedBlendMode = mode;
-        for (let i = 0; i < this.children.length; i++) {
-            const child = this.children[i];
+        this._passBlendModeForPixi(data);
+    }
+    /**
+     * Gives the children the blend mode this clip draws them with.
+     */
+    _passBlendModeForPixi(data) {
+        const children = this.children;
+        if (!children) {
+            // inside the createjs constructor (DisplayObject writes
+            // compositeOperation before Container makes the child list)
+            return;
+        }
+        const mode = blendModeForPixi(data);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
             if (isBlendModeChild(child)) {
                 child.updateBlendModeForPixi(mode);
             }
@@ -1050,11 +987,12 @@ class CreatejsMovieClip extends createjs.MovieClip {
     }
     set compositeOperation(value) {
         const data = ensureData$5(this);
-        if (data.compositeOperation === value)
-            return;
-        const blendMode = (value && blendModes[value]) || data.reservedBlendMode;
-        this.updateBlendModeForPixi(blendMode);
+        const before = blendModeForPixi(data);
         data.compositeOperation = value;
+        // timelines write the value on every frame they place the clip
+        if (blendModeForPixi(data) !== before) {
+            this._passBlendModeForPixi(data);
+        }
     }
     // @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
     get filters() {
@@ -1076,6 +1014,7 @@ class CreatejsMovieClip extends createjs.MovieClip {
             }
         }
         data.instance.filters = list;
+        data.instance.setColorFiltersForPixi(list.length ? list : null);
         data.colorFilters = pairs.length ? pairs : null;
         data.filters = value;
     }
@@ -1086,12 +1025,17 @@ class CreatejsMovieClip extends createjs.MovieClip {
     set mask(value) {
         setMaskForPixi(ensureData$5(this), value);
     }
+    /**
+     * Gives a child being added the blend mode this clip draws it with. A child
+     * this clip already has (timelines place their children again on every
+     * frame) has it already: this clip passes its mode to all its children
+     * whenever the mode changes.
+     */
     _updateChildrenBlendModeForPixi(child) {
-        const data = ensureData$5(this);
-        const blendMode = (data.compositeOperation && blendModes[data.compositeOperation]) || data.reservedBlendMode;
-        if (!blendMode)
+        if (child.parent === this) {
             return;
-        child.updateBlendModeForPixi(blendMode);
+        }
+        child.updateBlendModeForPixi(blendModeForPixi(ensureData$5(this)));
     }
     addChild(...children) {
         const data = ensureData$5(this);
@@ -1176,6 +1120,8 @@ class CreatejsMovieClip extends createjs.MovieClip {
         removeAllInteractionListeners(this, type);
     }
 }
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsMovieClip.prototype, ensureData$5);
 delete (CreatejsMovieClip.prototype.endAnimation);
 delete (CreatejsMovieClip.prototype.reachLabel);
 
@@ -1191,8 +1137,6 @@ class PixiSprite extends PIXI.Sprite {
         return this._createjs;
     }
 }
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiSprite.prototype);
 /**
  * @ignore
  */
@@ -1203,9 +1147,13 @@ function createPixiSpriteData(cjs) {
 /**
  * @ignore
  */
+const dataStore$4 = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData$4(cjs) {
     const data = createPixiSpriteData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore$4.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -1213,9 +1161,8 @@ function resetData$4(cjs) {
  * @ignore
  */
 function ensureData$4(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData$4(cjs);
+    const data = dataStore$4.get(cjs);
+    return data ? data : resetData$4(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Sprite.html | createjs.Sprite}
@@ -1247,7 +1194,20 @@ class CreatejsSprite extends createjs.Sprite {
         // spritesheet self-animation is disabled
     }
     updateBlendModeForPixi(mode) {
-        ensureData$4(this).instance.blendMode = mode;
+        const data = ensureData$4(this);
+        data.reservedBlendMode = mode;
+        data.instance.blendMode = blendModeForPixi(data);
+    }
+    // @ts-expect-error TS2611/TS2416 - a plain data property on the real
+    // createjs.DisplayObject; intercepted here to draw it (see the class-level
+    // comment on CreatejsShape)
+    get compositeOperation() {
+        return ensureData$4(this).compositeOperation;
+    }
+    set compositeOperation(value) {
+        const data = ensureData$4(this);
+        data.compositeOperation = value;
+        data.instance.blendMode = blendModeForPixi(data);
     }
     gotoAndStop(frameOrAnimation) {
         super.gotoAndStop(frameOrAnimation);
@@ -1294,6 +1254,8 @@ class CreatejsSprite extends createjs.Sprite {
         removeAllInteractionListeners(this, type);
     }
 }
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsSprite.prototype, ensureData$4);
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
@@ -1307,8 +1269,6 @@ class PixiShape extends PIXI.Container {
         return this._createjs;
     }
 }
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiShape.prototype);
 /**
  * @ignore
  */
@@ -1322,9 +1282,13 @@ function createPixiShapeData(cjs) {
 /**
  * @ignore
  */
+const dataStore$3 = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData$3(cjs) {
     const data = createPixiShapeData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore$3.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -1332,9 +1296,8 @@ function resetData$3(cjs) {
  * @ignore
  */
 function ensureData$3(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData$3(cjs);
+    const data = dataStore$3.get(cjs);
+    return data ? data : resetData$3(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Shape.html | createjs.Shape}
@@ -1361,7 +1324,19 @@ class CreatejsShape extends createjs.Shape {
         var _a;
         const data = ensureData$3(this);
         data.reservedBlendMode = mode;
-        (_a = data.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(mode);
+        (_a = data.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(blendModeForPixi(data));
+    }
+    // @ts-expect-error TS2611/TS2416 - a plain data property on the real
+    // createjs.DisplayObject; intercepted here to draw it (see the class-level
+    // comment on CreatejsShape)
+    get compositeOperation() {
+        return ensureData$3(this).compositeOperation;
+    }
+    set compositeOperation(value) {
+        var _a;
+        const data = ensureData$3(this);
+        data.compositeOperation = value;
+        (_a = data.graphics) === null || _a === void 0 ? void 0 : _a.updateBlendModeForPixi(blendModeForPixi(data));
     }
     // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get graphics() {
@@ -1369,8 +1344,10 @@ class CreatejsShape extends createjs.Shape {
     }
     set graphics(value) {
         const data = ensureData$3(this);
+        // The node holds the current graphics only: createjs draws
+        // this.graphics, never one it had before
+        data.instance.removeChildren();
         if (data.masked.length) {
-            data.instance.removeChildren();
             if (value) {
                 for (let i = 0; i < data.masked.length; i++) {
                     data.masked[i].mask = data.instance;
@@ -1384,6 +1361,7 @@ class CreatejsShape extends createjs.Shape {
         }
         if (value) {
             data.instance.addChild(value.pixi);
+            value.updateBlendModeForPixi(blendModeForPixi(data));
         }
         data.graphics = value;
     }
@@ -1425,6 +1403,8 @@ class CreatejsShape extends createjs.Shape {
         removeAllInteractionListeners(this, type);
     }
 }
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsShape.prototype, ensureData$3);
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
@@ -1438,8 +1418,6 @@ class PixiBitmap extends PIXI.Sprite {
         return this._createjs;
     }
 }
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiBitmap.prototype);
 /**
  * @ignore
  */
@@ -1450,9 +1428,13 @@ function createPixiBitmapData(cjs) {
 /**
  * @ignore
  */
+const dataStore$2 = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData$2(cjs) {
     const data = createPixiBitmapData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore$2.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -1460,9 +1442,8 @@ function resetData$2(cjs) {
  * @ignore
  */
 function ensureData$2(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData$2(cjs);
+    const data = dataStore$2.get(cjs);
+    return data ? data : resetData$2(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Bitmap.html | createjs.Bitmap}
@@ -1487,7 +1468,20 @@ class CreatejsBitmap extends createjs.Bitmap {
         return ensureData$2(this).instance;
     }
     updateBlendModeForPixi(mode) {
-        ensureData$2(this).instance.blendMode = mode;
+        const data = ensureData$2(this);
+        data.reservedBlendMode = mode;
+        data.instance.blendMode = blendModeForPixi(data);
+    }
+    // @ts-expect-error TS2611/TS2416 - a plain data property on the real
+    // createjs.DisplayObject; intercepted here to draw it (see the class-level
+    // comment on CreatejsShape)
+    get compositeOperation() {
+        return ensureData$2(this).compositeOperation;
+    }
+    set compositeOperation(value) {
+        const data = ensureData$2(this);
+        data.compositeOperation = value;
+        data.instance.blendMode = blendModeForPixi(data);
     }
     // @ts-expect-error TS2611/TS2416 - see the class-level comment above
     get mask() {
@@ -1524,6 +1518,151 @@ class CreatejsBitmap extends createjs.Bitmap {
         removeAllInteractionListeners(this, type);
     }
 }
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsBitmap.prototype, ensureData$2);
+
+/** Pixels a gradient is drawn across: along the line of a linear one, across the circles of a radial one */
+const GRADIENT_SIZE = 256;
+/** At most this many gradient textures are kept for sharing (the oldest is let go first) */
+const MAX_KEPT_GRADIENTS = 256;
+/**
+ * The base texture of a gradient: always clamped. Pixi's Graphics sets the
+ * wrap mode of every texture it fills with to REPEAT when it builds its
+ * shapes (GraphicsGeometry.updateBatches), which would repeat the gradient
+ * outside the area drawn; canvas (and so createjs) pads a gradient with its
+ * end colors instead, which is what clamping gives.
+ */
+class GradientBaseTexture extends PIXI.BaseTexture {
+    // pixi.js declares `wrapMode` as a plain field of BaseTexture; an accessor
+    // on this prototype takes the writes (the field is never an own property:
+    // BaseTexture's constructor assigns it, which reaches this setter)
+    // @ts-expect-error TS2611 - see above
+    get wrapMode() {
+        return PIXI.WRAP_MODES.CLAMP;
+    }
+    set wrapMode(value) {
+        // always clamped
+    }
+}
+/**
+ * A gradient drawn into a canvas by the browser's own gradient (so that its
+ * colors are what canvas, and createjs, paints), as a texture that Pixi's
+ * Graphics fills and strokes with through a matrix. `gradient` is the
+ * gradient in the shape's coordinates, `local` the same gradient in the
+ * texture's pixels, and `toShape` takes texture pixels to the shape's
+ * coordinates.
+ */
+class GradientTexture extends PIXI.Texture {
+    constructor(canvas, gradient, local, toShape) {
+        // No mipmaps: a gradient drawn small would take the averaged colors of
+        // a smaller image; canvas paints the exact color at every pixel, which
+        // sampling the full-size image gives
+        super(new GradientBaseTexture(canvas, { mipmap: PIXI.MIPMAP_MODES.OFF }));
+        this.gradient = gradient;
+        this.local = local;
+        this.toShape = toShape;
+    }
+}
+/**
+ * Gradient textures by their gradient, shared by every Graphics that uses the
+ * same gradient (each instance of a published symbol draws its own Graphics
+ * with the same commands). Made outside Pixi's texture caches; a texture let
+ * go here stays while a Graphics still uses it.
+ */
+const gradientTextures = new Map();
+function paintGradient(canvas, local) {
+    const context = canvas.getContext('2d');
+    if (!context) {
+        return;
+    }
+    const paint = local.type === 'linear'
+        ? context.createLinearGradient(local.x0, local.y0, local.x1, local.y1)
+        : context.createRadialGradient(local.x0, local.y0, local.r0, local.x1, local.y1, local.r1);
+    for (let i = 0; i < local.colors.length; i++) {
+        paint.addColorStop(local.ratios[i], local.colors[i]);
+    }
+    context.fillStyle = paint;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+}
+/**
+ * A linear gradient drawn along a canvas one pixel high, from one pixel in
+ * from the left edge to one pixel in from the right edge: the edge pixels are
+ * then the end colors themselves, which clamping continues outside the line
+ * (an edge pixel on the line would hold the color at its center, a little
+ * short of the end color). The texture's x axis runs along the gradient's
+ * line and its y axis across it (every row is the same, so how far across
+ * does not matter).
+ */
+function linearGradientTexture(gradient) {
+    const dx = gradient.x1 - gradient.x0;
+    const dy = gradient.y1 - gradient.y0;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    if (!length) {
+        // canvas paints nothing with a line of length 0
+        return null;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = GRADIENT_SIZE + 2;
+    canvas.height = 1;
+    const local = {
+        type: 'linear', colors: gradient.colors, ratios: gradient.ratios,
+        x0: 1, y0: 0, r0: 0, x1: GRADIENT_SIZE + 1, y1: 0, r1: 0
+    };
+    paintGradient(canvas, local);
+    const a = dx / GRADIENT_SIZE;
+    const b = dy / GRADIENT_SIZE;
+    // texture pixel x = 1 is the line's start
+    const toShape = new PIXI.Matrix(a, b, -dy / length, dx / length, gradient.x0 - a, gradient.y0 - b);
+    return new GradientTexture(canvas, gradient, local, toShape);
+}
+/**
+ * A radial gradient drawn into a square canvas covering both of its circles,
+ * scaled to fit (the mapping is a scale and a move, so the circles stay
+ * circles and every point keeps its place in the gradient).
+ */
+function radialGradientTexture(gradient) {
+    const left = Math.min(gradient.x0 - gradient.r0, gradient.x1 - gradient.r1);
+    const top = Math.min(gradient.y0 - gradient.r0, gradient.y1 - gradient.r1);
+    const right = Math.max(gradient.x0 + gradient.r0, gradient.x1 + gradient.r1);
+    const bottom = Math.max(gradient.y0 + gradient.r0, gradient.y1 + gradient.r1);
+    const size = Math.max(right - left, bottom - top);
+    if (!(size > 0) || (gradient.r1 === gradient.r0 && gradient.x0 === gradient.x1 && gradient.y0 === gradient.y1)) {
+        // canvas paints nothing with two equal circles
+        return null;
+    }
+    const scale = GRADIENT_SIZE / size;
+    const canvas = document.createElement('canvas');
+    canvas.width = GRADIENT_SIZE;
+    canvas.height = GRADIENT_SIZE;
+    const local = {
+        type: 'radial', colors: gradient.colors, ratios: gradient.ratios,
+        x0: (gradient.x0 - left) * scale, y0: (gradient.y0 - top) * scale, r0: gradient.r0 * scale,
+        x1: (gradient.x1 - left) * scale, y1: (gradient.y1 - top) * scale, r1: gradient.r1 * scale
+    };
+    paintGradient(canvas, local);
+    const toShape = new PIXI.Matrix(1 / scale, 0, 0, 1 / scale, left, top);
+    return new GradientTexture(canvas, gradient, local, toShape);
+}
+/**
+ * The texture a gradient is drawn with, or null when canvas paints nothing
+ * with it (a line of length 0, two equal circles).
+ */
+function getGradientTexture(gradient) {
+    const key = JSON.stringify(gradient);
+    const known = gradientTextures.get(key);
+    if (known !== undefined) {
+        return known;
+    }
+    const texture = gradient.type === 'linear' ? linearGradientTexture(gradient) : radialGradientTexture(gradient);
+    gradientTextures.set(key, texture);
+    if (gradientTextures.size > MAX_KEPT_GRADIENTS) {
+        const oldest = gradientTextures.keys().next();
+        if (!oldest.done) {
+            gradientTextures.delete(oldest.value);
+        }
+    }
+    return texture;
+}
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html | PIXI.Graphics}
@@ -1536,6 +1675,21 @@ class PixiGraphics extends PIXI.Graphics {
     get createjs() {
         return this._createjs;
     }
+    /**
+     * Sets the blend mode the graphics is drawn with. Pixi 5 draws a small
+     * Graphics in batches that keep the blend mode it had when they were made
+     * and makes them again only when the shapes change, so a new mode would
+     * not be drawn; the batches are made again on the next render.
+     *
+     * @ignore
+     */
+    setBlendModeForPixi(mode) {
+        if (this.blendMode === mode) {
+            return;
+        }
+        this.blendMode = mode;
+        this.batchDirty = -1;
+    }
 }
 /**
  * @ignore
@@ -1544,15 +1698,21 @@ function createPixiGraphicsData(cjs) {
     const pixi = new PixiGraphics(cjs);
     return Object.assign(createPixiData(pixi, null), {
         strokeFill: 0,
-        strokeAlpha: 1
+        strokeAlpha: 1,
+        strokeTexture: null,
+        strokeMatrix: null
     });
 }
 /**
  * @ignore
  */
+const dataStore$1 = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData$1(cjs) {
     const data = createPixiGraphicsData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore$1.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -1560,9 +1720,8 @@ function resetData$1(cjs) {
  * @ignore
  */
 function ensureData$1(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData$1(cjs);
+    const data = dataStore$1.get(cjs);
+    return data ? data : resetData$1(cjs);
 }
 /**
  * @ignore
@@ -1589,6 +1748,29 @@ const LineJoin = {
     2: PIXI.LINE_JOIN.BEVEL
 };
 /**
+ * The textures bitmap fills are drawn with, one per image. Keyed by the image,
+ * so that a texture is kept only while its image is: the images of a published
+ * library live with the library, and an image a frame is extracted into
+ * (SpriteSheetUtils.extractFrame, made for each instance) goes with the
+ * Graphics that use it. The textures are made outside Pixi's texture caches
+ * (which would keep them for good), and their GPU memory is given back by
+ * Pixi's texture garbage collection once they are no longer drawn.
+ *
+ * @ignore
+ */
+const bitmapFillTextures = new WeakMap();
+/**
+ * @ignore
+ */
+function getBitmapFillTexture(image) {
+    let texture = bitmapFillTextures.get(image);
+    if (!texture) {
+        texture = new PIXI.Texture(new PIXI.BaseTexture(image));
+        bitmapFillTextures.set(image, texture);
+    }
+    return texture;
+}
+/**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
  *
  * createjs.Graphics is a command object, not a display object (no
@@ -1608,9 +1790,7 @@ class CreatejsGraphics extends createjs.Graphics {
         return ensureData$1(this).instance;
     }
     updateBlendModeForPixi(mode) {
-        if (!mode)
-            return;
-        ensureData$1(this).instance.blendMode = mode;
+        ensureData$1(this).instance.setBlendModeForPixi(mode);
     }
     // path methods
     //
@@ -1733,6 +1913,61 @@ class CreatejsGraphics extends createjs.Graphics {
     f(color) {
         return this.beginFill(color);
     }
+    /**
+     * Fills with an image, placed by `matrix` (from the image's space to the
+     * shape's) as createjs places its pattern. The image is repeated (Pixi
+     * repeats every texture it fills with, as createjs does for the default
+     * repetition that published content uses; "no-repeat" and the other
+     * repetitions are drawn repeated too).
+     */
+    beginBitmapFill(image, repetition, matrix) {
+        ensureData$1(this).instance.beginTextureFill({
+            texture: getBitmapFillTexture(image),
+            color: 0xFFFFFF,
+            alpha: 1,
+            matrix: matrix ? new PIXI.Matrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty) : undefined
+        });
+        super.beginBitmapFill(image, repetition, matrix);
+        return this;
+    }
+    bf(image, repetition, matrix) {
+        return this.beginBitmapFill(image, repetition, matrix);
+    }
+    /**
+     * Fills with a gradient. Pixi's Graphics has no gradients: the gradient is
+     * drawn by the browser's canvas into a texture (so that its colors are what
+     * createjs paints), once for each gradient and shared, and filled with
+     * through a matrix from the texture's pixels to the shape's coordinates.
+     * Outside the gradient the end colors continue, as in canvas. A gradient
+     * canvas paints nothing with (a line of length 0, two equal circles) fills
+     * nothing.
+     */
+    beginLinearGradientFill(colors, ratios, x0, y0, x1, y1) {
+        this._beginGradientFill({ type: 'linear', colors, ratios, x0, y0, r0: 0, x1, y1, r1: 0 });
+        super.beginLinearGradientFill(colors, ratios, x0, y0, x1, y1);
+        return this;
+    }
+    lf(colors, ratios, x0, y0, x1, y1) {
+        return this.beginLinearGradientFill(colors, ratios, x0, y0, x1, y1);
+    }
+    beginRadialGradientFill(colors, ratios, x0, y0, r0, x1, y1, r1) {
+        this._beginGradientFill({ type: 'radial', colors, ratios, x0, y0, r0, x1, y1, r1 });
+        super.beginRadialGradientFill(colors, ratios, x0, y0, r0, x1, y1, r1);
+        return this;
+    }
+    rf(colors, ratios, x0, y0, r0, x1, y1, r1) {
+        return this.beginRadialGradientFill(colors, ratios, x0, y0, r0, x1, y1, r1);
+    }
+    _beginGradientFill(gradient) {
+        const instance = ensureData$1(this).instance;
+        const texture = getGradientTexture(gradient);
+        if (texture) {
+            instance.beginTextureFill({ texture, color: 0xFFFFFF, alpha: 1, matrix: texture.toShape });
+        }
+        else {
+            instance.beginFill(0, 0);
+        }
+    }
     endFill() {
         ensureData$1(this).instance.endFill();
         super.endFill();
@@ -1743,14 +1978,31 @@ class CreatejsGraphics extends createjs.Graphics {
     }
     setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale) {
         const data = ensureData$1(this);
-        data.instance.lineTextureStyle({
-            width: thickness,
-            color: data.strokeFill,
-            alpha: data.strokeAlpha,
-            cap: (caps in LineCap) ? LineCap[caps] : LineCap[0],
-            join: (joints in LineJoin) ? LineJoin[joints] : LineJoin[0],
-            miterLimit
-        });
+        const cap = (caps in LineCap) ? LineCap[caps] : LineCap[0];
+        const join = (joints in LineJoin) ? LineJoin[joints] : LineJoin[0];
+        const gradient = data.strokeTexture;
+        if (gradient) {
+            data.instance.lineTextureStyle({
+                width: thickness,
+                texture: gradient,
+                color: 0xFFFFFF,
+                alpha: 1,
+                matrix: data.strokeMatrix || undefined,
+                cap,
+                join,
+                miterLimit
+            });
+        }
+        else {
+            data.instance.lineTextureStyle({
+                width: thickness,
+                color: data.strokeFill,
+                alpha: data.strokeAlpha,
+                cap,
+                join,
+                miterLimit
+            });
+        }
         super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
         return this;
     }
@@ -1762,11 +2014,43 @@ class CreatejsGraphics extends createjs.Graphics {
         const c = this._parseColor(color);
         data.strokeFill = c.color;
         data.strokeAlpha = c.alpha;
+        data.strokeTexture = null;
+        data.strokeMatrix = null;
         super.beginStroke(color);
         return this;
     }
     s(color) {
         return this.beginStroke(color);
+    }
+    /**
+     * Strokes with a gradient (taken by the stroke style set next, as a color
+     * set by beginStroke is). The gradient is drawn by the browser's canvas
+     * into a texture once and shared; see beginLinearGradientFill.
+     */
+    beginLinearGradientStroke(colors, ratios, x0, y0, x1, y1) {
+        this._setGradientStroke({ type: 'linear', colors, ratios, x0, y0, r0: 0, x1, y1, r1: 0 });
+        super.beginLinearGradientStroke(colors, ratios, x0, y0, x1, y1);
+        return this;
+    }
+    ls(colors, ratios, x0, y0, x1, y1) {
+        return this.beginLinearGradientStroke(colors, ratios, x0, y0, x1, y1);
+    }
+    beginRadialGradientStroke(colors, ratios, x0, y0, r0, x1, y1, r1) {
+        this._setGradientStroke({ type: 'radial', colors, ratios, x0, y0, r0, x1, y1, r1 });
+        super.beginRadialGradientStroke(colors, ratios, x0, y0, r0, x1, y1, r1);
+        return this;
+    }
+    rs(colors, ratios, x0, y0, r0, x1, y1, r1) {
+        return this.beginRadialGradientStroke(colors, ratios, x0, y0, r0, x1, y1, r1);
+    }
+    _setGradientStroke(gradient) {
+        const data = ensureData$1(this);
+        const texture = getGradientTexture(gradient);
+        data.strokeTexture = texture;
+        data.strokeMatrix = texture ? texture.toShape : null;
+        data.strokeFill = 0xFFFFFF;
+        // a gradient canvas paints nothing with strokes nothing
+        data.strokeAlpha = texture ? 1 : 0;
     }
     drawRoundRect(x, y, w, h, radius) {
         ensureData$1(this).instance.drawRoundedRect(x, y, w, h, radius);
@@ -1829,8 +2113,6 @@ class PixiTextContainer extends PIXI.Container {
         return this._text;
     }
 }
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiTextContainer.prototype);
 /**
  * @ignore
  */
@@ -1856,9 +2138,13 @@ function createPixiTextData(cjs) {
 /**
  * @ignore
  */
+const dataStore = new WeakMap();
+/**
+ * @ignore
+ */
 function resetData(cjs) {
     const data = createPixiTextData(cjs);
-    cjs[PIXI_DATA] = data;
+    dataStore.set(cjs, data);
     registerPixiData(cjs, data);
     return data;
 }
@@ -1866,9 +2152,8 @@ function resetData(cjs) {
  * @ignore
  */
 function ensureData(cjs) {
-    const data = cjs[PIXI_DATA];
-    // its own data only (see IPixiData.owner)
-    return data && data.owner === cjs ? data : resetData(cjs);
+    const data = dataStore.get(cjs);
+    return data ? data : resetData(cjs);
 }
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Text.html | createjs.Text}
@@ -1888,7 +2173,20 @@ class CreatejsText extends createjs.Text {
         return ensureData(this).instance;
     }
     updateBlendModeForPixi(mode) {
-        ensureData(this).instance.text.blendMode = mode;
+        const data = ensureData(this);
+        data.reservedBlendMode = mode;
+        data.instance.text.blendMode = blendModeForPixi(data);
+    }
+    // @ts-expect-error TS2611/TS2416 - a plain data property on the real
+    // createjs.DisplayObject; intercepted here to draw it (see the class-level
+    // comment on CreatejsShape)
+    get compositeOperation() {
+        return ensureData(this).compositeOperation;
+    }
+    set compositeOperation(value) {
+        const data = ensureData(this);
+        data.compositeOperation = value;
+        data.instance.text.blendMode = blendModeForPixi(data);
     }
     // @ts-expect-error TS2611 - see the class-level comment above
     get text() {
@@ -2017,6 +2315,8 @@ class CreatejsText extends createjs.Text {
         removeAllInteractionListeners(this, type);
     }
 }
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsText.prototype, ensureData);
 
 /**
  * Recovers the wrapper contract (the paired Pixi instance) on a value typed
@@ -2078,9 +2378,9 @@ class CreatejsButtonHelper extends createjs.ButtonHelper {
                 throw new TypeError('CreatejsButtonHelper requires wrapper class instances for target and hitArea.');
             }
             gotoAndStopVerbatim(hitArea, hitLabel);
-            // The hit clip hangs on the pixi tree only (never on the createjs tree),
-            // so the per-tick pull sync can never reach it. It is static after the
-            // gotoAndStop above, so one explicit sync here is sufficient.
+            // The hit clip hangs on the pixi tree only (never on the createjs tree).
+            // Its color filters are copied at once here (Pixi copies them again
+            // whenever it draws the clip).
             syncToPixi(hitArea);
             hitPixi = pixi.addChild(hitArea.pixi);
             hitPixi.alpha = 0.00001;
@@ -2359,11 +2659,11 @@ class CreatejsController {
      * must run per frame as its substitute — without it, SYNCHED clips never
      * move at all.
      *
-     * Before a frame is played, values written to the Pixi nodes are taken
-     * over into createjs (pullFromPixi), so that a tween writing the property
-     * in that frame replaces them, as it did when the wrapper pushed every
-     * createjs write to Pixi. After the frames, the tree is synced to Pixi, so
-     * that code reading the Pixi nodes before the next render sees the frame.
+     * The display properties write through to the Pixi nodes as createjs writes
+     * them (see defineDisplayAccessors), so the Pixi mirror follows every
+     * frame with no copying walk. The color filter scalars (plain data
+     * properties of createjs ColorFilters) are copied by the Pixi nodes that
+     * carry the filters, right before they are drawn.
      *
      * How many frames a call plays: every root is owed `delta x speed x fps /
      * 60` frames a call (t). Without smooth, the whole frames of t are played.
@@ -2387,7 +2687,6 @@ class CreatejsController {
         const d = delta * speed;
         const usual = this._usualDelta(delta) * speed;
         beginDrive();
-        pullFromPixi();
         const targets = this._createjsData.targets;
         for (let i in targets) {
             const target = targets[i];
@@ -2399,7 +2698,6 @@ class CreatejsController {
                 target.isFirst = false;
                 target.clock = target.t + lead;
                 target.cjs.updateStateForPixi();
-                syncToPixi(target.cjs);
                 continue;
             }
             let p;
@@ -2425,7 +2723,6 @@ class CreatejsController {
                 target.cjs._tick(new CreatejsEvent('tick'));
                 target.cjs.updateStateForPixi();
             }
-            syncToPixi(target.cjs);
         }
         endDrive();
     }
@@ -2437,11 +2734,12 @@ class CreatejsController {
      * createjs would draw at that moment:
      *
      * - a tree whose timelines moved outside handleTick (a goto made by the
-     *   application, a clip added between frames) is settled first, as a
-     *   createjs draw settles each clip (CreatejsMovieClip.settleForPixi)
-     * - every tree is synced, so that createjs properties written after
-     *   handleTick (by application code running later in the same display
-     *   frame) are drawn at once
+     *   application, a clip added between frames) is settled, as a createjs
+     *   draw settles each clip (CreatejsMovieClip.settleForPixi)
+     *
+     * Display properties written after handleTick need nothing here: they
+     * reached the Pixi nodes when they were written. Color filters are brought
+     * up to date by the nodes that carry them (PixiMovieClip.updateTransform).
      */
     flushForRender() {
         beginDrive();
@@ -2451,7 +2749,6 @@ class CreatejsController {
             if (takeSettleMark(root)) {
                 root.settleForPixi();
             }
-            syncToPixi(root);
         }
         endDrive();
     }
@@ -2577,9 +2874,7 @@ exports.CreatejsMovieClip = CreatejsMovieClip;
 exports.CreatejsShape = CreatejsShape;
 exports.CreatejsSprite = CreatejsSprite;
 exports.CreatejsText = CreatejsText;
-exports.EVENT_MANAGER = EVENT_MANAGER;
-exports.PIXI_DATA = PIXI_DATA;
-exports.PIXI_FILTER = PIXI_FILTER;
+exports.DISPLAY_ACCESSOR_NAMES = DISPLAY_ACCESSOR_NAMES;
 exports.PixiBitmap = PixiBitmap;
 exports.PixiColorMatrixFilter = PixiColorMatrixFilter;
 exports.PixiGraphics = PixiGraphics;
@@ -2588,17 +2883,17 @@ exports.PixiShape = PixiShape;
 exports.PixiSprite = PixiSprite;
 exports.PixiText = PixiText;
 exports.PixiTextContainer = PixiTextContainer;
-exports.SETTLE_MARK = SETTLE_MARK;
 exports.addInteractionListener = addInteractionListener;
 exports.beginDrive = beginDrive;
+exports.blendModeForPixi = blendModeForPixi;
 exports.createPixiData = createPixiData;
+exports.defineDisplayAccessors = defineDisplayAccessors;
 exports.endDrive = endDrive;
 exports.findPixiData = findPixiData;
 exports.getPixiColorMatrixFilter = getPixiColorMatrixFilter;
 exports.isDriving = isDriving;
 exports.loadAssetAsync = loadAssetAsync;
 exports.markForSettle = markForSettle;
-exports.pullFromPixi = pullFromPixi;
 exports.registerPixiData = registerPixiData;
 exports.removeAllInteractionListeners = removeAllInteractionListeners;
 exports.removeInteractionListener = removeInteractionListener;

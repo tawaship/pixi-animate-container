@@ -136,7 +136,7 @@
 <li><span><span class="tsd-kind-parameter">cjs</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#addcreatejst">T</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#addcreatejst">T</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L286">packages/pixi-animate-container/src/Container.ts:286</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L281">packages/pixi-animate-container/src/Container.ts:281</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="addcreatejsat"><span>add<wbr/>Createjs<wbr/>At</span><a href="#addcreatejsat" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -154,7 +154,7 @@
 <li><span><span class="tsd-kind-parameter">index</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#addcreatejsatt">T</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L293">packages/pixi-animate-container/src/Container.ts:293</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L288">packages/pixi-animate-container/src/Container.ts:288</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="flushforrender"><span>flush<wbr/>For<wbr/>Render</span><a href="#flushforrender" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -168,16 +168,16 @@ frame, a content frame played or not, and what it draws has to be what
 createjs would draw at that moment:</p>
 <ul>
 <li>a tree whose timelines moved outside handleTick (a goto made by the
-application, a clip added between frames) is settled first, as a
-createjs draw settles each clip (CreatejsMovieClip.settleForPixi)</li>
-<li>every tree is synced, so that createjs properties written after
-handleTick (by application code running later in the same display
-frame) are drawn at once</li>
+application, a clip added between frames) is settled, as a createjs
+draw settles each clip (CreatejsMovieClip.settleForPixi)</li>
 </ul>
+<p>Display properties written after handleTick need nothing here: they
+reached the Pixi nodes when they were written. Color filters are brought
+up to date by the nodes that carry them (PixiMovieClip.updateTransform).</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L234">packages/pixi-animate-container/src/Container.ts:234</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L231">packages/pixi-animate-container/src/Container.ts:231</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="handletick"><span>handle<wbr/>Tick</span><a href="#handletick" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -198,11 +198,11 @@ resolves SYNCHED / SINGLE_FRAME / first-render state. There is no draw
 phase here, so updateStateForPixi() (the recursive _updateState walk)
 must run per frame as its substitute — without it, SYNCHED clips never
 move at all.</p>
-<p>Before a frame is played, values written to the Pixi nodes are taken
-over into createjs (pullFromPixi), so that a tween writing the property
-in that frame replaces them, as it did when the wrapper pushed every
-createjs write to Pixi. After the frames, the tree is synced to Pixi, so
-that code reading the Pixi nodes before the next render sees the frame.</p>
+<p>The display properties write through to the Pixi nodes as createjs writes
+them (see defineDisplayAccessors), so the Pixi mirror follows every
+frame with no copying walk. The color filter scalars (plain data
+properties of createjs ColorFilters) are copied by the Pixi nodes that
+carry the filters, right before they are drawn.</p>
 <p>How many frames a call plays: every root is owed <code>delta x speed x fps / 60</code> frames a call (t). Without smooth, the whole frames of t are played.
 With smooth, the whole frames of a steady clock are played instead: the
 clock advances by the usual delta (the median of the latest deltas) on
@@ -236,7 +236,7 @@ are its floor.</p>
 <li><span><span class="tsd-kind-parameter">cjs</span>: <a href="../types/TCreatejsObject.html" class="tsd-signature-type tsd-kind-type-alias">TCreatejsObject</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="../types/TCreatejsObject.html" class="tsd-signature-type tsd-kind-type-alias">TCreatejsObject</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L300">packages/pixi-animate-container/src/Container.ts:300</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/Container.ts#L295">packages/pixi-animate-container/src/Container.ts:295</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

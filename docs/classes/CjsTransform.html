@@ -11,36 +11,31 @@
 <li><a href="" aria-current="page">CjsTransform</a></li></ul>
 <h1>Class CjsTransform</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>A Pixi Transform whose rotation and skew follow createjs, and which logs
-writes made through Pixi.</p>
+<div class="tsd-comment tsd-typography"><p>A Pixi Transform whose rotation and skew follow createjs.</p>
 <ul>
-<li>The createjs values (degrees) are kept as written, so that reading them
-back gives exactly what was written (a degrees -&gt; radians -&gt; degrees
-round trip does not)</li>
+<li>The createjs values (degrees) are kept as written, so that the matrix is
+built from exactly them (a degrees -&gt; radians -&gt; degrees round trip would
+not give them back)</li>
 <li>Pixi's own fields carry the same values in Pixi's terms (rotation in
 radians, skew.x = -skewX, skew.y = skewY, all in radians), so code that
 uses the Pixi node sees the values it always saw. A write made through
-Pixi (node.rotation, node.skew) becomes the new createjs value</li>
+Pixi (node.rotation, node.skew) is converted to degrees and used</li>
 <li>The local matrix is built the createjs way (Matrix2D.appendTransform):
 skew x (rotation x scale), i.e. the object is rotated first and then
 skewed. Pixi composes them the other way round (skewed, then rotated as
 a whole); the two agree only while the rotation is 0 or skewX equals
 skewY. A rotation that is a multiple of 360 is taken as exactly none, as
 createjs does</li>
-<li>A change made through Pixi to the node's position, scale, pivot,
-rotation or skew (and, through the node classes, its anchor, alpha and
-visible) is logged once per node, so that the wrapper takes it over into
-createjs without walking the whole tree</li>
 </ul>
 </div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="19484">
+<section class="tsd-panel tsd-hierarchy" data-refl="19495">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="https://pixijs.download/v5.3.9/docs/index.html" class="tsd-signature-type external" target="_blank">Transform</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">CjsTransform</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L69">packages/pixi-animate-container/src/createjs/modules/transform.ts:69</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L26">packages/pixi-animate-container/src/createjs/modules/transform.ts:26</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -65,8 +60,6 @@ createjs without walking the whole tree</li>
 <a href="#degskewx" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>X</span></a>
 <a href="#degskewy" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>Y</span></a>
 <a href="#localtransform" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>local<wbr/>Transform</span></a>
-<a href="#logged" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>logged</span></a>
-<a href="#owner" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner</span></a>
 <a href="#pivot" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pivot</span></a>
 <a href="#position" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>position</span></a>
 <a href="#rotation" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>rotation</span></a>
@@ -77,10 +70,11 @@ createjs without walking the whole tree</li>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-index-list"><a href="#logpixiwrite" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>log<wbr/>Pixi<wbr/>Write</span></a>
-<a href="#onchange" class="tsd-index-link tsd-is-protected"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>on<wbr/>Change</span></a>
+<div class="tsd-index-list"><a href="#onchange" class="tsd-index-link tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>on<wbr/>Change</span></a>
 <a href="#setfrommatrix" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>From<wbr/>Matrix</span></a>
-<a href="#setrotationskew" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Rotation<wbr/>Skew</span></a>
+<a href="#setrotation" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Rotation</span></a>
+<a href="#setskewx" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Skew<wbr/>X</span></a>
+<a href="#setskewy" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Skew<wbr/>Y</span></a>
 <a href="#updatelocaltransform" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Local<wbr/>Transform</span></a>
 <a href="#updateskew" class="tsd-index-link tsd-is-protected"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Skew</span></a>
 <a href="#updatetransform" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Transform</span></a>
@@ -221,21 +215,21 @@ the second column of the local transformation matrix without a scale.</p>
 <div class="tsd-comment tsd-typography"><p>createjs rotation, in degrees</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L71">packages/pixi-animate-container/src/createjs/modules/transform.ts:71</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L28">packages/pixi-animate-container/src/createjs/modules/transform.ts:28</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="degskewx"><span>deg<wbr/>Skew<wbr/>X</span><a href="#degskewx" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">degSkewX</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
 <div class="tsd-comment tsd-typography"><p>createjs skewX, in degrees</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L73">packages/pixi-animate-container/src/createjs/modules/transform.ts:73</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L30">packages/pixi-animate-container/src/createjs/modules/transform.ts:30</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="degskewy"><span>deg<wbr/>Skew<wbr/>Y</span><a href="#degskewy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">degSkewY</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
 <div class="tsd-comment tsd-typography"><p>createjs skewY, in degrees</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L75">packages/pixi-animate-container/src/createjs/modules/transform.ts:75</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L32">packages/pixi-animate-container/src/createjs/modules/transform.ts:32</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="localtransform"><span>local<wbr/>Transform</span><a href="#localtransform" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">localTransform</span><span class="tsd-signature-symbol">:</span> <a href="https://pixijs.download/v5.3.9/docs/index.html" class="tsd-signature-type external" target="_blank">Matrix</a></div>
@@ -248,20 +242,6 @@ the second column of the local transformation matrix without a scale.</p>
 <p>Inherited from Transform.localTransform</p>
 <ul>
 <li>Defined in node_modules/pixi.js/pixi.js.d.ts:12591</li></ul></aside></section>
-<section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="logged"><span>logged</span><a href="#logged" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">logged</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
-<div class="tsd-comment tsd-typography"><p>Whether the node is in the write log</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L81">packages/pixi-animate-container/src/createjs/modules/transform.ts:81</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="owner"><span>owner</span><a href="#owner" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">owner</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/ICreatejsSyncNode.html" class="tsd-signature-type tsd-kind-interface">ICreatejsSyncNode</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> = null</span></div>
-<div class="tsd-comment tsd-typography"><p>The createjs object this node mirrors (null until the wrapper links it)</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L78">packages/pixi-animate-container/src/createjs/modules/transform.ts:78</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="pivot"><span>pivot</span><a href="#pivot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pivot</span><span class="tsd-signature-symbol">:</span> <a href="https://pixijs.download/v5.3.9/docs/index.html" class="tsd-signature-type external" target="_blank">ObservablePoint</a></div>
@@ -351,29 +331,18 @@ the second column of the local transformation matrix without a scale.</p>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
-<section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="logpixiwrite"><span>log<wbr/>Pixi<wbr/>Write</span><a href="#logpixiwrite" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures">
-<li class="">
-<div class="tsd-signature tsd-anchor-link" id="logpixiwrite-1"><span class="tsd-kind-call-signature">logPixiWrite</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#logpixiwrite-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
-<div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Logs a Pixi-side write to the node (once until the log is taken).</p>
-</div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L91">packages/pixi-animate-container/src/createjs/modules/transform.ts:91</a></li></ul></aside></div></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-protected">
+<section class="tsd-panel tsd-member tsd-is-protected tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="onchange"><code class="tsd-tag">Protected</code><span>on<wbr/>Change</span><a href="#onchange" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-protected">
-<li class="">
+<ul class="tsd-signatures tsd-is-protected tsd-is-inherited tsd-is-external">
+<li class="tsd-is-protected tsd-is-inherited tsd-is-external">
 <div class="tsd-signature tsd-anchor-link" id="onchange-1"><span class="tsd-kind-call-signature">onChange</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#onchange-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
-<div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Called by the position, scale and pivot points when they change.</p>
+<div class="tsd-description"><code class="tsd-tag">Protected</code>
+<div class="tsd-comment tsd-typography"><p>Called when a value changes.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<p>Overrides Transform.onChange</p>
+<p>Inherited from Transform.onChange</p>
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L122">packages/pixi-animate-container/src/createjs/modules/transform.ts:122</a></li></ul></aside></div></li></ul></section>
+<li>Defined in node_modules/pixi.js/pixi.js.d.ts:12690</li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="setfrommatrix"><span>set<wbr/>From<wbr/>Matrix</span><a href="#setfrommatrix" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -393,23 +362,52 @@ the second column of the local transformation matrix without a scale.</p>
 <ul>
 <li>Defined in node_modules/pixi.js/pixi.js.d.ts:12712</li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="setrotationskew"><span>set<wbr/>Rotation<wbr/>Skew</span><a href="#setrotationskew" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h3 class="tsd-anchor-link" id="setrotation"><span>set<wbr/>Rotation</span><a href="#setrotation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="setrotationskew-1"><span class="tsd-kind-call-signature">setRotationSkew</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">rotation</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">skewX</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">skewY</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setrotationskew-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="setrotation-1"><span class="tsd-kind-call-signature">setRotation</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">degrees</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setrotation-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Writes the createjs rotation, skewX and skewY (degrees), computing the
-matrix once.</p>
+<div class="tsd-comment tsd-typography"><p>Writes the createjs rotation (degrees). Nothing is computed when the
+node already has it (tweens write every property they have on every
+frame, value changed or not).</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">rotation</span>: <span class="tsd-signature-type">number</span></span></li>
-<li><span><span class="tsd-kind-parameter">skewX</span>: <span class="tsd-signature-type">number</span></span></li>
-<li><span><span class="tsd-kind-parameter">skewY</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<li><span><span class="tsd-kind-parameter">degrees</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L102">packages/pixi-animate-container/src/createjs/modules/transform.ts:102</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L44">packages/pixi-animate-container/src/createjs/modules/transform.ts:44</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setskewx"><span>set<wbr/>Skew<wbr/>X</span><a href="#setskewx" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setskewx-1"><span class="tsd-kind-call-signature">setSkewX</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">degrees</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setskewx-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Writes the createjs skewX (degrees). See setRotation.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">degrees</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L57">packages/pixi-animate-container/src/createjs/modules/transform.ts:57</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setskewy"><span>set<wbr/>Skew<wbr/>Y</span><a href="#setskewy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setskewy-1"><span class="tsd-kind-call-signature">setSkewY</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">degrees</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#setskewy-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Writes the createjs skewY (degrees). See setRotation.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">degrees</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L74">packages/pixi-animate-container/src/createjs/modules/transform.ts:74</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="updatelocaltransform"><span>update<wbr/>Local<wbr/>Transform</span><a href="#updatelocaltransform" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -433,7 +431,7 @@ matrix once.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <p>Overrides Transform.updateSkew</p>
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L127">packages/pixi-animate-container/src/createjs/modules/transform.ts:127</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/transform.ts#L87">packages/pixi-animate-container/src/createjs/modules/transform.ts:87</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external">
 <h3 class="tsd-anchor-link" id="updatetransform"><span>update<wbr/>Transform</span><a href="#updatetransform" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -470,9 +468,9 @@ matrix once.</p>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor" class="tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#_currentlocalid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>current<wbr/>Local<wbr/>ID</span></a><a href="#_cx" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>cx</span></a><a href="#_cy" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>cy</span></a><a href="#_localid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>local<wbr/>ID</span></a><a href="#_parentid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>parent<wbr/>ID</span></a><a href="#_rotation" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>rotation</span></a><a href="#_sx" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>sx</span></a><a href="#_sy" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>sy</span></a><a href="#_worldid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>world<wbr/>ID</span></a><a href="#degrotation"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Rotation</span></a><a href="#degskewx"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>X</span></a><a href="#degskewy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>Y</span></a><a href="#localtransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>local<wbr/>Transform</span></a><a href="#logged"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>logged</span></a><a href="#owner"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner</span></a><a href="#pivot" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pivot</span></a><a href="#position" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>position</span></a><a href="#rotation" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>rotation</span></a><a href="#scale" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>scale</span></a><a href="#skew" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>skew</span></a><a href="#worldtransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>world<wbr/>Transform</span></a><a href="#identity" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>IDENTITY</span></a></div></details>
+<div><a href="#_currentlocalid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>current<wbr/>Local<wbr/>ID</span></a><a href="#_cx" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>cx</span></a><a href="#_cy" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>cy</span></a><a href="#_localid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>local<wbr/>ID</span></a><a href="#_parentid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>parent<wbr/>ID</span></a><a href="#_rotation" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>rotation</span></a><a href="#_sx" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>sx</span></a><a href="#_sy" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>sy</span></a><a href="#_worldid" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>_<wbr/>world<wbr/>ID</span></a><a href="#degrotation"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Rotation</span></a><a href="#degskewx"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>X</span></a><a href="#degskewy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>deg<wbr/>Skew<wbr/>Y</span></a><a href="#localtransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>local<wbr/>Transform</span></a><a href="#pivot" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pivot</span></a><a href="#position" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>position</span></a><a href="#rotation" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>rotation</span></a><a href="#scale" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>scale</span></a><a href="#skew" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>skew</span></a><a href="#worldtransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>world<wbr/>Transform</span></a><a href="#identity" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>IDENTITY</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#logpixiwrite"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>log<wbr/>Pixi<wbr/>Write</span></a><a href="#onchange" class="tsd-is-protected"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>on<wbr/>Change</span></a><a href="#setfrommatrix" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>From<wbr/>Matrix</span></a><a href="#setrotationskew"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Rotation<wbr/>Skew</span></a><a href="#updatelocaltransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Local<wbr/>Transform</span></a><a href="#updateskew" class="tsd-is-protected"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Skew</span></a><a href="#updatetransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Transform</span></a></div></details></div></details></div>
+<div><a href="#onchange" class="tsd-is-protected tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>on<wbr/>Change</span></a><a href="#setfrommatrix" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>From<wbr/>Matrix</span></a><a href="#setrotation"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Rotation</span></a><a href="#setskewx"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Skew<wbr/>X</span></a><a href="#setskewy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Skew<wbr/>Y</span></a><a href="#updatelocaltransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Local<wbr/>Transform</span></a><a href="#updateskew" class="tsd-is-protected"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Skew</span></a><a href="#updatetransform" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>update<wbr/>Transform</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">@tawaship/pixi-animate-container - v3.1.0</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

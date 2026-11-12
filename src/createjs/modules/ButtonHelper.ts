@@ -77,9 +77,9 @@ export class CreatejsButtonHelper extends createjs.ButtonHelper {
 			}
 
 			gotoAndStopVerbatim(hitArea, hitLabel);
-			// The hit clip hangs on the pixi tree only (never on the createjs tree),
-			// so the per-tick pull sync can never reach it. It is static after the
-			// gotoAndStop above, so one explicit sync here is sufficient.
+			// The hit clip hangs on the pixi tree only (never on the createjs tree).
+			// Its color filters are copied at once here (Pixi copies them again
+			// whenever it draws the clip).
 			syncToPixi(hitArea);
 			hitPixi = pixi.addChild(hitArea.pixi);
 			hitPixi.alpha = 0.00001;

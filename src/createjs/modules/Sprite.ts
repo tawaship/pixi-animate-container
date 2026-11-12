@@ -2,10 +2,9 @@ import { Sprite, Texture, BaseTexture, BLEND_MODES, Rectangle } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
+	createPixiData, registerPixiData, setMaskForPixi, defineDisplayAccessors, blendModeForPixi
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
-import { logPixiWrites } from './transform';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Sprite.html | PIXI.Sprite}
@@ -24,8 +23,6 @@ export class PixiSprite extends Sprite {
 	}
 }
 
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiSprite.prototype);
 
 // Derived from the real constructor so there is a single source of truth.
 export type TCreatejsSpriteConstructorArgs = ConstructorParameters<typeof createjs.Sprite>;
@@ -45,9 +42,14 @@ function createPixiSpriteData(cjs: CreatejsSprite): IPixiSpriteData {
 /**
  * @ignore
  */
+const dataStore = new WeakMap<CreatejsSprite, IPixiSpriteData>();
+
+/**
+ * @ignore
+ */
 function resetData(cjs: CreatejsSprite): IPixiSpriteData {
 	const data = createPixiSpriteData(cjs);
-	cjs[PIXI_DATA] = data;
+	dataStore.set(cjs, data);
 	registerPixiData(cjs, data);
 
 	return data;
@@ -57,10 +59,9 @@ function resetData(cjs: CreatejsSprite): IPixiSpriteData {
  * @ignore
  */
 function ensureData(cjs: CreatejsSprite): IPixiSpriteData {
-	const data = cjs[PIXI_DATA];
+	const data = dataStore.get(cjs);
 
-	// its own data only (see IPixiData.owner)
-	return data && data.owner === cjs ? data : resetData(cjs);
+	return data ? data : resetData(cjs);
 }
 
 /**
@@ -72,12 +73,6 @@ function ensureData(cjs: CreatejsSprite): IPixiSpriteData {
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayObject<PixiSprite> {
-	/** The wrapper data (see PIXI_DATA in core) */
-	declare [PIXI_DATA]?: IPixiSpriteData;
-
-	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-	declare [EVENT_MANAGER]?: CreatejsEventManager;
-
 	constructor(...args: TCreatejsSpriteConstructorArgs) {
 		super(...args);
 
@@ -105,7 +100,24 @@ export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayO
 	}
 
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		ensureData(this).instance.blendMode = mode;
+		const data = ensureData(this);
+
+		data.reservedBlendMode = mode;
+		data.instance.blendMode = blendModeForPixi(data);
+	}
+
+	// @ts-expect-error TS2611/TS2416 - a plain data property on the real
+	// createjs.DisplayObject; intercepted here to draw it (see the class-level
+	// comment on CreatejsShape)
+	get compositeOperation() {
+		return ensureData(this).compositeOperation;
+	}
+
+	set compositeOperation(value) {
+		const data = ensureData(this);
+
+		data.compositeOperation = value;
+		data.instance.blendMode = blendModeForPixi(data);
 	}
 
 	gotoAndStop(frameOrAnimation: string | number): void {
@@ -193,3 +205,6 @@ export class CreatejsSprite extends createjs.Sprite implements ICreatejsDisplayO
 		removeAllInteractionListeners(this, type);
 	}
 }
+
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsSprite.prototype, ensureData);

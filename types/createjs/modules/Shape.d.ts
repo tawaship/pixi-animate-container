@@ -1,8 +1,7 @@
 import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { ICreatejsDisplayObject, IPixiData, TCreatejsMask, PIXI_DATA } from './core';
+import { ICreatejsDisplayObject, IPixiData, TCreatejsMask } from './core';
 import { CreatejsGraphics } from './Graphics';
-import { EVENT_MANAGER, CreatejsEventManager } from './EventManager';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
@@ -32,13 +31,11 @@ export interface IPixiShapeData extends IPixiData<PixiShape> {
  * verification-C suites, which exercise both assignments.
  */
 export declare class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObject<PixiShape> {
-    /** The wrapper data (see PIXI_DATA in core) */
-    [PIXI_DATA]?: IPixiShapeData;
-    /** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-    [EVENT_MANAGER]?: CreatejsEventManager;
     constructor(graphics?: CreatejsGraphics);
     get pixi(): PixiShape;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
+    get compositeOperation(): string | null;
+    set compositeOperation(value: string | null);
     get graphics(): CreatejsGraphics | null;
     set graphics(value: CreatejsGraphics | null);
     get masked(): DisplayObject[];

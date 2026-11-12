@@ -1,15 +1,30 @@
 import { BLEND_MODES, Container } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
-import { CreatejsColorFilter } from './ColorFilter';
-import { ICreatejsDisplayObject, ICreatejsBlendModeTarget, IPixiData, TCreatejsMask, PIXI_DATA } from './core';
-import { EVENT_MANAGER, CreatejsEventManager } from './EventManager';
+import { CreatejsColorFilter, PixiColorMatrixFilter } from './ColorFilter';
+import { ICreatejsDisplayObject, ICreatejsBlendModeTarget, IPixiData, TCreatejsMask } from './core';
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
  */
 export declare class PixiMovieClip extends Container {
     private _createjs;
     private _filterContainer;
+    private _colorFilters;
     constructor(cjs: CreatejsMovieClip);
+    /**
+     * Sets the color filters whose matrices follow their createjs ColorFilters
+     * (see updateTransform).
+     *
+     * @ignore
+     */
+    setColorFiltersForPixi(value: PixiColorMatrixFilter[] | null): void;
+    /**
+     * Copies the color filter scalars (plain data properties that tweens write)
+     * into the filters' matrices, then updates the transforms as usual. Pixi
+     * calls this on every node it is about to draw, so the filters drawn always
+     * carry the current createjs values, and a node no longer drawn (or
+     * discarded) costs nothing.
+     */
+    updateTransform(): void;
     get filterContainer(): Container | null;
     set filterContainer(value: Container | null);
     get createjs(): CreatejsMovieClip;
@@ -65,28 +80,7 @@ export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
     subInstance: Container;
     listenFrameEvents: IAnimateFrameEventOption;
     filters: TCreatejsColorFilters;
-    compositeOperation: CompositeOperations | null;
 }
-/**
- * Key of the mark a root clip carries while its tree has to be settled before
- * Pixi draws (see markForSettle).
- */
-export declare const SETTLE_MARK: unique symbol;
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws
- * (CreatejsController.flushForRender). createjs settles synched / single
- * frame clips and clips waiting to start over when it draws (MovieClip.draw
- * -> _updateState); the driver does that after every frame it plays, but a
- * goto made by the application between frames, or a clip added between
- * frames, would otherwise be drawn unsettled until the next frame is played.
- * The mark is put on the top of the tree, which is a clip the container
- * plays when the tree is on one.
- */
-export declare function markForSettle(node: createjs.DisplayObject): void;
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-export declare function takeSettleMark(root: CreatejsMovieClip): boolean;
 /**
  * inherited {@link https://createjs.com/docs/easeljs/classes/MovieClip.html | createjs.MovieClip}
  *
@@ -96,12 +90,6 @@ export declare function takeSettleMark(root: CreatejsMovieClip): boolean;
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export declare class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
-    /** The wrapper data (see PIXI_DATA in core) */
-    [PIXI_DATA]?: IPixiMovieClipData;
-    /** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-    [EVENT_MANAGER]?: CreatejsEventManager;
-    /** Set while the tree under this root has to be settled before Pixi draws (see markForSettle) */
-    [SETTLE_MARK]?: boolean;
     [key: string]: any;
     protected _fps: number;
     protected _listenFrameEventsBase: IAnimateFrameEventOption;
@@ -173,12 +161,22 @@ export declare class CreatejsMovieClip extends createjs.MovieClip implements ICr
      */
     gotoAndStop(positionOrLabel: string | number): void;
     updateBlendModeForPixi(mode: BLEND_MODES): void;
-    get compositeOperation(): CompositeOperations | null;
-    set compositeOperation(value: CompositeOperations | null);
+    /**
+     * Gives the children the blend mode this clip draws them with.
+     */
+    private _passBlendModeForPixi;
+    get compositeOperation(): string | null;
+    set compositeOperation(value: string | null);
     get filters(): TCreatejsColorFilters;
     set filters(value: TCreatejsColorFilters);
     get mask(): TCreatejsMask;
     set mask(value: TCreatejsMask);
+    /**
+     * Gives a child being added the blend mode this clip draws it with. A child
+     * this clip already has (timelines place their children again on every
+     * frame) has it already: this clip passes its mode to all its children
+     * whenever the mode changes.
+     */
     private _updateChildrenBlendModeForPixi;
     addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child: T): T;
     addChild<T extends createjs.DisplayObject & ICreatejsBlendModeTarget>(child0: createjs.DisplayObject & ICreatejsBlendModeTarget, lastChild: T): T;

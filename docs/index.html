@@ -55,6 +55,142 @@
 </code><button type="button">Copy</button></pre>
 
 <p>See <a href="https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAnimatePrepareTarget.html">here</a> for complete options for <code>PIXI.animate.loadAssetAsync</code>.</p>
+<h2 id="supported-features" class="tsd-anchor-link">Supported features<a href="#supported-features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>What plays, sorted by how far it is confirmed. &quot;Checked&quot; means that the content is played frame by frame
+next to CreateJS itself, and what PixiJS is given to draw (positions, matrices, visibility, masks, blend
+modes, fills) is compared with what CreateJS would draw, after every frame and at every point PixiJS may
+render; the samples (<a href="https://tawaship.github.io/pixi-animate-container/samples/">https://tawaship.github.io/pixi-animate-container/samples/</a>) show the same content
+played by this package and by CreateJS.</p>
+<h3 id="supported" class="tsd-anchor-link">Supported<a href="#supported" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Timelines: independent / synched / single frame clips, loops, labels, <code>gotoAndPlay</code> / <code>gotoAndStop</code>, <code>play</code> / <code>stop</code></td>
+<td>A <code>goto</code> made between frames (from a click handler or another ticker callback) is drawn at once</td>
+</tr>
+<tr>
+<td>Frame scripts</td>
+<td>Run at their frame, in the same order as CreateJS</td>
+</tr>
+<tr>
+<td>Classic and motion tweens, motion guides, easing</td>
+<td></td>
+</tr>
+<tr>
+<td>Rotation and skew</td>
+<td>Drawn as Animate's HTML5 Canvas output draws them, also when both are set</td>
+</tr>
+<tr>
+<td>Shapes with solid fills and strokes</td>
+<td></td>
+</tr>
+<tr>
+<td>Bitmap fills (from an image or a sprite sheet frame)</td>
+<td>The image is always repeated, which is what published content uses</td>
+</tr>
+<tr>
+<td>Gradient fills and strokes (linear and radial)</td>
+<td>Outside the gradient the end colors continue, as in CreateJS</td>
+</tr>
+<tr>
+<td>Bitmaps and sprite sheets (one or several sheets)</td>
+<td></td>
+</tr>
+<tr>
+<td>Masks, tweened masks, masks that are taken off</td>
+<td></td>
+</tr>
+<tr>
+<td>Color effects published as <code>createjs.ColorFilter</code>, and their tweens</td>
+<td>Drawn with a <code>PIXI.filters.ColorMatrixFilter</code></td>
+</tr>
+<tr>
+<td>Blend modes: add (<code>lighter</code>), multiply, screen</td>
+<td>Switching them on and off, also on a shape, bitmap or text, as CreateJS draws them</td>
+</tr>
+<tr>
+<td>Buttons (<code>ButtonHelper</code>) and mouse events (<code>mousedown</code>, <code>pressmove</code>, <code>pressup</code>, <code>click</code>, <code>rollover</code>, <code>rollout</code>)</td>
+<td>Listened to with <code>on</code> / <code>addEventListener</code> on the CreateJS instance; PixiJS's pointer events are used underneath</td>
+</tr>
+<tr>
+<td>Frame rate</td>
+<td>Content plays at the frame rate it was published with, whatever the display's rate; <code>createjsSmooth</code> (on by default) keeps it even when the time between frames varies; <code>createjsSpeed</code> changes the speed</td>
+</tr>
+<tr>
+<td>Sound (<code>playSound</code> in frame scripts)</td>
+<td>With <code>options: { useSound: true }</code> in <code>loadAssetAsync</code>; played by CreateJS's <code>Sound</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="probably-works" class="tsd-anchor-link">Probably works<a href="#probably-works" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>What is not confirmed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dynamic text</td>
+<td>Font, color, alignment, line height and width are passed on, and lines are broken by PixiJS's word wrap, which can break them at other places than CreateJS. <code>textBaseline</code> other than the default and <code>outline</code> are not drawn. A <code>lineHeight</code> of 0 (the default) uses PixiJS's line spacing, where CreateJS uses 1.2 times the width of &quot;M&quot;</td>
+</tr>
+<tr>
+<td>Playing a symbol other than the published root (<code>new lib.Symbol()</code> added with <code>addCreatejs</code>)</td>
+<td>Plays as a root of its own. Not compared with CreateJS frame by frame; the samples page can play any symbol of a sample</td>
+</tr>
+<tr>
+<td><code>cache()</code> and filter caches</td>
+<td>CreateJS's cache is made but not used for drawing: color effects are drawn without it, and a blend mode on a cached clip applies to each object in it rather than to the cached image as a whole (they differ where the objects overlap)</td>
+</tr>
+<tr>
+<td><code>regX</code> / <code>regY</code> of a bitmap or sprite</td>
+<td>Not covered by the published samples</td>
+</tr>
+<tr>
+<td>A mask whose shape is empty (not null)</td>
+<td>Not covered by the published samples; CreateJS does not clip with it, and this package may clip everything</td>
+</tr>
+</tbody>
+</table>
+<h3 id="not-supported" class="tsd-anchor-link">Not supported<a href="#not-supported" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blend modes other than add, multiply and screen (darken, lighten, overlay, hard light, difference and so on)</td>
+<td>Drawn as the blend mode of the parent (PixiJS's WebGL renderer does not have them)</td>
+</tr>
+<tr>
+<td>Filters other than color effects (blur, glow, drop shadow and so on)</td>
+<td>Not drawn</td>
+</tr>
+<tr>
+<td>Bitmap strokes (<code>beginBitmapStroke</code>)</td>
+<td>Not drawn</td>
+</tr>
+<tr>
+<td><code>no-repeat</code> and the other repetitions of a bitmap fill</td>
+<td>Drawn repeated</td>
+</tr>
+<tr>
+<td>Sprite sheet animations playing on their own (<code>new Sprite(sheet, frame)</code>, a sprite's own <code>framerate</code>)</td>
+<td>A sprite shows the frame its timeline goes to (as published content uses sprites)</td>
+</tr>
+</tbody>
+</table>
+<p>Content that uses the Animate camera (&quot;Advanced Layers&quot;) has not been checked.</p>
 <h2 id="using-with-typescript" class="tsd-anchor-link">Using with TypeScript<a href="#using-with-typescript" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>The full createjs 1.0 API is typed (via <code>@tawaship/createjs-module</code>), so
 TypeScript checks every call against the real createjs surface. New type
@@ -126,11 +262,38 @@ comes before its first <code>handleTick</code></li>
 </li>
 <li>Fixed: a value written to an instance's pixi node (<code>instance.pixi.x = 100</code>)
 stays until the timeline writes that property again, as in 2.x (3.0.x lost
-it on the next tick). The written value is also taken over by the createjs
-instance (<code>instance.x</code> reads 100 from the next <code>handleTick</code> on).</li>
+it on the next tick). The createjs instance keeps its own value
+(<code>instance.x</code> still reads what createjs wrote), as in 2.x.</li>
+<li>Changed: the display properties (<code>x</code>, <code>y</code>, <code>scaleX</code>, <code>scaleY</code>, <code>rotation</code>,
+<code>skewX</code>, <code>skewY</code>, <code>regX</code>, <code>regY</code>, <code>alpha</code>, <code>visible</code>) are accessors on the
+class prototypes again, as in 2.x: a value written on the createjs side is
+passed to the pixi node at once, so <code>instance.pixi.*</code> read from a frame
+script is current. They are enumerable (<code>for...in</code> lists them) but are not
+own properties, so <code>Object.keys()</code> / <code>JSON.stringify()</code> of an instance do not
+include them. <code>_off</code> stays a plain property. <code>compositeOperation</code> is an
+accessor on every display object class (it was on MovieClip only).</li>
 <li>Fixed: objects that are both rotated and skewed are drawn the way the
 browser output of Animate (createjs) draws them. The values of
 <code>pixi.rotation</code> / <code>pixi.skew</code> are unchanged.</li>
+<li>Fixed: <code>compositeOperation</code> is drawn as createjs draws it. An object draws
+with its own value, or else its nearest ancestor's, so taking a value off
+(<code>undefined</code> / <code>null</code>) goes back to the inherited one; 2.x and 3.0.x kept
+drawing the value that was taken off, and a change made after a shape was
+first drawn did not show. The value of a Shape, Bitmap, Sprite or Text is
+drawn as well (it was ignored), and <code>source-over</code> draws normally inside a
+blended clip.</li>
+<li>Fixed: a Shape given new <code>graphics</code> draws only them (the previous graphics
+stayed drawn as well, unless the shape was used as a mask).</li>
+<li>Added: bitmap fills (<code>beginBitmapFill</code> / <code>bf</code>, which Animate publishes for
+shapes filled with a bitmap, from an image or a sprite sheet frame) are
+drawn. The image is always repeated, which is what published content uses.
+Bitmap strokes are not drawn.</li>
+<li>Added: gradient fills and strokes (<code>beginLinearGradientFill</code> / <code>lf</code>,
+<code>beginRadialGradientFill</code> / <code>rf</code>, <code>beginLinearGradientStroke</code> / <code>ls</code>,
+<code>beginRadialGradientStroke</code> / <code>rs</code>) are drawn, with the colors the browser's
+canvas paints; outside the gradient the end colors continue, as in
+createjs. Each gradient is drawn into a texture once and shared by the
+shapes that use it.</li>
 <li>Fixed: an object marked <code>_off</code> that is on a display list is drawn, as in
 createjs. A shape used as a mask is no longer drawn itself, and a mask shape
 taken off with <code>mask = null</code> is no longer left drawn in the pixi tree.</li>
@@ -364,6 +527,12 @@ this with full createjs typings; see &quot;Using with TypeScript&quot;.</p>
 <li><a href="#npm"><span>NPM</span></a></li>
 <li><a href="#browser"><span>Browser</span></a></li></ul></li>
 <li><a href="#usage"><span>Usage</span></a></li>
+<li><a href="#supported-features"><span>Supported features</span></a></li>
+<li>
+<ul>
+<li><a href="#supported"><span>Supported</span></a></li>
+<li><a href="#probably-works"><span>Probably works</span></a></li>
+<li><a href="#not-supported"><span>Not supported</span></a></li></ul></li>
 <li><a href="#using-with-typescript"><span>Using with <wbr/>Type<wbr/>Script</span></a></li>
 <li><a href="#claude-code-skills"><span>Claude <wbr/>Code skills</span></a></li>
 <li><a href="#change-log"><span>Change log</span></a></li>

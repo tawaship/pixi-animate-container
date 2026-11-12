@@ -1,10 +1,11 @@
-import { BLEND_MODES, Graphics, LINE_CAP, LINE_JOIN } from 'pixi.js';
+import { BaseTexture, BLEND_MODES, Graphics, LINE_CAP, LINE_JOIN, Matrix, Texture } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
+	createPixiData, registerPixiData, setMaskForPixi
 } from './core';
 import { DEG_TO_RAD } from './utils';
+import { ICreatejsGradient, getGradientTexture } from './gradient';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Graphics.html | PIXI.Graphics}
@@ -21,6 +22,23 @@ export class PixiGraphics extends Graphics {
 	get createjs() {
 		return this._createjs;
 	}
+
+	/**
+	 * Sets the blend mode the graphics is drawn with. Pixi 5 draws a small
+	 * Graphics in batches that keep the blend mode it had when they were made
+	 * and makes them again only when the shapes change, so a new mode would
+	 * not be drawn; the batches are made again on the next render.
+	 *
+	 * @ignore
+	 */
+	setBlendModeForPixi(mode: BLEND_MODES): void {
+		if (this.blendMode === mode) {
+			return;
+		}
+
+		this.blendMode = mode;
+		this.batchDirty = -1;
+	}
 }
 
 // Derived from the real constructor so there is a single source of truth.
@@ -29,6 +47,10 @@ export type TCreatejsGraphicsConstructorArgs = ConstructorParameters<typeof crea
 export interface IPixiGraphicsData extends IPixiData<PixiGraphics> {
 	strokeFill: number;
 	strokeAlpha: number;
+	/** The gradient texture the next stroke style strokes with (null: the color above) */
+	strokeTexture: Texture | null;
+	/** The matrix from strokeTexture's pixels to the shape's coordinates */
+	strokeMatrix: Matrix | null;
 }
 
 /**
@@ -39,16 +61,23 @@ function createPixiGraphicsData(cjs: CreatejsGraphics): IPixiGraphicsData {
 
 	return Object.assign(createPixiData<PixiGraphics>(pixi, null), {
 		strokeFill: 0,
-		strokeAlpha: 1
+		strokeAlpha: 1,
+		strokeTexture: null,
+		strokeMatrix: null
 	});
 }
 
 /**
  * @ignore
  */
+const dataStore = new WeakMap<CreatejsGraphics, IPixiGraphicsData>();
+
+/**
+ * @ignore
+ */
 function resetData(cjs: CreatejsGraphics): IPixiGraphicsData {
 	const data = createPixiGraphicsData(cjs);
-	cjs[PIXI_DATA] = data;
+	dataStore.set(cjs, data);
 	registerPixiData(cjs, data);
 
 	return data;
@@ -58,10 +87,9 @@ function resetData(cjs: CreatejsGraphics): IPixiGraphicsData {
  * @ignore
  */
 function ensureData(cjs: CreatejsGraphics): IPixiGraphicsData {
-	const data = cjs[PIXI_DATA];
+	const data = dataStore.get(cjs);
 
-	// its own data only (see IPixiData.owner)
-	return data && data.owner === cjs ? data : resetData(cjs);
+	return data ? data : resetData(cjs);
 }
 
 /**
@@ -93,6 +121,39 @@ const LineJoin = {
 };
 
 /**
+ * What createjs fills with: an image, a canvas (SpriteSheetUtils.extractFrame
+ * makes one) or a video.
+ */
+export type TBitmapFillImage = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+
+/**
+ * The textures bitmap fills are drawn with, one per image. Keyed by the image,
+ * so that a texture is kept only while its image is: the images of a published
+ * library live with the library, and an image a frame is extracted into
+ * (SpriteSheetUtils.extractFrame, made for each instance) goes with the
+ * Graphics that use it. The textures are made outside Pixi's texture caches
+ * (which would keep them for good), and their GPU memory is given back by
+ * Pixi's texture garbage collection once they are no longer drawn.
+ *
+ * @ignore
+ */
+const bitmapFillTextures = new WeakMap<TBitmapFillImage, Texture>();
+
+/**
+ * @ignore
+ */
+function getBitmapFillTexture(image: TBitmapFillImage): Texture {
+	let texture = bitmapFillTextures.get(image);
+
+	if (!texture) {
+		texture = new Texture(new BaseTexture(image));
+		bitmapFillTextures.set(image, texture);
+	}
+
+	return texture;
+}
+
+/**
  * inherited {@link https://createjs.com/docs/easeljs/classes/Graphics.html | createjs.Graphics}
  *
  * createjs.Graphics is a command object, not a display object (no
@@ -101,9 +162,6 @@ const LineJoin = {
  * ICreatejsDisplayObject.
  */
 export class CreatejsGraphics extends createjs.Graphics {
-	/** The wrapper data (see PIXI_DATA in core) */
-	declare [PIXI_DATA]?: IPixiGraphicsData;
-
 	constructor(...args: TCreatejsGraphicsConstructorArgs) {
 		super(...args);
 
@@ -118,8 +176,7 @@ export class CreatejsGraphics extends createjs.Graphics {
 	}
 
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		if (!mode) return;
-		ensureData(this).instance.blendMode = mode;
+		ensureData(this).instance.setBlendModeForPixi(mode);
 	}
 
 	// path methods
@@ -284,6 +341,71 @@ export class CreatejsGraphics extends createjs.Graphics {
 		return this.beginFill(color);
 	}
 
+	/**
+	 * Fills with an image, placed by `matrix` (from the image's space to the
+	 * shape's) as createjs places its pattern. The image is repeated (Pixi
+	 * repeats every texture it fills with, as createjs does for the default
+	 * repetition that published content uses; "no-repeat" and the other
+	 * repetitions are drawn repeated too).
+	 */
+	beginBitmapFill(image: TBitmapFillImage, repetition?: string, matrix?: createjs.Matrix2D): this {
+		ensureData(this).instance.beginTextureFill({
+			texture: getBitmapFillTexture(image),
+			color: 0xFFFFFF,
+			alpha: 1,
+			matrix: matrix ? new Matrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty) : undefined
+		});
+		super.beginBitmapFill(image, repetition, matrix);
+
+		return this;
+	}
+
+	bf(image: TBitmapFillImage, repetition?: string, matrix?: createjs.Matrix2D) {
+		return this.beginBitmapFill(image, repetition, matrix);
+	}
+
+	/**
+	 * Fills with a gradient. Pixi's Graphics has no gradients: the gradient is
+	 * drawn by the browser's canvas into a texture (so that its colors are what
+	 * createjs paints), once for each gradient and shared, and filled with
+	 * through a matrix from the texture's pixels to the shape's coordinates.
+	 * Outside the gradient the end colors continue, as in canvas. A gradient
+	 * canvas paints nothing with (a line of length 0, two equal circles) fills
+	 * nothing.
+	 */
+	beginLinearGradientFill(colors: string[], ratios: number[], x0: number, y0: number, x1: number, y1: number): this {
+		this._beginGradientFill({ type: 'linear', colors, ratios, x0, y0, r0: 0, x1, y1, r1: 0 });
+		super.beginLinearGradientFill(colors, ratios, x0, y0, x1, y1);
+
+		return this;
+	}
+
+	lf(colors: string[], ratios: number[], x0: number, y0: number, x1: number, y1: number) {
+		return this.beginLinearGradientFill(colors, ratios, x0, y0, x1, y1);
+	}
+
+	beginRadialGradientFill(colors: string[], ratios: number[], x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): this {
+		this._beginGradientFill({ type: 'radial', colors, ratios, x0, y0, r0, x1, y1, r1 });
+		super.beginRadialGradientFill(colors, ratios, x0, y0, r0, x1, y1, r1);
+
+		return this;
+	}
+
+	rf(colors: string[], ratios: number[], x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
+		return this.beginRadialGradientFill(colors, ratios, x0, y0, r0, x1, y1, r1);
+	}
+
+	private _beginGradientFill(gradient: ICreatejsGradient): void {
+		const instance = ensureData(this).instance;
+		const texture = getGradientTexture(gradient);
+
+		if (texture) {
+			instance.beginTextureFill({ texture, color: 0xFFFFFF, alpha: 1, matrix: texture.toShape });
+		} else {
+			instance.beginFill(0, 0);
+		}
+	}
+
 	endFill(): this {
 		ensureData(this).instance.endFill();
 		super.endFill();
@@ -297,15 +419,31 @@ export class CreatejsGraphics extends createjs.Graphics {
 
 	setStrokeStyle(thickness: number, caps: 0 | 1 | 2, joints: 0 | 1 | 2, miterLimit: number, ignoreScale: boolean): this {
 		const data = ensureData(this);
+		const cap = (caps in LineCap) ? LineCap[caps] : LineCap[0];
+		const join = (joints in LineJoin) ? LineJoin[joints] : LineJoin[0];
+		const gradient = data.strokeTexture;
 
-		data.instance.lineTextureStyle({
-			width: thickness,
-			color: data.strokeFill,
-			alpha: data.strokeAlpha,
-			cap: (caps in LineCap) ? LineCap[caps] : LineCap[0],
-			join: (joints in LineJoin) ? LineJoin[joints] : LineJoin[0],
-			miterLimit
-		});
+		if (gradient) {
+			data.instance.lineTextureStyle({
+				width: thickness,
+				texture: gradient,
+				color: 0xFFFFFF,
+				alpha: 1,
+				matrix: data.strokeMatrix || undefined,
+				cap,
+				join,
+				miterLimit
+			});
+		} else {
+			data.instance.lineTextureStyle({
+				width: thickness,
+				color: data.strokeFill,
+				alpha: data.strokeAlpha,
+				cap,
+				join,
+				miterLimit
+			});
+		}
 
 		super.setStrokeStyle(thickness, caps, joints, miterLimit, ignoreScale);
 
@@ -321,6 +459,8 @@ export class CreatejsGraphics extends createjs.Graphics {
 		const c = this._parseColor(color);
 		data.strokeFill = c.color;
 		data.strokeAlpha = c.alpha;
+		data.strokeTexture = null;
+		data.strokeMatrix = null;
 
 		super.beginStroke(color);
 
@@ -329,6 +469,44 @@ export class CreatejsGraphics extends createjs.Graphics {
 
 	s(color: string) {
 		return this.beginStroke(color);
+	}
+
+	/**
+	 * Strokes with a gradient (taken by the stroke style set next, as a color
+	 * set by beginStroke is). The gradient is drawn by the browser's canvas
+	 * into a texture once and shared; see beginLinearGradientFill.
+	 */
+	beginLinearGradientStroke(colors: string[], ratios: number[], x0: number, y0: number, x1: number, y1: number): this {
+		this._setGradientStroke({ type: 'linear', colors, ratios, x0, y0, r0: 0, x1, y1, r1: 0 });
+		super.beginLinearGradientStroke(colors, ratios, x0, y0, x1, y1);
+
+		return this;
+	}
+
+	ls(colors: string[], ratios: number[], x0: number, y0: number, x1: number, y1: number) {
+		return this.beginLinearGradientStroke(colors, ratios, x0, y0, x1, y1);
+	}
+
+	beginRadialGradientStroke(colors: string[], ratios: number[], x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): this {
+		this._setGradientStroke({ type: 'radial', colors, ratios, x0, y0, r0, x1, y1, r1 });
+		super.beginRadialGradientStroke(colors, ratios, x0, y0, r0, x1, y1, r1);
+
+		return this;
+	}
+
+	rs(colors: string[], ratios: number[], x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
+		return this.beginRadialGradientStroke(colors, ratios, x0, y0, r0, x1, y1, r1);
+	}
+
+	private _setGradientStroke(gradient: ICreatejsGradient): void {
+		const data = ensureData(this);
+		const texture = getGradientTexture(gradient);
+
+		data.strokeTexture = texture;
+		data.strokeMatrix = texture ? texture.toShape : null;
+		data.strokeFill = 0xFFFFFF;
+		// a gradient canvas paints nothing with strokes nothing
+		data.strokeAlpha = texture ? 1 : 0;
 	}
 
 	drawRoundRect(x: number, y: number, w: number, h: number, radius: number): this {

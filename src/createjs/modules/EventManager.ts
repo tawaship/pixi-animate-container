@@ -58,15 +58,6 @@ export class CreatejsEventManager {
 	private _emitter: utils.EventEmitter;
 	private _cjs: TCreatejsObject;
 	
-	/**
-	 * Whether this is the manager of `cjs` (a symbol-keyed property is
-	 * inherited through the prototype chain, so the one found may be a
-	 * prototype's).
-	 */
-	isFor(cjs: TCreatejsObject): boolean {
-		return this._cjs === cjs;
-	}
-
 	constructor(cjs: TCreatejsObject) {
 		this._cjs = cjs;
 		this._emitter = new utils.EventEmitter();
@@ -215,23 +206,21 @@ export class CreatejsEventManager {
 }
 
 /**
- * Key of the event manager on the createjs instance (every display wrapper
- * class declares it). The manager (and its pointer handlers on the Pixi
- * instance) is created lazily on the first listener registration, so
- * instances that never listen pay nothing. A symbol key keeps the createjs
- * object's surface as it is.
+ * External store keyed by the createjs instance. The manager (and its pointer
+ * handlers on the Pixi instance) is created lazily on the first listener
+ * registration, so instances that never listen pay nothing.
  */
-export const EVENT_MANAGER: unique symbol = Symbol('eventManager');
+const eventManagerStore = new WeakMap<object, CreatejsEventManager>();
 
 /**
  * @ignore
  */
 function getEventManager(cjs: TCreatejsObject): CreatejsEventManager {
-	let manager = cjs[EVENT_MANAGER];
+	let manager = eventManagerStore.get(cjs);
 
-	if (!manager || !manager.isFor(cjs)) {
+	if (!manager) {
 		manager = new CreatejsEventManager(cjs);
-		cjs[EVENT_MANAGER] = manager;
+		eventManagerStore.set(cjs, manager);
 	}
 
 	return manager;
@@ -245,18 +234,18 @@ export function addInteractionListener(cjs: TCreatejsObject, type: string, cb: I
 	getEventManager(cjs).add(type, cb);
 }
 
-export function removeInteractionListener(cjs: TCreatejsObject, type: string, cb: ICreatejsInteractionEventDelegate): void {
-	const manager = cjs[EVENT_MANAGER];
+export function removeInteractionListener(cjs: object, type: string, cb: ICreatejsInteractionEventDelegate): void {
+	const manager = eventManagerStore.get(cjs);
 
-	if (manager && manager.isFor(cjs)) {
+	if (manager) {
 		manager.remove(type, cb);
 	}
 }
 
-export function removeAllInteractionListeners(cjs: TCreatejsObject, type?: string): void {
-	const manager = cjs[EVENT_MANAGER];
+export function removeAllInteractionListeners(cjs: object, type?: string): void {
+	const manager = eventManagerStore.get(cjs);
 
-	if (manager && manager.isFor(cjs)) {
+	if (manager) {
 		manager.removeAll(type);
 	}
 }

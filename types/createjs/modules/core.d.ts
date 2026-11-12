@@ -21,32 +21,10 @@ export type TCreatejsMask = CreatejsShape | null;
  */
 export type TCreatejsObject = CreatejsMovieClip | CreatejsSprite | CreatejsShape | CreatejsBitmap | CreatejsText;
 /**
- * Key of the wrapper data on a createjs object (a display object or a
- * Graphics). The wrapper data is held by the object itself, not by a WeakMap:
- * it is read on every node on every frame and on every display-list change,
- * and a property costs less to read and to set up. A symbol key keeps the
- * createjs object's surface as it is: for-in, Object.keys and
- * Object.getOwnPropertyNames do not show it.
- */
-export declare const PIXI_DATA: unique symbol;
-/**
- * Minimal surface of a createjs display object consumed by the sync walks.
- * All members are plain data properties on the createjs side.
+ * Minimal surface of a createjs object walked by syncToPixi.
  */
 export interface ICreatejsSyncNode {
-    [PIXI_DATA]?: IPixiData<Container>;
-    x: number;
-    y: number;
-    scaleX: number;
-    scaleY: number;
-    regX: number;
-    regY: number;
-    skewX: number;
-    skewY: number;
-    rotation: number;
     visible: boolean;
-    alpha: number;
-    _off?: boolean;
     children?: ICreatejsSyncNode[];
 }
 /**
@@ -67,6 +45,10 @@ export interface ICreatejsSyncNode {
  */
 export interface ICreatejsDisplayObject<T extends DisplayObject> {
     readonly pixi: T;
+    /**
+     * Gives the node the blend mode in effect where its parent is drawn (the
+     * parent's own, or what the parent inherits); see blendModeForPixi.
+     */
     updateBlendModeForPixi(mode: BLEND_MODES): void;
 }
 /**
@@ -87,31 +69,27 @@ export interface IColorFilterSyncPair {
     matrix: number[];
 }
 export interface IPixiData<T extends Container> {
-    /**
-     * The createjs object the data belongs to. A property under a symbol key is
-     * inherited through the prototype chain, and published symbols use a
-     * createjs instance as their prototype (`p = new cjs.MovieClip()`), so the
-     * data found on an object is its own only when this is the object itself
-     */
-    owner: object | null;
     regObj: Point;
     instance: T;
     /** The node's transform, which composes rotation and skew the createjs way */
     transform: CjsTransform;
+    /** The blend mode the node inherits from its ancestors (see blendModeForPixi) */
     reservedBlendMode: BLEND_MODES;
+    /** The node's own createjs compositeOperation */
+    compositeOperation: string | null;
     mask: TCreatejsMask;
     colorFilters: IColorFilterSyncPair[] | null;
-    syncedX: number;
-    syncedY: number;
-    syncedScaleX: number;
-    syncedScaleY: number;
-    syncedRotation: number;
-    syncedSkewX: number;
-    syncedSkewY: number;
-    syncedRegX: number;
-    syncedRegY: number;
-    syncedVisible: boolean;
-    syncedAlpha: number;
+    cjsX: number;
+    cjsY: number;
+    cjsScaleX: number;
+    cjsScaleY: number;
+    cjsRotation: number;
+    cjsSkewX: number;
+    cjsSkewY: number;
+    cjsRegX: number;
+    cjsRegY: number;
+    cjsVisible: boolean;
+    cjsAlpha: number;
 }
 /**
  * Creates the wrapper data of a Pixi node and gives the node a
@@ -121,32 +99,67 @@ export interface IPixiData<T extends Container> {
  */
 export declare function createPixiData<TPixiDisplayObject extends Container>(pixi: TPixiDisplayObject, anchor: Point | null): IPixiData<TPixiDisplayObject>;
 /**
- * What holds wrapper data under PIXI_DATA (every wrapper class declares it
- * with its own data type).
+ * The blend mode a node draws its content with, as createjs draws it: its own
+ * compositeOperation, or else the one in effect where its parent is drawn
+ * (`reservedBlendMode`, passed down by the parent). createjs sets a node's
+ * compositeOperation on the context for the draw of the node and its whole
+ * subtree (DisplayObject.updateContext, inside save / restore), so a
+ * descendant's own value replaces it for that descendant's subtree only.
+ * A value Pixi cannot draw is drawn as the inherited one.
  */
-export interface IPixiDataHolder {
-    [PIXI_DATA]?: IPixiData<Container>;
-}
-/**
- * Links new wrapper data to the createjs object it was stored on (each class
- * module stores it under PIXI_DATA itself, with its own data type): the data
- * learns its owner (see IPixiData.owner), and the node's transform too, so
- * that values written through Pixi can be taken over into that object (see
- * pullFromPixi).
- */
+export declare function blendModeForPixi(data: IPixiData<Container>): BLEND_MODES;
 export declare function registerPixiData(cjs: object, data: IPixiData<Container>): void;
+export declare function findPixiData(cjs: object): IPixiData<Container> | null;
 /**
- * The wrapper data of a createjs object, or null when it has none.
+ * The display properties every wrapper display object class gets as
+ * accessors (see defineDisplayAccessors). One list for all classes, so that
+ * no class can miss one; test/harness checks that every class has them.
  */
-export declare function findPixiData(cjs: IPixiDataHolder): IPixiData<Container> | null;
+export declare const DISPLAY_ACCESSOR_NAMES: string[];
 /**
- * Brackets the driver's own work (playing frames, settling, syncing): the
+ * Makes the display properties of a wrapper display object class write
+ * through to its Pixi node at once: every write on the createjs side
+ * (timeline, frame scripts, application code) reaches the Pixi node when it
+ * is made, so Pixi draws the createjs state whenever it draws, with no walk
+ * to copy it over.
+ *
+ * - The createjs-side value is kept in the wrapper data and read back from
+ *   there. A value written to the Pixi node (`instance.pixi.x = 100`) stays
+ *   until the createjs side writes that property again, and the createjs
+ *   side still reads its own value (AC2's behavior)
+ * - Every write is passed to the Pixi node, even with the value it had, so
+ *   that a tween writing the property puts a Pixi-side write back (Pixi's
+ *   setters compare the value themselves)
+ * - The data is looked up (and made the first time) by `getData`: the
+ *   createjs constructor writes these properties inside `super()`, before
+ *   the wrapper's constructor body runs, and the first write creates the data
+ * - `_off` is not mapped: createjs draws whatever is on its display list
+ *   (`_off` only keeps the timeline from placing an object, and the display
+ *   list is mirrored to Pixi). `renderable` is left to Pixi, which turns it
+ *   off for nodes used as masks.
+ *
+ * Pixi declares these as plain fields of the createjs-side classes' types,
+ * which an accessor in a subclass body cannot override (TS2611), so they are
+ * defined on the prototype; they are enumerable, so that for-in on an
+ * instance still lists them.
+ */
+export declare function defineDisplayAccessors<T extends object>(proto: object, getData: (cjs: T) => IPixiData<Container>): void;
+/**
+ * Brackets the driver's own work (playing frames, settling): the
  * display-list churn createjs makes while resolving a frame is not an
  * application change and marks nothing.
  */
 export declare function beginDrive(): void;
 export declare function endDrive(): void;
 export declare function isDriving(): boolean;
+/**
+ * Marks the tree `node` belongs to as needing to be settled before Pixi draws.
+ */
+export declare function markForSettle(node: createjs.DisplayObject): void;
+/**
+ * Whether `root` was marked since the last call, clearing the mark.
+ */
+export declare function takeSettleMark(root: object): boolean;
 /**
  * Shared implementation of the mask setter (push layer).
  *
@@ -160,32 +173,8 @@ export declare function isDriving(): boolean;
  */
 export declare function setMaskForPixi(data: IPixiData<Container>, value: TCreatejsMask): void;
 /**
- * Push half of the sync: copies the plain display properties of the whole
- * createjs tree to the Pixi mirror. Runs at the end of each handleTick and
- * right before Pixi draws (the container's updateTransform), so that Pixi
- * always draws the current createjs state, whenever it draws.
- *
- * - A property is written only when its createjs value differs from the one
- *   last written (or taken over, see pullFromPixi). Besides saving the Pixi
- *   setters, this keeps a value written to the Pixi node
- *   (`instance.pixi.x = 100`) in place until createjs writes that property
- *   again, as AC2 did
- * - Invisible nodes are NOT skipped: switching to invisible is itself a state
- *   that must reach Pixi.
- * - `_off` is not mapped: createjs draws whatever is on its display list
- *   (`_off` only keeps the timeline from placing an object, and the display
- *   list is mirrored to Pixi). `renderable` is left to Pixi, which turns it
- *   off for nodes used as masks.
+ * Copies the color filter scalars of a whole createjs tree (children and
+ * mask references) into their Pixi filters' matrices. The display properties
+ * need no copying (they write through at once, see defineDisplayAccessors).
  */
 export declare function syncToPixi(root: ICreatejsSyncNode): void;
-/**
- * Pull half of the sync: takes values written to the Pixi nodes
- * (`instance.pixi.x = 100`) over into the createjs properties. Runs before
- * createjs plays a frame, so that a tween writing the property in that frame
- * (even with the value it already had) replaces the Pixi-side write, as it
- * did in AC2, and a property nothing writes keeps it. Only the nodes written
- * through Pixi since the last call are visited (their transforms log the
- * writes, see CjsTransform). `renderable` is not taken over (Pixi changes
- * it itself for masks).
- */
-export declare function pullFromPixi(): void;

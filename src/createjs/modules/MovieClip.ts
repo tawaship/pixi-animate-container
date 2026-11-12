@@ -4,10 +4,9 @@ import { CreatejsColorFilter, PixiColorMatrixFilter, getPixiColorMatrixFilter } 
 import {
 	ICreatejsDisplayObject, ICreatejsBlendModeTarget,
 	IColorFilterSyncPair, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi, isDriving
+	createPixiData, registerPixiData, setMaskForPixi, markForSettle, isDriving, defineDisplayAccessors, blendModeForPixi
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
-import { logPixiWrites } from './transform';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
@@ -15,11 +14,40 @@ import { logPixiWrites } from './transform';
 export class PixiMovieClip extends Container {
 	private _createjs: CreatejsMovieClip;
 	private _filterContainer: Container | null = null;
+	private _colorFilters: PixiColorMatrixFilter[] | null = null;
 
 	constructor(cjs: CreatejsMovieClip) {
 		super();
 
 		this._createjs = cjs;
+	}
+
+	/**
+	 * Sets the color filters whose matrices follow their createjs ColorFilters
+	 * (see updateTransform).
+	 *
+	 * @ignore
+	 */
+	setColorFiltersForPixi(value: PixiColorMatrixFilter[] | null): void {
+		this._colorFilters = value;
+	}
+
+	/**
+	 * Copies the color filter scalars (plain data properties that tweens write)
+	 * into the filters' matrices, then updates the transforms as usual. Pixi
+	 * calls this on every node it is about to draw, so the filters drawn always
+	 * carry the current createjs values, and a node no longer drawn (or
+	 * discarded) costs nothing.
+	 */
+	updateTransform(): void {
+		const colorFilters = this._colorFilters;
+		if (colorFilters) {
+			for (let i = 0; i < colorFilters.length; i++) {
+				colorFilters[i].syncFromCreatejs();
+			}
+		}
+
+		super.updateTransform();
 	}
 
 	get filterContainer() {
@@ -35,8 +63,6 @@ export class PixiMovieClip extends Container {
 	}
 }
 
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiMovieClip.prototype);
 
 export type TCreatejsColorFilters = CreatejsColorFilter[] | null;
 
@@ -111,20 +137,10 @@ export enum CompositeOperations {
 	Screen = "screen"
 }
 
-/**
- * @ignore
- */
-const blendModes = {
-	[CompositeOperations.Lighter]: BLEND_MODES.ADD,
-	[CompositeOperations.Multiply]: BLEND_MODES.MULTIPLY,
-	[CompositeOperations.Screen]: BLEND_MODES.SCREEN,
-};
-
 export interface IPixiMovieClipData extends IPixiData<PixiMovieClip> {
 	subInstance: Container;
 	listenFrameEvents: IAnimateFrameEventOption;
 	filters: TCreatejsColorFilters;
-	compositeOperation: CompositeOperations | null;
 }
 
 /**
@@ -136,17 +152,21 @@ function createPixiMovieClipData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 	return Object.assign(createPixiData<PixiMovieClip>(pixi, null), {
 		subInstance: pixi,
 		listenFrameEvents: {},
-		filters: null,
-		compositeOperation: null
+		filters: null
 	});
 }
 
 /**
  * @ignore
  */
+const dataStore = new WeakMap<CreatejsMovieClip, IPixiMovieClipData>();
+
+/**
+ * @ignore
+ */
 function resetData(cjs: CreatejsMovieClip): IPixiMovieClipData {
 	const data = createPixiMovieClipData(cjs);
-	cjs[PIXI_DATA] = data;
+	dataStore.set(cjs, data);
 	registerPixiData(cjs, data);
 
 	return data;
@@ -156,47 +176,9 @@ function resetData(cjs: CreatejsMovieClip): IPixiMovieClipData {
  * @ignore
  */
 function ensureData(cjs: CreatejsMovieClip): IPixiMovieClipData {
-	const data = cjs[PIXI_DATA];
+	const data = dataStore.get(cjs);
 
-	// its own data only (see IPixiData.owner)
-	return data && data.owner === cjs ? data : resetData(cjs);
-}
-
-/**
- * Key of the mark a root clip carries while its tree has to be settled before
- * Pixi draws (see markForSettle).
- */
-export const SETTLE_MARK: unique symbol = Symbol('settleMark');
-
-/**
- * Marks the tree `node` belongs to as needing to be settled before Pixi draws
- * (CreatejsController.flushForRender). createjs settles synched / single
- * frame clips and clips waiting to start over when it draws (MovieClip.draw
- * -> _updateState); the driver does that after every frame it plays, but a
- * goto made by the application between frames, or a clip added between
- * frames, would otherwise be drawn unsettled until the next frame is played.
- * The mark is put on the top of the tree, which is a clip the container
- * plays when the tree is on one.
- */
-export function markForSettle(node: createjs.DisplayObject): void {
-	let top = node;
-	while (top.parent) {
-		top = top.parent;
-	}
-	if (top instanceof CreatejsMovieClip) {
-		top[SETTLE_MARK] = true;
-	}
-}
-
-/**
- * Whether `root` was marked since the last call, clearing the mark.
- */
-export function takeSettleMark(root: CreatejsMovieClip): boolean {
-	if (!root[SETTLE_MARK]) {
-		return false;
-	}
-	root[SETTLE_MARK] = false;
-	return true;
+	return data ? data : resetData(cjs);
 }
 
 /**
@@ -219,15 +201,6 @@ function isBlendModeChild(child: createjs.DisplayObject): child is createjs.Disp
  * prototype accessor safely intercepts it despite TS2611/TS2416.
  */
 export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDisplayObject<PixiMovieClip> {
-	/** The wrapper data (see PIXI_DATA in core) */
-	declare [PIXI_DATA]?: IPixiMovieClipData;
-
-	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-	declare [EVENT_MANAGER]?: CreatejsEventManager;
-
-	/** Set while the tree under this root has to be settled before Pixi draws (see markForSettle) */
-	declare [SETTLE_MARK]?: boolean;
-
 	// Adobe Animate's publish output stamps named child instances (`this.a`
 	// and friends) onto published symbols at runtime, so no declaration can
 	// know their names. This index signature lets them be referenced without
@@ -402,11 +375,31 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
 		const data = ensureData(this);
 
-		if (data.compositeOperation && blendModes[data.compositeOperation] === mode) return;
+		// The subtree already draws with what this mode gives: a clip passes its
+		// mode on whenever it changes, and to each child it is given
+		if (data.reservedBlendMode === mode) {
+			return;
+		}
 
 		data.reservedBlendMode = mode;
-		for (let i = 0; i < this.children.length; i++) {
-			const child = this.children[i];
+		this._passBlendModeForPixi(data);
+	}
+
+	/**
+	 * Gives the children the blend mode this clip draws them with.
+	 */
+	private _passBlendModeForPixi(data: IPixiMovieClipData): void {
+		const children = this.children;
+		if (!children) {
+			// inside the createjs constructor (DisplayObject writes
+			// compositeOperation before Container makes the child list)
+			return;
+		}
+
+		const mode = blendModeForPixi(data);
+
+		for (let i = 0; i < children.length; i++) {
+			const child = children[i];
 
 			if (isBlendModeChild(child)) {
 				child.updateBlendModeForPixi(mode);
@@ -421,12 +414,13 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 
 	set compositeOperation(value) {
 		const data = ensureData(this);
+		const before = blendModeForPixi(data);
 
-		if (data.compositeOperation === value) return;
-
-		const blendMode = (value && blendModes[value]) || data.reservedBlendMode;
-		this.updateBlendModeForPixi(blendMode);
 		data.compositeOperation = value;
+		// timelines write the value on every frame they place the clip
+		if (blendModeForPixi(data) !== before) {
+			this._passBlendModeForPixi(data);
+		}
 	}
 
 	// @ts-expect-error TS2611/TS2416 - see the class-level comment on CreatejsShape
@@ -454,6 +448,7 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		}
 
 		data.instance.filters = list;
+		data.instance.setColorFiltersForPixi(list.length ? list : null);
 		data.colorFilters = pairs.length ? pairs : null;
 		data.filters = value;
 	}
@@ -467,11 +462,18 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		setMaskForPixi(ensureData(this), value);
 	}
 
-	private _updateChildrenBlendModeForPixi(child: ICreatejsBlendModeTarget) {
-		const data = ensureData(this);
-		const blendMode = (data.compositeOperation && blendModes[data.compositeOperation]) || data.reservedBlendMode;
-		if (!blendMode) return;
-		child.updateBlendModeForPixi(blendMode);
+	/**
+	 * Gives a child being added the blend mode this clip draws it with. A child
+	 * this clip already has (timelines place their children again on every
+	 * frame) has it already: this clip passes its mode to all its children
+	 * whenever the mode changes.
+	 */
+	private _updateChildrenBlendModeForPixi(child: createjs.DisplayObject & ICreatejsBlendModeTarget) {
+		if (child.parent === this) {
+			return;
+		}
+
+		child.updateBlendModeForPixi(blendModeForPixi(ensureData(this)));
 	}
 
 	// Every real Container.addChild overload has to be redeclared verbatim to
@@ -628,6 +630,9 @@ export class CreatejsMovieClip extends createjs.MovieClip implements ICreatejsDi
 		removeAllInteractionListeners(this, type);
 	}
 }
+
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsMovieClip.prototype, ensureData);
 
 delete(CreatejsMovieClip.prototype.endAnimation);
 delete(CreatejsMovieClip.prototype.reachLabel);

@@ -88,6 +88,55 @@ PIXI.animate.loadAssetAsync([{
 
 See [here](https://tawaship.github.io/pixi-animate-container/docs/interfaces/IAnimatePrepareTarget.html) for complete options for `PIXI.animate.loadAssetAsync`.
 
+## Supported features
+
+What plays, sorted by how far it is confirmed. "Checked" means that the content is played frame by frame
+next to CreateJS itself, and what PixiJS is given to draw (positions, matrices, visibility, masks, blend
+modes, fills) is compared with what CreateJS would draw, after every frame and at every point PixiJS may
+render; the samples (https://tawaship.github.io/pixi-animate-container/samples/) show the same content
+played by this package and by CreateJS.
+
+### Supported
+
+| Feature | Notes |
+|---|---|
+| Timelines: independent / synched / single frame clips, loops, labels, `gotoAndPlay` / `gotoAndStop`, `play` / `stop` | A `goto` made between frames (from a click handler or another ticker callback) is drawn at once |
+| Frame scripts | Run at their frame, in the same order as CreateJS |
+| Classic and motion tweens, motion guides, easing | |
+| Rotation and skew | Drawn as Animate's HTML5 Canvas output draws them, also when both are set |
+| Shapes with solid fills and strokes | |
+| Bitmap fills (from an image or a sprite sheet frame) | The image is always repeated, which is what published content uses |
+| Gradient fills and strokes (linear and radial) | Outside the gradient the end colors continue, as in CreateJS |
+| Bitmaps and sprite sheets (one or several sheets) | |
+| Masks, tweened masks, masks that are taken off | |
+| Color effects published as `createjs.ColorFilter`, and their tweens | Drawn with a `PIXI.filters.ColorMatrixFilter` |
+| Blend modes: add (`lighter`), multiply, screen | Switching them on and off, also on a shape, bitmap or text, as CreateJS draws them |
+| Buttons (`ButtonHelper`) and mouse events (`mousedown`, `pressmove`, `pressup`, `click`, `rollover`, `rollout`) | Listened to with `on` / `addEventListener` on the CreateJS instance; PixiJS's pointer events are used underneath |
+| Frame rate | Content plays at the frame rate it was published with, whatever the display's rate; `createjsSmooth` (on by default) keeps it even when the time between frames varies; `createjsSpeed` changes the speed |
+| Sound (`playSound` in frame scripts) | With `options: { useSound: true }` in `loadAssetAsync`; played by CreateJS's `Sound` |
+
+### Probably works
+
+| Feature | What is not confirmed |
+|---|---|
+| Dynamic text | Font, color, alignment, line height and width are passed on, and lines are broken by PixiJS's word wrap, which can break them at other places than CreateJS. `textBaseline` other than the default and `outline` are not drawn. A `lineHeight` of 0 (the default) uses PixiJS's line spacing, where CreateJS uses 1.2 times the width of "M" |
+| Playing a symbol other than the published root (`new lib.Symbol()` added with `addCreatejs`) | Plays as a root of its own. Not compared with CreateJS frame by frame; the samples page can play any symbol of a sample |
+| `cache()` and filter caches | CreateJS's cache is made but not used for drawing: color effects are drawn without it, and a blend mode on a cached clip applies to each object in it rather than to the cached image as a whole (they differ where the objects overlap) |
+| `regX` / `regY` of a bitmap or sprite | Not covered by the published samples |
+| A mask whose shape is empty (not null) | Not covered by the published samples; CreateJS does not clip with it, and this package may clip everything |
+
+### Not supported
+
+| Feature | What happens |
+|---|---|
+| Blend modes other than add, multiply and screen (darken, lighten, overlay, hard light, difference and so on) | Drawn as the blend mode of the parent (PixiJS's WebGL renderer does not have them) |
+| Filters other than color effects (blur, glow, drop shadow and so on) | Not drawn |
+| Bitmap strokes (`beginBitmapStroke`) | Not drawn |
+| `no-repeat` and the other repetitions of a bitmap fill | Drawn repeated |
+| Sprite sheet animations playing on their own (`new Sprite(sheet, frame)`, a sprite's own `framerate`) | A sprite shows the frame its timeline goes to (as published content uses sprites) |
+
+Content that uses the Animate camera ("Advanced Layers") has not been checked.
+
 ## Using with TypeScript
 
 The full createjs 1.0 API is typed (via `@tawaship/createjs-module`), so
@@ -177,11 +226,38 @@ Copy them again after updating the package: each skill describes the version it 
     comes before its first `handleTick`
 - Fixed: a value written to an instance's pixi node (`instance.pixi.x = 100`)
   stays until the timeline writes that property again, as in 2.x (3.0.x lost
-  it on the next tick). The written value is also taken over by the createjs
-  instance (`instance.x` reads 100 from the next `handleTick` on).
+  it on the next tick). The createjs instance keeps its own value
+  (`instance.x` still reads what createjs wrote), as in 2.x.
+- Changed: the display properties (`x`, `y`, `scaleX`, `scaleY`, `rotation`,
+  `skewX`, `skewY`, `regX`, `regY`, `alpha`, `visible`) are accessors on the
+  class prototypes again, as in 2.x: a value written on the createjs side is
+  passed to the pixi node at once, so `instance.pixi.*` read from a frame
+  script is current. They are enumerable (`for...in` lists them) but are not
+  own properties, so `Object.keys()` / `JSON.stringify()` of an instance do not
+  include them. `_off` stays a plain property. `compositeOperation` is an
+  accessor on every display object class (it was on MovieClip only).
 - Fixed: objects that are both rotated and skewed are drawn the way the
   browser output of Animate (createjs) draws them. The values of
   `pixi.rotation` / `pixi.skew` are unchanged.
+- Fixed: `compositeOperation` is drawn as createjs draws it. An object draws
+  with its own value, or else its nearest ancestor's, so taking a value off
+  (`undefined` / `null`) goes back to the inherited one; 2.x and 3.0.x kept
+  drawing the value that was taken off, and a change made after a shape was
+  first drawn did not show. The value of a Shape, Bitmap, Sprite or Text is
+  drawn as well (it was ignored), and `source-over` draws normally inside a
+  blended clip.
+- Fixed: a Shape given new `graphics` draws only them (the previous graphics
+  stayed drawn as well, unless the shape was used as a mask).
+- Added: bitmap fills (`beginBitmapFill` / `bf`, which Animate publishes for
+  shapes filled with a bitmap, from an image or a sprite sheet frame) are
+  drawn. The image is always repeated, which is what published content uses.
+  Bitmap strokes are not drawn.
+- Added: gradient fills and strokes (`beginLinearGradientFill` / `lf`,
+  `beginRadialGradientFill` / `rf`, `beginLinearGradientStroke` / `ls`,
+  `beginRadialGradientStroke` / `rs`) are drawn, with the colors the browser's
+  canvas paints; outside the gradient the end colors continue, as in
+  createjs. Each gradient is drawn into a texture once and shared by the
+  shapes that use it.
 - Fixed: an object marked `_off` that is on a display list is drawn, as in
   createjs. A shape used as a mask is no longer drawn itself, and a mask shape
   taken off with `mask = null` is no longer left drawn in the pixi tree.

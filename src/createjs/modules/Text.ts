@@ -2,10 +2,9 @@ import { BLEND_MODES, Container, Text } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
+	createPixiData, registerPixiData, setMaskForPixi, defineDisplayAccessors, blendModeForPixi
 } from './core';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
-import { logPixiWrites } from './transform';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Text.html | PIXI.Text}
@@ -35,8 +34,6 @@ export class PixiTextContainer extends Container {
 	}
 }
 
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiTextContainer.prototype);
 
 export type TCreatejsTextAlign = 'left' | 'center' | 'right';
 
@@ -86,9 +83,14 @@ function createPixiTextData(cjs: CreatejsText): IPixiTextData {
 /**
  * @ignore
  */
+const dataStore = new WeakMap<CreatejsText, IPixiTextData>();
+
+/**
+ * @ignore
+ */
 function resetData(cjs: CreatejsText): IPixiTextData {
 	const data = createPixiTextData(cjs);
-	cjs[PIXI_DATA] = data;
+	dataStore.set(cjs, data);
 	registerPixiData(cjs, data);
 
 	return data;
@@ -98,10 +100,9 @@ function resetData(cjs: CreatejsText): IPixiTextData {
  * @ignore
  */
 function ensureData(cjs: CreatejsText): IPixiTextData {
-	const data = cjs[PIXI_DATA];
+	const data = dataStore.get(cjs);
 
-	// its own data only (see IPixiData.owner)
-	return data && data.owner === cjs ? data : resetData(cjs);
+	return data ? data : resetData(cjs);
 }
 
 /**
@@ -114,12 +115,6 @@ function ensureData(cjs: CreatejsText): IPixiTextData {
  * prototype accessor safely intercepts them despite TS2611/TS2416.
  */
 export class CreatejsText extends createjs.Text implements ICreatejsDisplayObject<PixiTextContainer> {
-	/** The wrapper data (see PIXI_DATA in core) */
-	declare [PIXI_DATA]?: IPixiTextData;
-
-	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-	declare [EVENT_MANAGER]?: CreatejsEventManager;
-
 	constructor(text: string, font: string, color: string = '#000000') {
 		super(text, font, color);
 
@@ -131,7 +126,24 @@ export class CreatejsText extends createjs.Text implements ICreatejsDisplayObjec
 	}
 
 	updateBlendModeForPixi(mode: BLEND_MODES): void {
-		ensureData(this).instance.text.blendMode = mode;
+		const data = ensureData(this);
+
+		data.reservedBlendMode = mode;
+		data.instance.text.blendMode = blendModeForPixi(data);
+	}
+
+	// @ts-expect-error TS2611/TS2416 - a plain data property on the real
+	// createjs.DisplayObject; intercepted here to draw it (see the class-level
+	// comment on CreatejsShape)
+	get compositeOperation() {
+		return ensureData(this).compositeOperation;
+	}
+
+	set compositeOperation(value) {
+		const data = ensureData(this);
+
+		data.compositeOperation = value;
+		data.instance.text.blendMode = blendModeForPixi(data);
 	}
 
 	// @ts-expect-error TS2611 - see the class-level comment above
@@ -329,3 +341,6 @@ export class CreatejsText extends createjs.Text implements ICreatejsDisplayObjec
 		removeAllInteractionListeners(this, type);
 	}
 }
+
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsText.prototype, ensureData);

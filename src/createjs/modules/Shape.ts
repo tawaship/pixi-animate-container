@@ -2,11 +2,10 @@ import { DisplayObject, Container, BLEND_MODES } from 'pixi.js';
 import createjs from '@tawaship/createjs-module';
 import {
 	ICreatejsDisplayObject, IPixiData, TCreatejsMask,
-	createPixiData, registerPixiData, PIXI_DATA, setMaskForPixi
+	createPixiData, registerPixiData, setMaskForPixi, defineDisplayAccessors, blendModeForPixi
 } from './core';
 import { CreatejsGraphics } from './Graphics';
-import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners, EVENT_MANAGER, CreatejsEventManager } from './EventManager';
-import { logPixiWrites } from './transform';
+import { TCreatejsEventListener, addInteractionListener, removeInteractionListener, removeAllInteractionListeners } from './EventManager';
 
 /**
  * inherited {@link https://pixijs.download/v5.3.9/docs/PIXI.Container.html | PIXI.Container}
@@ -25,8 +24,6 @@ export class PixiShape extends Container {
 	}
 }
 
-// alpha / visible written through Pixi are taken over into createjs (see logPixiWrites)
-logPixiWrites(PixiShape.prototype);
 
 export interface IPixiShapeData extends IPixiData<PixiShape> {
 	/**
@@ -52,9 +49,14 @@ function createPixiShapeData(cjs: CreatejsShape): IPixiShapeData {
 /**
  * @ignore
  */
+const dataStore = new WeakMap<CreatejsShape, IPixiShapeData>();
+
+/**
+ * @ignore
+ */
 function resetData(cjs: CreatejsShape): IPixiShapeData {
 	const data = createPixiShapeData(cjs);
-	cjs[PIXI_DATA] = data;
+	dataStore.set(cjs, data);
 	registerPixiData(cjs, data);
 
 	return data;
@@ -64,10 +66,9 @@ function resetData(cjs: CreatejsShape): IPixiShapeData {
  * @ignore
  */
 function ensureData(cjs: CreatejsShape): IPixiShapeData {
-	const data = cjs[PIXI_DATA];
+	const data = dataStore.get(cjs);
 
-	// its own data only (see IPixiData.owner)
-	return data && data.owner === cjs ? data : resetData(cjs);
+	return data ? data : resetData(cjs);
 }
 
 /**
@@ -84,12 +85,6 @@ function ensureData(cjs: CreatejsShape): IPixiShapeData {
  * verification-C suites, which exercise both assignments.
  */
 export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObject<PixiShape> {
-	/** The wrapper data (see PIXI_DATA in core) */
-	declare [PIXI_DATA]?: IPixiShapeData;
-
-	/** The interaction event manager, created on the first listener (see EVENT_MANAGER) */
-	declare [EVENT_MANAGER]?: CreatejsEventManager;
-
 	constructor(graphics?: CreatejsGraphics) {
 		super(graphics);
 
@@ -104,7 +99,21 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 		const data = ensureData(this);
 
 		data.reservedBlendMode = mode;
-		data.graphics?.updateBlendModeForPixi(mode);
+		data.graphics?.updateBlendModeForPixi(blendModeForPixi(data));
+	}
+
+	// @ts-expect-error TS2611/TS2416 - a plain data property on the real
+	// createjs.DisplayObject; intercepted here to draw it (see the class-level
+	// comment on CreatejsShape)
+	get compositeOperation() {
+		return ensureData(this).compositeOperation;
+	}
+
+	set compositeOperation(value) {
+		const data = ensureData(this);
+
+		data.compositeOperation = value;
+		data.graphics?.updateBlendModeForPixi(blendModeForPixi(data));
 	}
 
 	// @ts-expect-error TS2611/TS2416 - see the class-level comment above
@@ -115,9 +124,11 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 	set graphics(value) {
 		const data = ensureData(this);
 
-		if (data.masked.length) {
-			data.instance.removeChildren();
+		// The node holds the current graphics only: createjs draws
+		// this.graphics, never one it had before
+		data.instance.removeChildren();
 
+		if (data.masked.length) {
 			if (value) {
 				for (let i = 0; i < data.masked.length; i++) {
 					data.masked[i].mask = data.instance;
@@ -131,6 +142,7 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 
 		if (value) {
 			data.instance.addChild(value.pixi);
+			value.updateBlendModeForPixi(blendModeForPixi(data));
 		}
 
 		data.graphics = value;
@@ -220,3 +232,6 @@ export class CreatejsShape extends createjs.Shape implements ICreatejsDisplayObj
 		removeAllInteractionListeners(this, type);
 	}
 }
+
+// x / y / scale / rotation / skew / reg / visible / alpha write through to the Pixi node (see defineDisplayAccessors)
+defineDisplayAccessors(CreatejsShape.prototype, ensureData);

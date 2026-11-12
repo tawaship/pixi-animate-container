@@ -1,15 +1,399 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-		<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no, minimal-ui">
-		<link rel="stylesheet" href="../style.css" />
-	</head>
-	<body>
-		<ul>
-			<li><a href="24.0.1/">Animate 24.0.1</a></li>
-			<li><a href="24.0.5/">Animate 24.0.5</a></li>
-		</ul>
-	</div>
-	</body>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pixi-animate-container samples</title>
+<style>
+	body { margin: 0; padding: 16px; font-family: sans-serif; font-size: 14px; background: #f4f4f4; color: #222; }
+	header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+	header select, header button { font-size: 14px; padding: 4px 8px; }
+	#status { font-family: monospace; }
+	#error { color: #c00; white-space: pre-wrap; margin: 0 0 8px; }
+	#view canvas, #view iframe { display: block; border: 1px solid #ccc; background: #fff; }
+	.note { color: #666; font-size: 12px; margin: 0 0 8px; max-width: 900px; }
+	.accel { color: #7a4b00; background: #fff6e0; border: 1px solid #f0d090; padding: 4px 8px; }
+	label { user-select: none; }
+</style>
+</head>
+<body>
+<header>
+	<select id="sample" title="Sample" autocomplete="off"></select>
+	<select id="symbol" title="The symbol played as the root" autocomplete="off"></select>
+	<label><input type="radio" name="player" value="container" autocomplete="off" checked> pixi-animate-container</label>
+	<label id="smoothLabel" title="The container's createjsSmooth (pixi-animate-container only): frames are played by a steady clock, so that small changes of the frame time do not make the playing uneven">(<input type="checkbox" id="smooth" autocomplete="off" checked> createjsSmooth)</label>
+	<label><input type="radio" name="player" value="createjs" autocomplete="off"> CreateJS (the published HTML)</label>
+	<label title="@tawaship/createjs-accel, a separate plugin that speeds up the timeline processing of createjs itself (installed for both players; the page reloads)"><input type="checkbox" id="accel" autocomplete="off"> createjs-accel</label>
+	<button id="toggle">Stop</button>
+	<button id="step">Step</button>
+	<button id="restart">Restart</button>
+	<span id="status"></span>
+</header>
+<p class="note">
+	Each sample is content published from Adobe Animate (<code>&lt;sample&gt;/&lt;name&gt;.html</code> and <code>.js</code>), played as it was published:
+	by this package (the published file loaded with <code>loadAssetAsync</code> and played by a <code>Container</code>), or by CreateJS with the published HTML.
+	Switch the player to compare the two: only one plays at a time, so the frame rate shown is that player's alone.
+	Choosing a symbol plays it as the root, created without arguments.
+</p>
+<p class="note accel" id="accelNote" hidden></p>
+<p id="error"></p>
+<div id="view"></div>
+
+<script>
+(function () {
+	'use strict';
+
+	// Each sample: the directory, the name of its published file (the symbol its HTML plays as the root), and its composition id
+	var SAMPLES = [
+		['animation', 'animation', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['bitmap_fill', 'bitmap_fill', 'D6D503623560A342B108582EC805B2B5'],
+		['color', 'color', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['color_vanish', 'color', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['frame_jump', 'frame_jump', 'D6D503623560A342B108582EC805B2B5'],
+		['gen_filter', 'gen_filter', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['gradient', 'gradient', 'D6D503623560A342B108582EC805B2B5'],
+		['independent', 'independent', 'B3DEAFD3765D5D468756A4D5C548FD3E'], ['interaction', 'interaction', '2FA8E0C7230941478CE2CA3DB82DBEDF'],
+		['mask', 'mask', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['mask_anim', 'anim', '2FA8E0C7230941478CE2CA3DB82DBEDF'],
+		['mask_tween', 'tween', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['mask_vanish', 'mask_vanish', 'B3DEAFD3765D5D468756A4D5C548FD3E'],
+		['mask_vanish_2', 'mask_vanish', 'B3DEAFD3765D5D468756A4D5C548FD3E'], ['motionguide', 'motionguide', '2FA8E0C7230941478CE2CA3DB82DBEDF'],
+		['multi_ss', 'multi_ss', 'D6D503623560A342B108582EC805B2B5'], ['script-write', 'a', 'FED07F67BF08AD41ACF1BFE7F50DCB33'],
+		['script_label', 'script', '2FA8E0C7230941478CE2CA3DB82DBEDF'], ['shape', 'shape', '2FA8E0C7230941478CE2CA3DB82DBEDF'],
+		['sprite_fill', 'sprite_fill', 'D6D503623560A342B108582EC805B2B5'], ['text', 'text', '2FA8E0C7230941478CE2CA3DB82DBEDF'],
+		['transformation', 'transformation', 'D6D503623560A342B108582EC805B2B5']
+	].map(function (s) { return { dir: s[0], name: s[1], id: s[2] }; });
+
+	var ACCEL_NOTE = 'createjs-accel is installed: @tawaship/createjs-accel is a separate plugin that speeds up the timeline ' +
+		'processing of createjs itself, installed here for both players. pixi-animate-container does not include it; uncheck it to see the samples without it.';
+
+	function readHash() {
+		var settings = {};
+		location.hash.slice(1).split('&').forEach(function (pair) {
+			var at = pair.indexOf('=');
+			if (at > 0) { settings[pair.slice(0, at)] = decodeURIComponent(pair.slice(at + 1)); }
+		});
+		return settings;
+	}
+
+	function loadScript(src) {
+		return new Promise(function (resolve, reject) {
+			var script = document.createElement('script');
+			script.src = src;
+			script.onload = function () { script.remove(); resolve(); };
+			script.onerror = function () { reject(new Error('Could not load ' + src)); };
+			document.body.appendChild(script);
+		});
+	}
+
+	var initial = readHash();
+	var accel = initial.accel === '1';
+
+	// createjs-accel has to be installed after createjs and before any content is created, so the
+	// libraries are loaded in order here, and changing the setting reloads the page
+	loadScript('../lib/createjs.min.js').then(function () {
+		return accel ? loadScript('../lib/createjs-accel.min.js').then(function () { createjsAccel.install(createjs); }) : null;
+	}).then(function () {
+		return loadScript('../lib/pixi.min.js');
+	}).then(function () {
+		return loadScript('../dist/pixi-animate-container.js');
+	}).then(main).catch(function (e) {
+		document.getElementById('error').textContent = String(e && e.stack ? e.stack : e);
+	});
+
+	function main() {
+		var A = PIXI.animate;
+		var sampleSelect = document.getElementById('sample');
+		var symbolSelect = document.getElementById('symbol');
+		var toggle = document.getElementById('toggle');
+		var statusView = document.getElementById('status');
+		var errorView = document.getElementById('error');
+		var view = document.getElementById('view');
+		var smoothCheck = document.getElementById('smooth');
+		var accelCheck = document.getElementById('accel');
+		var accelNote = document.getElementById('accelNote');
+
+		var session = 0;      // bumps on every (re)start, so that stale async work is dropped
+		var playing = true;
+		var current = null;   // { root, fps, container, step(), setPlaying(), stop() } of the player shown
+		var meter = { last: null, times: [] };
+
+		accelCheck.checked = accel;
+
+		function showError(e) {
+			errorView.textContent = e ? String(e && e.stack ? e.stack : e) : '';
+		}
+
+		function playerName() {
+			return document.querySelector('input[name="player"]:checked').value;
+		}
+
+		/**
+		 * Loads a sample's published file and gives its library. Samples can share
+		 * a composition id (copies of one .fla), so the file is loaded every time:
+		 * it registers its composition in place of the sample loaded before.
+		 */
+		function loadLibrary(sample) {
+			return loadScript(sample.dir + '/' + sample.name + '.js?t=' + Date.now()).then(function () {
+				return AdobeAn.getComposition(sample.id).getLibrary();
+			});
+		}
+
+		function fillSymbols(sample, lib, selected) {
+			var symbols = Object.keys(lib).filter(function (key) {
+				return key !== sample.name && typeof lib[key] === 'function' && lib[key].prototype instanceof createjs.MovieClip;
+			}).sort();
+			symbols.unshift(sample.name);
+			symbolSelect.innerHTML = '';
+			symbols.forEach(function (symbol) {
+				var option = document.createElement('option');
+				option.value = symbol;
+				option.textContent = symbol + (symbol === sample.name ? ' (the root of the published HTML)' : '');
+				symbolSelect.appendChild(option);
+			});
+			symbolSelect.value = symbols.indexOf(selected) >= 0 ? selected : sample.name;
+		}
+
+		/** Plays the published content with pixi-animate-container, as an application does */
+		function startContainer(sample, symbol) {
+			return A.loadAssetAsync({ id: sample.id, basepath: sample.dir + '/', options: { useSound: true } }).then(function (lib) {
+				var props = lib.properties;
+				var app = new PIXI.Application({
+					width: props.width,
+					height: props.height,
+					backgroundColor: parseInt(String(props.color).replace('#', ''), 16),
+					antialias: true,
+					resolution: window.devicePixelRatio || 1,
+					autoDensity: true
+				});
+				view.appendChild(app.view);
+
+				var container = new A.Container();
+				container.createjsSmooth = smoothCheck.checked;
+				app.stage.addChild(container);
+				app.ticker.add(container.handleTick, container);
+				var root = container.addCreatejs(new lib[symbol]());
+
+				return {
+					root: root,
+					fps: props.fps,
+					container: container,
+					// One frame: createjs's tick phase, then its resolve (the container syncs it before the render)
+					step: function () { root._tick(new createjs.Event('tick')); root.updateStateForPixi(); },
+					setPlaying: function (value) { container.createjsSpeed = value ? 1 : 0; },
+					stop: function () { app.destroy(true, { children: true }); }
+				};
+			});
+		}
+
+		/**
+		 * Plays the published HTML with CreateJS. Its stage is taken off the
+		 * CreateJS Ticker and played here at the content's frame rate as the Ticker
+		 * plays it (one frame at most per display frame, nothing caught up), so that
+		 * it can be stopped and stepped; the chosen symbol replaces the root, set up as the HTML sets up
+		 * its own (after createjs-accel is installed in it, when that is on).
+		 */
+		function startCreatejs(sample, lib, symbol, id) {
+			var props = lib.properties;
+			var frame = document.createElement('iframe');
+			frame.width = props.width + 4;
+			frame.height = props.height + 4;
+			view.appendChild(frame);
+
+			var player = { root: null, fps: props.fps, frame: frame, raf: 0, t: 0 };
+			player.step = function () { if (player.win) { player.win.stage.update(); } };
+			player.setPlaying = function () {};
+			player.stop = function () { cancelAnimationFrame(player.raf); frame.remove(); };
+
+			function installAccel(win) {
+				if (!accel) { return Promise.resolve(); }
+				return new Promise(function (resolve, reject) {
+					var script = win.document.createElement('script');
+					script.src = '../../lib/createjs-accel.min.js';
+					script.onload = function () { win.createjsAccel.install(win.createjs); resolve(); };
+					script.onerror = function () { reject(new Error('Could not load createjs-accel into the published HTML')); };
+					win.document.body.appendChild(script);
+				});
+			}
+
+			return new Promise(function (resolve, reject) {
+				frame.onload = function () {
+					var tries = 0;
+					(function poll() {
+						if (id !== session) { resolve(player); return; }
+						var win = frame.contentWindow;
+						var cjs = win && win.createjs;
+						if (cjs && cjs.Ticker && win.stage && win.exportRoot && cjs.Ticker.hasEventListener('tick')) {
+							cjs.Ticker.removeEventListener('tick', win.stage);
+							installAccel(win).then(function () {
+								var an = win.AdobeAn;
+								var ids = Object.keys(an.compositions);
+								var frameLib = an.getComposition(ids[ids.length - 1]).getLibrary();
+								var root = new frameLib[symbol]();
+								if (root.filterCacheList !== undefined && an.handleFilterCache) {
+									root.addEventListener('tick', an.handleFilterCache);
+								}
+								win.stage.removeAllChildren();
+								win.stage.addChild(root);
+								win.exportRoot = root;
+								player.win = win;
+								player.root = root;
+								var last = performance.now();
+								(function loop(now) {
+									var delta = Math.min((now - last) / (1000 / 60), 10);
+									last = now;
+									player.t += delta * (playing ? 1 : 0) * player.fps / 60;
+									// One frame at most per display frame, as the HTML's Ticker
+									// plays it (one stage.update a tick): frames owed beyond it
+									// are dropped, not played (a slow display slows the content
+									// down instead of skipping frames)
+									if (player.t >= 1) {
+										player.t = (player.t - 1) % 1;
+										win.stage.update();
+									}
+									player.raf = requestAnimationFrame(loop);
+								})(last);
+								resolve(player);
+							}).catch(reject);
+							return;
+						}
+						if (++tries > 400) {
+							reject(new Error('The published HTML did not start (was lib/createjs.min.js loaded?)'));
+							return;
+						}
+						setTimeout(poll, 25);
+					})();
+				};
+				frame.src = sample.dir + '/' + sample.name + '.html?t=' + Date.now();
+			});
+		}
+
+		function showAccelNote(sample) {
+			if (accel) {
+				accelNote.textContent = ACCEL_NOTE;
+				accelNote.hidden = false;
+			} else {
+				accelNote.hidden = true;
+			}
+		}
+
+		function start(keepSymbol) {
+			var id = ++session;
+			if (current) {
+				current.stop();
+				current = null;
+			}
+			view.innerHTML = '';
+			meter = { last: null, times: [] };
+			showError(null);
+
+			var sample = SAMPLES[sampleSelect.selectedIndex];
+			var wanted = keepSymbol ? symbolSelect.value : sample.name;
+			document.getElementById('smoothLabel').hidden = playerName() !== 'container';
+			showAccelNote(sample);
+			updateHash(wanted);
+			loadLibrary(sample).then(function (lib) {
+				if (id !== session) { return null; }
+				fillSymbols(sample, lib, wanted);
+				updateHash(symbolSelect.value);
+				var symbol = symbolSelect.value;
+				return playerName() === 'container' ? startContainer(sample, symbol) : startCreatejs(sample, lib, symbol, id);
+			}).then(function (player) {
+				if (!player || id !== session) {
+					if (player) { player.stop(); }
+					return;
+				}
+				current = player;
+				current.setPlaying(playing);
+			}).catch(showError);
+		}
+
+		function setPlaying(value) {
+			playing = value;
+			toggle.textContent = playing ? 'Stop' : 'Play';
+			if (current) {
+				current.setPlaying(playing);
+			}
+		}
+
+		/**
+		 * Every choice is kept in the URL's hash (#sample=...&player=...&symbol=...&smooth=...&accel=...), so that a
+		 * reload or a shared URL opens the same; the form does not restore values by itself (autocomplete off)
+		 */
+		function updateHash(symbol) {
+			var settings = {
+				sample: SAMPLES[sampleSelect.selectedIndex].dir,
+				player: playerName(),
+				symbol: symbol,
+				smooth: smoothCheck.checked ? '1' : '0',
+				accel: accel ? '1' : '0'
+			};
+			history.replaceState(null, '', '#' + Object.keys(settings).map(function (key) {
+				return key + '=' + encodeURIComponent(settings[key]);
+			}).join('&'));
+		}
+
+		/** The frames the root actually played during the last second, from its timeline position */
+		function measure(now) {
+			var root = current && current.root;
+			var text = '';
+			if (root) {
+				var raw = root.timeline.rawPosition;
+				if (meter.last !== null && raw > meter.last) {
+					for (var i = meter.last; i < raw; i++) { meter.times.push(now); }
+				}
+				meter.last = raw;
+				while (meter.times.length && meter.times[0] < now - 1000) { meter.times.shift(); }
+				text = 'frame ' + root.currentFrame + ' / ' + root.totalFrames;
+				if (playing) {
+					text += '  ' + meter.times.length + ' fps (published at ' + current.fps + ')';
+				}
+				if (accel) {
+					text += '  [createjs-accel]';
+				}
+			}
+			statusView.textContent = text;
+			requestAnimationFrame(measure);
+		}
+
+		SAMPLES.forEach(function (sample) {
+			var option = document.createElement('option');
+			option.textContent = sample.dir;
+			sampleSelect.appendChild(option);
+		});
+
+		sampleSelect.addEventListener('change', function () { start(false); });
+		symbolSelect.addEventListener('change', function () { start(true); });
+		Array.prototype.forEach.call(document.querySelectorAll('input[name="player"]'), function (input) {
+			input.addEventListener('change', function () { start(true); });
+		});
+		toggle.addEventListener('click', function () { setPlaying(!playing); });
+		// Takes effect at once, without restarting
+		smoothCheck.addEventListener('change', function () {
+			if (current && current.container) { current.container.createjsSmooth = smoothCheck.checked; }
+			updateHash(symbolSelect.value);
+		});
+		// createjs-accel can only be installed before content is created: reload with the new setting
+		accelCheck.addEventListener('change', function () {
+			accel = accelCheck.checked;
+			updateHash(symbolSelect.value);
+			location.reload();
+		});
+		document.getElementById('step').addEventListener('click', function () {
+			setPlaying(false);
+			if (current) { current.step(); }
+		});
+		document.getElementById('restart').addEventListener('click', function () { start(true); });
+
+		var settings = readHash();
+		sampleSelect.selectedIndex = Math.max(0, SAMPLES.map(function (s) { return s.dir; }).indexOf(settings.sample));
+		var radio = settings.player && document.querySelector('input[name="player"][value="' + settings.player + '"]');
+		if (radio) { radio.checked = true; }
+		if (settings.smooth !== undefined) { smoothCheck.checked = settings.smooth !== '0'; }
+		if (settings.symbol) {
+			var option = document.createElement('option');
+			option.value = settings.symbol;
+			symbolSelect.appendChild(option);
+			symbolSelect.value = settings.symbol;
+		}
+		start(!!settings.symbol);
+		requestAnimationFrame(measure);
+	}
+})();
+</script>
+</body>
 </html>

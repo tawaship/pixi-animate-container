@@ -15,23 +15,9 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="synctopixi"><span class="tsd-kind-call-signature">syncToPixi</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">root</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/ICreatejsSyncNode.html" class="tsd-signature-type tsd-kind-interface">ICreatejsSyncNode</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#synctopixi" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Push half of the sync: copies the plain display properties of the whole
-createjs tree to the Pixi mirror. Runs at the end of each handleTick and
-right before Pixi draws (the container's updateTransform), so that Pixi
-always draws the current createjs state, whenever it draws.</p>
-<ul>
-<li>A property is written only when its createjs value differs from the one
-last written (or taken over, see pullFromPixi). Besides saving the Pixi
-setters, this keeps a value written to the Pixi node
-(<code>instance.pixi.x = 100</code>) in place until createjs writes that property
-again, as AC2 did</li>
-<li>Invisible nodes are NOT skipped: switching to invisible is itself a state
-that must reach Pixi.</li>
-<li><code>_off</code> is not mapped: createjs draws whatever is on its display list
-(<code>_off</code> only keeps the timeline from placing an object, and the display
-list is mirrored to Pixi). <code>renderable</code> is left to Pixi, which turns it
-off for nodes used as masks.</li>
-</ul>
+<div class="tsd-comment tsd-typography"><p>Copies the color filter scalars of a whole createjs tree (children and
+mask references) into their Pixi filters' matrices. The display properties
+need no copying (they write through at once, see defineDisplayAccessors).</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -39,7 +25,7 @@ off for nodes used as masks.</li>
 <li><span><span class="tsd-kind-parameter">root</span>: <a href="../interfaces/ICreatejsSyncNode.html" class="tsd-signature-type tsd-kind-interface">ICreatejsSyncNode</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/core.ts#L293">packages/pixi-animate-container/src/createjs/modules/core.ts:293</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/tawaship/pixi-animate-container/blob/master/src/createjs/modules/core.ts#L422">packages/pixi-animate-container/src/createjs/modules/core.ts:422</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
