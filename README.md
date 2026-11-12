@@ -23,7 +23,7 @@
 
 ## Supported version
 
-- A complete set of content created with Adobe Animate version 24.0.1 / 24.0.5
+- Content published for HTML5 Canvas by Adobe Animate 24.0 (the samples and the checks use content published by it)
 - pixi.js 5.3.x
 
 I have not confirmed the operation on other versions.
@@ -33,7 +33,7 @@ I have not confirmed the operation on other versions.
 ### NPM
 
 ```sh
-npm install --save pixi.js @tawaship/pixi-animate-container
+npm install --save pixi.js @tawaship/pixi-animate-container@3.1.0
 ```
 
 <br />
